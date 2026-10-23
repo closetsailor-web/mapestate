@@ -752,7 +752,8 @@ header,nav{margin-left:env(safe-area-inset-left);margin-right:env(safe-area-inse
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
 <div id="picker"></div>
-<script>
+<script>/*TEST: one-time fresh start*/try{if(!localStorage.getItem('mt.reset1')){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.reset1','1');}}catch(e){}
+
 'use strict';
 /* ======================= CONFIG ======================= */
 /* Every $ figure is a real, sourced Australian/QLD number (see REAL-FIGURES.md) or is marked EST (estimate) or GAME (game mechanic, no real equivalent). */
@@ -1659,7 +1660,7 @@ function picker0(show=true,onboard){const el=document.getElementById('picker');i
   ${onboard?'':'<button class="btn sec" onclick="picker(false);tab(\'map\')">Close</button>'}`;el.style.display='block';}
 function onboard(step){const el=document.getElementById('picker');
   if(step===1){el.innerHTML=`<h1>🏡 Welcome to MapEstate</h1>${NOTE}<div class="fin" style="color:#14213d">Step 1 · Choose a username. Other players see only this, so don't use your real name.<input type="text" id="uname" maxlength="16" placeholder="e.g. bargain_hunter" value="${esc(G.username||'')}"><button class="btn buy" onclick="if(setUname()!==false&&G.username)onboard(2)">Continue</button></div>`;el.style.display='block';return;}
-  if(step===2)return picker(true,true);
+  if(step===2)return chooseCity('c1'); /*TEST: skip picker, start in Bundaberg*/
   const c=CITIES.find(x=>x.id===G.cur),cs=CS[G.cur],g=GEN[G.cur],ls=segLots(g,cs.start),st=ls[0].addr.replace(/^Lot [^,]+, /,''),b=bank(),wet=ls.filter(l=>waterPrem(l).p>=WATER.view).length;
   el.innerHTML=`<h1>Step 3 · You're in ${c.name}</h1>${NOTE}<div class="fin" style="color:#14213d;font-size:14px">
     <div class="row">${kv('Cash',fmt(G.cash))}${kv('Salary',fmt(SALARY)+'/yr')}</div>
@@ -1682,6 +1683,7 @@ function checkReleases(){const key=CITIES.map(c=>c.id+':'+GEN[c.id]?.subs.filter
 if(DEV){const d=document.createElement('div');d.id='dev';d.innerHTML=`<b>DEV</b> players: <span id="dp">${players()}</span><input type="range" min="0" max="150000" step="50" value="${players()}" oninput="localStorage.setItem('fe.dev.players',this.value);dp.textContent=(+this.value).toLocaleString();checkReleases();hud()"><button onclick="localStorage.removeItem('fe.dev.players');location.reload()">reset to ${CFG.simPlayers}</button>`;document.body.appendChild(d);}
 setTheme(localStorage.getItem('fe.theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));G=loadG();CITIES.forEach(c=>genCity(c));G.visited.forEach(ensureCity);ensureCity(G.cur);
 CITIES.forEach(c=>GEN[c.id].subs.forEach(s=>{if(s.unlock>0&&players()>=s.unlock)G.seenRel[c.id+s.si]=1;}));
+if(G.started&&G.cur!=='c1'){G.cur='c1';ensureCity('c1');} /*TEST: always open Bundaberg*/
 MapView.init();MapView.load(GEN[G.cur]);if(!G.started)onboard(1);
 if(!G.started)G.last=Date.now();{const c0=G.cash,n=advance(Date.now()-G.last);save();hud();if(n>1)toast(`⏩ ${n} game weeks passed while away (cash ${fmt(G.cash-c0)})`);}
 checkReleases();
