@@ -770,6 +770,8 @@ body.realmap #osmattr{top:auto;bottom:calc(env(safe-area-inset-bottom) + 70px);m
 <div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div></div></div><div id="picker"></div>
 <script>/*TEST: one-time fresh start (v16 real map)*/try{if(!localStorage.getItem('mt.reset2')){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.reset2','1');localStorage.setItem('mt.reset1','1');}}catch(e){}
+/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='20261025-0748';
+try{if(localStorage.getItem('mt.build')!==TEST_BUILD_ID){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.build',TEST_BUILD_ID);['mt.reset1','mt.reset2','mt.reset3'].forEach(k=>localStorage.setItem(k,'1'));}}catch(e){}
 'use strict';
 /* ======================= CONFIG ======================= */
 /* Every $ figure is a real, sourced Australian/QLD number (see REAL-FIGURES.md) or is marked EST (estimate) or GAME (game mechanic, no real equivalent). */
