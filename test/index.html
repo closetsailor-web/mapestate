@@ -665,6 +665,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 		print-color-adjust: exact;
 		}
 	}
+#rsearch:focus-within~#hint{display:none!important}
 </style>
 <meta name="application-name" content="Your Plot"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="apple-mobile-web-app-title" content="Your Plot"><meta name="theme-color" content="#0b2545">
 <script>/* Leaflet 1.9.4 (BSD-2-Clause) inlined */
@@ -912,7 +913,7 @@ body.realmap #osmattr{top:auto;bottom:calc(var(--sab) + 70px);max-width:70vw;fon
 <div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
 <script>/*TEST: one-time fresh start (v16 real map)*/try{if(!localStorage.getItem('mt.reset2')){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.reset2','1');localStorage.setItem('mt.reset1','1');}}catch(e){}
-/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='20261026-211522';
+/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='20261026-212345';
 /* v29: full wipe on a new build. Also wipes if the save itself was written by a different build (e.g. an old tab still open). */
 /*TEST: TEST_ALWAYS_FRESH=true -> EVERY page load (new tab, reload, reopened browser, home-screen launch) wipes all game data and starts at the Welcome screen. Set to false when Troy says things are flowing right. Test build only (lives next to TEST_BUILD_ID).
   window.__MT_TEST_KEEP is a code-level hook for automated tests only (set by a Playwright init script before the page runs); it is not a URL parameter or anything a player can reach.*/
@@ -1758,7 +1759,7 @@ Object.assign(MapView,{
         L.marker([a.y,a.x],{interactive:false,keyboard:false,icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="stlabel" style="transform:translate(-50%,-50%) rotate(${a.ang.toFixed(0)}deg)">${esc(a.n)}</div>`})}).addTo(this.st);}}else this.m.removeLayer(this.st);
     this.own.clearLayers();if(z<-.5&&CS[g.city.id]){const c=CS[g.city.id];const dot=(id,col)=>{const l=lot(id);if(!l)return;if(col==='#f47b20')L.circleMarker([l.y+l.h/2,l.x+l.w/2],{renderer:this.rend,radius:14,stroke:false,fillColor:'#f47b20',fillOpacity:.22,interactive:false}).addTo(this.own);L.circleMarker([l.y+l.h/2,l.x+l.w/2],{renderer:this.rend,radius:col==='#f47b20'?7:4.5,color:'#fff',weight:1.5,fillColor:col,fillOpacity:1,interactive:false}).addTo(this.own);};
       RIVALS.forEach(r=>c.rivals[r.id].plots.forEach(id=>dot(id,r.color)));Object.keys(c.props).forEach(id=>dot(id,'#f47b20'));}
-    const h=document.getElementById('hint');h.style.display=show?'none':'block';h.textContent='🔍 Search a street or suburb, or tap anywhere to find a lot';},
+    const h=document.getElementById('hint');h.style.display='none'; /* v34: the old hint pill covered search results; the search box placeholder says it now */},
   realClick(e){const g=this.g;if(!g||!g.parcels)return;const z=this.m.getZoom(),x=e.latlng.lng,y=e.latlng.lat;
     if(z<REALZ-.25){this.m.setView([y,x],.25);return;}const l=realPick(g,x,y);if(l){tab('map');UI.plot(l.id);const H=this.m.getSize().y,py=e.containerPoint.y,ty=H*.22;if(py>H*.38)this.m.panBy([0,py-ty],{animate:true,duration:.35});}}});
 /* ---- search: street or suburb ---- */
