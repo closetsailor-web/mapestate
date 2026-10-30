@@ -695,6 +695,7 @@ header{position:absolute;top:calc(var(--sat) + 8px);left:8px;right:8px;z-index:3
 #badge{position:absolute;top:3px;right:2px;min-width:18px;height:18px;border-radius:9px;background:#e46d1e;color:#fff;font-size:10.5px;font-weight:800;display:none;place-items:center;padding:0 4px;border:2px solid var(--card)}
 #toast{position:absolute;top:calc(var(--sat) + 70px);left:50%;transform:translate(-50%,-8px);z-index:60;background:var(--navy);color:#fff;padding:10px 16px;border-radius:14px;font-size:14px;font-weight:500;opacity:0;transition:.25s;pointer-events:none;max-width:92%;text-align:center;box-shadow:var(--shadow)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
+.homebadge{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:#f47b20;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;pointer-events:none}
 #toast.big{top:50%;transform:translate(-50%,-50%);width:82%;max-width:340px;padding:22px 20px;border-radius:20px;font-size:20px;font-weight:600;line-height:1.35}
 #toast.big.show{transform:translate(-50%,-50%)}
 .fab{position:absolute;right:12px;z-index:10;width:48px;height:48px;border-radius:16px;border:0;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--navy);box-shadow:var(--shadow);cursor:pointer;display:grid;place-items:center}body.dark .fab{color:#fff}.fab svg{width:22px;height:22px}
@@ -955,7 +956,7 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 <div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
 <script>/*TEST: one-time fresh start (v16 real map)*/try{if(!localStorage.getItem('mt.reset2')){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.reset2','1');localStorage.setItem('mt.reset1','1');}}catch(e){}
-/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='20261031-072549';
+/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='20261031-084545';
 /* v29: full wipe on a new build. Also wipes if the save itself was written by a different build (e.g. an old tab still open). */
 /*TEST: TEST_ALWAYS_FRESH=true -> EVERY page load (new tab, reload, reopened browser, home-screen launch) wipes all game data and starts at the Welcome screen. Set to false when Troy says things are flowing right. Test build only (lives next to TEST_BUILD_ID).
   window.__MT_TEST_KEEP is a code-level hook for automated tests only (set by a Playwright init script before the page runs); it is not a URL parameter or anything a player can reach.*/
@@ -1542,10 +1543,11 @@ function breakFee(){const L=leaseLock();if(!L)return null;const left=Math.max(0,
 function breakLease(){const b=breakFee();if(!b)return toast('Your lease has already ended.');const{fee,relet,L}=b;if(G.cash<fee)return toast('You need '+fmt(fee)+' in the bank to break this lease.');
   if(!confirm(`Break your lease at ${L.addr}?\n\nIt costs ${fmt(fee)}: 2 weeks' rent plus ${relet} week${relet===1?'':'s'} of rent while the owner finds a new tenant.\n\nAfter that you can move to a new home.`))return;
   G.cash-=fee;log('Broke lease at '+L.addr,-fee);L.end=G.week;L.broken=1;save();hud();toast('Lease ended. You paid '+fmt(fee)+'. Pick your next home on the map.');try{if(sel&&UI.el.classList.contains('open'))UI.plot(sel);}catch(e){}}
-function liveHere(id,mode,months){if(leaseLock())return toast(leaseMsg());if(!canLive(id))return toast('You can only live in a built house or unit');if(G.tut){G.tut.home=1;G.tut.done=1;}G.homeChosen=1;months=LEASE_WKS[months]?+months:12;for(const[,q]of allProps())q.occ=0;
+let _oldHome=null;
+function liveHere(id,mode,months){_oldHome=homeLotId();if(leaseLock())return toast(leaseMsg());if(!canLive(id))return toast('You can only live in a built house or unit');if(G.tut){G.tut.home=1;G.tut.done=1;}G.homeChosen=1;months=LEASE_WKS[months]?+months:12;for(const[,q]of allProps())q.occ=0;
   if(mode==='rent'){G.housing='rent';G.rental={k:lotSub(id)};G.lease={id,k:lotSub(id),addr:homeAddr(id),rent:weeklyRent(id),months,start:G.week,end:G.week+LEASE_WKS[months],m2m:0};delete G.famHome;toast('You currently live at '+lot(id).addr+' until '+gdate(G.lease.end)+'.',1);}
   else{G.housing='family';G.famHome={id,addr:homeAddr(id),start:G.week,months};toast('You currently live at '+lot(id).addr+' until '+gdate(G.week+LEASE_WKS[months])+'.',1);}
-  save();hud();if(sel===id)UI.plot(id);}
+  save();hud();try{const oldH=_oldHome;if(oldH&&oldH!==id)redraw(oldH);redraw(id);MapView.homeMark();}catch(e){}if(sel===id)UI.plot(id);}
 function occLine(id){const l=lot(id),p=propOf(id);if(!canLive(id)||(p&&p.occ)||(housing()==='rent'&&G.lease&&G.lease.id===id)||(housing()==='family'&&G.famHome&&G.famHome.id===id))return '';if(p&&p.vacant)return '<div class="sub">Between tenants</div>';if(!p&&availNow(id))return '';return `<div class="sub" id="occline">Tenanted ${fmt(weeklyRent(id))}/wk, lease ends in ${leaseLeftNPC(id)} weeks${p?'':'. If you buy it, the tenant and lease stay and the rent is paid to you.'}</div>`;}
 /* v31: optional family board, chosen right in the home choice. Same value (G.board, $/wk, max $1,000) as Profile, so the two never disagree. */
 function famBoardField(){const w=boardWk();return `<div id="lh_fam" style="margin-top:6px"><label for="lh_board" style="font-size:13px">Board you pay each week in the game</label><div class="row" style="gap:4px;margin-top:4px"><input id="lh_board" type="text" inputmode="decimal" autocomplete="off" placeholder="$0" value="${w?fmt(w).replace(/^\$/,'$'):''}" style="flex:2;min-width:0;font-size:16px"><select id="lh_bf" style="flex:1;min-width:0"><option value="1">a week</option><option value="0.5">a fortnight</option><option value="${(12/52).toFixed(6)}">a month</option></select></div><small>Board is what you pay to share a home with family, friends or strangers.</small></div>`;}
@@ -1562,6 +1564,7 @@ function liveSwitch(id){const R=(t,v)=>`<div class="hwr"><span>${t}</span><b>${v
   lsPop(`<h3>Where you live now</h3><p>${note}</p>${rows}<button class="hwb" id="ls_next" onclick="liveSwitch2('${id}')">Next</button><button class="hwx" id="ls_cancel" onclick="lsClose()">Cancel</button>`);}
 function liveSwitch2(id){const R=(t,v)=>`<div class="hwr"><span>${t}</span><b>${v}</b></div>`;
   lsPop(`<h3>Live here instead?</h3>${R('New home',esc(homeAddr(id)))}${R('Board you pay',fmt(boardWk())+' a week')}${R('Your old home','Leaving is free')}<button class="hwb" id="ls_ok" onclick="lsClose();liveFamily('${id}')">Confirm</button><button class="hwx" id="ls_back" onclick="liveSwitch('${id}')">Back</button>`);}
+function homeLotId(){if(!G.homeChosen)return null;if(housing()==='family'&&G.famHome)return G.famHome.id;if(housing()==='rent'&&G.lease&&!G.lease.broken)return G.lease.id;return null;}
 function liveFamily(id){famBoardRead();liveHere(id,'family',stayMonths());}
 function simNote(){return `<details class="more" id="aboutmap"><summary>ⓘ About this map</summary>${SIM}</details>`;}
 function liveBox(id){if(!canLive(id))return '';const p=propOf(id),L=G.lease,mine=housing()==='rent'&&L&&L.id===id,fam=housing()==='family'&&G.famHome&&G.famHome.id===id;
@@ -1810,13 +1813,14 @@ Object.assign(MapView,{
     if(z<REALZ)return;
     /* parcels */const done=new Set();for(let gx=Math.floor(x0/g.GC);gx<=Math.floor(x1/g.GC);gx++)for(let gy=Math.floor(yB/g.GC);gy<=Math.floor(yT/g.GC);gy++){const a=g.grid.get(gx*4096+gy);if(!a)continue;for(const i of a){if(done.has(i))continue;done.add(i);const l=g.lots[i];if(l.subd||l.x>x1||l.x+l.w<x0||l.y>yT||l.y+l.h<yB)continue;
       const id=l.id,o=ownerOf(id),selx=id===sel,tk=l.type==='vacant'?'vac':l.type==='acreage'?'acre':l.type==='shop'?'shop':'house';let f=P[tk],st=P[tk+'S'],lw=s>=1?1:.6;
-      if(o){f=o.you?'#f9a35c':shade(o.color,dark?-.1:.3);st=o.you?'#c4621a':shade(o.color,-.25);lw=1.4;}if(selx){f=o&&o.you?'#f9a35c':'#ffd2ad';st='#f47b20';lw=3;}
+      if(o){f=o.you?'#f9a35c':shade(o.color,dark?-.1:.3);st=o.you?'#c4621a':shade(o.color,-.25);lw=1.4;}if(!o&&id===homeLotId()){f='#f9a35c';st='#c4621a';lw=2.4;}if(selx){f=o&&o.you?'#f9a35c':(id===homeLotId()?'#f9a35c':'#ffd2ad');st='#f47b20';lw=3;}
       ctx.beginPath();if(l.poly){const p=l.poly;ctx.moveTo(X(p[0]),Y(p[1]));for(let k=2;k<p.length;k+=2)ctx.lineTo(X(p[k]),Y(p[k+1]));ctx.closePath();}else ctx.rect(X(l.x),Y(l.y+l.h),l.w*s,l.h*s);
       ctx.fillStyle=f;ctx.fill();ctx.strokeStyle=st;ctx.lineWidth=lw;if(l.type==='vacant'&&!o&&s>=.5)ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);
       if(s>=.5&&l.bsrc&&l.type!=='vacant'&&!l.kidOf){const r=Math.min(Math.sqrt(Math.min(l.a,400))*.42,Math.min(l.w,l.h)*.3)*s,cx=X(l.x+l.w/2),cy=Y(l.y+l.h/2);if(r>=1.5){ctx.fillStyle=o?st:P.roof;ctx.fillRect(cx-r,cy-r*.8,2*r,1.6*r);}}
       if(selx||(o&&o.you)){/* drawn last-ish so the outline sits on top */}}}},
   repaint(l){if(!this.realL||!l)return;for(const k in this.realL._tiles){const t=this.realL._tiles[k],c=t.coords,s=Math.pow(2,c.z),x0=c.x*256/s,yT=-c.y*256/s;if(l.x-6<=x0+256/s&&l.x+l.w+6>=x0&&l.y-6<=yT&&l.y+l.h+6>=yT-256/s)this.paintTile(t.el);}},
-  realRefresh(g){const z=this.m.getZoom(),C=this.m.getContainer();C.classList.add('zreal');C.classList.toggle('zclose',z>=-.75);if(this._cz!==z){this._cz=z;this.cull();}C.classList.toggle('zfar',z<-3.5);
+  homeMark(){const g=this.g;if(!this.hm)this.hm=L.layerGroup().addTo(this.m);this.hm.clearLayers();const hid=homeLotId();if(!g||!hid||cityOf(hid)!==g.city.id)return;const l=lot(hid);if(!l)return;L.marker([l.y+l.h/2,l.x+l.w/2],{interactive:false,keyboard:false,zIndexOffset:900,icon:L.divIcon({className:'',iconSize:[0,0],html:'<div class="homebadge" aria-label="Your home"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 3 2 12h3v8h5v-5h4v5h5v-8h3z" fill="#fff"/></svg></div>'})}).addTo(this.hm);},
+  realRefresh(g){this.homeMark();const z=this.m.getZoom(),C=this.m.getContainer();C.classList.add('zreal');C.classList.toggle('zclose',z>=-.75);if(this._cz!==z){this._cz=z;this.cull();}C.classList.toggle('zfar',z<-3.5);
     const show=z>=REALZ-.25;this.st.clearLayers();if(z>=-1.25){this.st.addTo(this.m);const b=this.m.getBounds(),shown=[],used={};let n=0;
       for(const a of g.anch){if(n>=70)break;if(a.x<b.getWest()||a.x>b.getEast()||a.y<b.getSouth()||a.y>b.getNorth())continue;if(a.c<1&&z<-.25)continue;if(used[a.n]&&z<1)continue;
         const p=this.m.latLngToContainerPoint([a.y,a.x]),w=a.n.length*6.2+8,rad=Math.max(w,16)/2;if(shown.some(q=>Math.hypot(q[0]-p.x,q[1]-p.y)<rad+q[2]))continue;shown.push([p.x,p.y,rad]);used[a.n]=1;n++;
@@ -1850,6 +1854,7 @@ function mix(a,b,t){const h=x=>[1,3,5].map(i=>parseInt(x.slice(i,i+2),16)),A=h(a
 const LOCKMIX=.55,LOCKGREY='#becadc';
 function lotStyle(id){if(!lotOpen(id)){const c=TYPES[lot(id).type].col;return{fill:mix(c,LOCKGREY,LOCKMIX),stroke:shade(mix(c,LOCKGREY,LOCKMIX),-.3),w:.8,dash:'3'};}const o=ownerOf(id),s=id===sel,t=TYPES[lot(id).type],p=propOf(id);
   if(o)return{fill:o.you?'#f9a35c':shade(o.color,.3),stroke:s?'#14213d':shade(o.color,-.25),w:s?3:1.2,dash:p&&p.status!=='leased'?'4':null};
+  if(id===homeLotId())return{fill:'#f9a35c',stroke:s?'#14213d':'#c4621a',w:s?3:2.4,dash:null};
   return{fill:s?'#ffd2ad':t.col,stroke:s?'#f47b20':shade(t.col,-.25),w:s?3:.8,dash:null};}
 function redraw(id){if(MapView.g&&cityOf(id)===MapView.g.city.id){MapView.restyle(id);if(MapView.m.getZoom()<-3)MapView.refresh();}}
 /* ======================= UI ======================= */
@@ -1869,7 +1874,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
   rentalView(id){const l=lot(id),g=GEN[cityOf(id)],Rr=realOf(l,g),sub=Rr?Rr.n:g.subs[l.si].name,L=G.lease,fam=housing()==='family';
     const row=(k,v)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)"><span>${k}</span><b style="text-align:right">${v}</b></div>`,wks=n=>n+' week'+(n===1?'':'s');
     let b='';if(fam){const since=G.famHome&&G.famHome.start!=null?Math.max(0,G.week-G.famHome.start):null;
-      b=row('Your start','Staying with family, friends or room share')+row('Board paid to family or friends',boardWk()?fmt(boardWk())+' a week':'Nothing')+row('Lived here for',since==null?'Since you moved in':wks(since));}
+      b=row('Your start','Staying with family, friends or room share')+row('Board paid to family or friends',boardWk()?fmt(boardWk())+' a week':'Nothing')+row('Lived here for',since==null?'Since you moved in':wks(since))+row('Arrangement ends',G.famHome&&G.famHome.start!=null&&LEASE_WKS[G.famHome.months]?gdate(G.famHome.start+LEASE_WKS[G.famHome.months]):'No end date');}
     else{const left=Math.max(0,L.end-G.week),lived=Math.max(0,G.week-L.start);
       b=row('Rent you pay',fmt(L.rent)+' a week')+row('Lease',L.months+'-month lease')+row('Rented for',wks(lived))+row(L.m2m?'Lease ended':'Time left',L.m2m?'Now month to month, same rent':wks(left)+' (ends '+gdate(L.end)+')');}
     return `<h2>${esc(l.addr)}</h2><div class="sub">${esc(sub)}, ${esc(g.city.name)} · ${fam?'Your home (family, friends or room share)':'Your rental home'}</div><div class="fin hcard" id="rentalview">${b}</div>`;},
