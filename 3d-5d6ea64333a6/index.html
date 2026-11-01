@@ -969,13 +969,13 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 <div id="map"></div><div id="osmattr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
 <header><button class="hbtn" id="menubtn" aria-label="Menu" onclick="UI.menu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><i class="ypico" aria-hidden="true"></i><div class="logo">Your <b>Plot</b><small id="cityname">—</small></div><div class="stats"><div class="pill coins" id="coins" data-l="Bank" onclick="UI.port()" style="cursor:pointer" title="Money in your bank">$0</div><div class="pill" id="nw" data-l="Net worth" onclick="UI.port()" style="cursor:pointer" title="Cash + property values − loans">$0</div><div class="pill" id="date">—</div></div><button class="hbtn" id="bell" aria-label="Notifications" onclick="UI.notifs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span id="badge"></span></button></header>
 <div id="rsearch"><input id="rsq" type="search" placeholder="Search a street or suburb" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Search a street or suburb"><div id="rsres"></div></div><div id="toast"></div><div class="hint" id="hint"></div>
-<button class="fab" id="list3d" title="Listings" aria-label="Listings" onclick="listOpen()" style="bottom:calc(376px + var(--sab));font-size:10px;font-weight:800"><span>List</span></button><button class="fab" id="view3d" title="Top view" aria-label="Top view" onclick="w3(w=>{const t=w.toggleView();this.title=this.ariaLabel=t?'3D view':'Top view';this.querySelector('span').textContent=t?'3D':'Top';})" style="bottom:calc(320px + var(--sab));font-size:11px;font-weight:800"><span>Top</span></button><button class="fab" id="night3d" title="Night" aria-label="Night" onclick="w3(w=>{const n=w.toggleNight();this.title=this.ariaLabel=n?'Day':'Night';this.querySelector('span').textContent=n?'☀':'☾';})" style="bottom:calc(264px + var(--sab));font-size:17px"><span>☾</span></button><button class="fab zb" id="zoomin" title="Zoom in" aria-label="Zoom in" onclick="MapView.m.zoomIn()" style="bottom:calc(208px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="fab zb" id="zoomout" title="Zoom out" aria-label="Zoom out" onclick="MapView.m.zoomOut()" style="bottom:calc(152px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button class="fab" id="home" title="Recentre city" aria-label="Recentre city" aria-label="Recentre" style="bottom:calc(96px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+<button class="fab" id="list3d" title="Listings" aria-label="Listings" onclick="listOpen()" style="bottom:calc(320px + var(--sab));font-size:10px;font-weight:800"><span>List</span></button><button class="fab" id="view3d" title="Top view" aria-label="Top view" onclick="w3(w=>{const t=w.toggleView();this.title=this.ariaLabel=t?'3D view':'Top view';this.querySelector('span').textContent=t?'3D':'Top';})" style="bottom:calc(264px + var(--sab));font-size:11px;font-weight:800"><span>Top</span></button><button class="fab zb" id="zoomin" title="Zoom in" aria-label="Zoom in" onclick="MapView.m.zoomIn()" style="bottom:calc(208px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="fab zb" id="zoomout" title="Zoom out" aria-label="Zoom out" onclick="MapView.m.zoomOut()" style="bottom:calc(152px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button class="fab" id="home" title="Recentre city" aria-label="Recentre city" aria-label="Recentre" style="bottom:calc(96px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
 <nav><button class="on" data-v="map"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg></span>Map</button><button data-v="sale" id="salebtn"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg></span>For sale</button><button data-v="mine" id="minebtn"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 3l9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>My properties</button><button data-v="shop"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span>Shop</button><button data-v="profile"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profile</button></nav>
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
 <script>/*TEST: one-time fresh start (v16 real map)*/try{if(!localStorage.getItem('mt.reset2')){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.reset2','1');localStorage.setItem('mt.reset1','1');}}catch(e){}
-/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='3d-20261101-065302';
+/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='3d-20261101-145612';
 /* v29: full wipe on a new build. Also wipes if the save itself was written by a different build (e.g. an old tab still open). */
 /*TEST: TEST_ALWAYS_FRESH=true -> EVERY page load (new tab, reload, reopened browser, home-screen launch) wipes all game data and starts at the Welcome screen. Set to false when Troy says things are flowing right. Test build only (lives next to TEST_BUILD_ID).
   window.__MT_TEST_KEEP is a code-level hook for automated tests only (set by a Playwright init script before the page runs); it is not a URL parameter or anything a player can reach.*/
@@ -2602,7 +2602,7 @@ const skyMat = new THREE.ShaderMaterial({
     vec3 top = mix(vec3(0.16,0.38,0.78), vec3(0.006,0.012,0.035), night);
     vec3 hor = mix(vec3(0.70,0.82,0.93), vec3(0.04,0.06,0.12), night);
     hor = mix(hor, vec3(0.95,0.55,0.30), dusk*0.8);
-    vec3 c = mix(hor, top, pow(h, 0.45));
+    vec3 c = mix(hor, top, pow(h, 0.45)); c = mix(c, hor*1.05 + vec3(0.03,0.02,0.0), (1.0 - smoothstep(0.0, 0.16, h)) * (1.0 - night) * 0.7);
     if (d.y < 0.0) c = hor * 0.9;
     float s = max(dot(d, normalize(sunDir)), 0.0);
     vec3 sunC = vec3(1.0,0.92,0.75)*(pow(s,900.0)*30.0 + pow(s,12.0)*0.35) + vec3(1.0,0.6,0.3)*pow(s,4.0)*0.35*dusk;
@@ -3020,7 +3020,7 @@ function road(b, R, opts = {}) {
 // ---------- static world ----------
 const world = new THREE.Group(); scene.add(world);
 const wb = new Batch(); const W = wb.add.bind(wb);
-W('plane', 'grass', 0, -0.05, 0, 2400, 1, 2400, '#d6cfa4');
+/* ground: see LANDSCAPE terrain */
 ROADS.forEach((R) => road(wb, R));
 W('disc', 'concrete', 55, 0.05, 141, 33, 1, 33, '#ffffff'); W('disc', 'concrete', 55, 0.07, 141, 26.6, 1, 26.6, '#e4e1d9'); W('disc', 'asphalt', 55, 0.09, 141, 26, 1, 26, '#ffffff');
 // park + creek + pond (north-west)
@@ -3058,6 +3058,96 @@ let powerLines;
   powerLines = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x2a2a2a, transparent: true, opacity: 0.7 })); world.add(powerLines); }
 if (fitErrors.length) console.warn('Lot boundary violations:', fitErrors.length, fitErrors.slice(0, 10));
 window.__fitErrors = fitErrors;
+
+// ---------- LANDSCAPE (1 Nov 2026): rolling bush hills around a flat town, eucalypt bush, scrub, a lake, landmarks, distant ridges ----------
+// Town area stays flat (y=-0.05) so lots, labels and tapping are unchanged. Instanced trees keep triangles low. ?lite=1 = low detail.
+const LITE = /[?&]lite=1/.test(location.search);
+const LAND = (() => {
+  let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+  for (const l of T3.lots) { const r = Math.max(l.w || 20, l.d || 30) / 2 + 14; x0 = Math.min(x0, l.cx - r); x1 = Math.max(x1, l.cx + r); z0 = Math.min(z0, l.cz - r); z1 = Math.max(z1, l.cz + r); }
+  for (const R of ROADS) { x0 = Math.min(x0, R.x0 - 20, R.x1 - 20); x1 = Math.max(x1, R.x0 + 20, R.x1 + 20); z0 = Math.min(z0, R.z0 - 20, R.z1 - 20); z1 = Math.max(z1, R.z0 + 20, R.z1 + 20); }
+  const M = 45; return { cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, hx: (x1 - x0) / 2 + M, hz: (z1 - z0) / 2 + M };
+})();
+const lrnd = (() => { let s = 90210; return () => ((s = (s * 16807) % 2147483647) / 2147483647); })();
+const lh = (x, z) => { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); };
+const vnoise = (x, z) => { const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi, u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = lh(xi, zi), b = lh(xi + 1, zi), c = lh(xi, zi + 1), d = lh(xi + 1, zi + 1); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; };
+const fbm = (x, z) => vnoise(x, z) * 0.5 + vnoise(x * 2.03 + 17, z * 2.03 + 9) * 0.3 + vnoise(x * 4.1 + 3, z * 4.1 + 41) * 0.2;
+const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const edgeD = (x, z) => { const dx = Math.max(Math.abs(x - LAND.cx) - LAND.hx, 0), dz = Math.max(Math.abs(z - LAND.cz) - LAND.hz, 0); return Math.hypot(dx, dz); };
+const LAKE = { x: LAND.cx + LAND.hx + 150, z: LAND.cz - LAND.hz * 0.35, r: 80 };
+function landH(x, z) { const e = edgeD(x, z); if (e <= 0) return -0.05;
+  const t = sstep(0, 480, e); let h = t * t * (28 + 120 * fbm(x * 0.0022 + 4, z * 0.0022 + 7)) + sstep(0, 90, e) * 7 * fbm(x * 0.012, z * 0.012);
+  const dl = Math.hypot(x - LAKE.x, z - LAKE.z); if (dl < LAKE.r + 60) h = -3.2 + (h + 3.2) * sstep(LAKE.r - 25, LAKE.r + 60, dl);
+  return -0.05 + h; }
+window.__landH = landH; window.__land = LAND;
+const land = new THREE.Group(); land.name = 'landscape'; scene.add(land);
+{ // ground: one terrain mesh (flat in town) with vertex colours: green lawn, dry grass, bush, red dirt
+  const S = 2900, N = LITE ? 80 : 120, g = new THREE.PlaneGeometry(S, S, N, N).rotateX(-Math.PI / 2); g.translate(LAND.cx, 0, LAND.cz);
+  const p = g.attributes.position, col = new Float32Array(p.count * 3), C = new THREE.Color(), K = (h) => new THREE.Color(h);
+  const lawn = K('#7f9c4f'), dry = K('#a7a35f'), gold = K('#b9a865'), bush = K('#6c8547'), dark = K('#566f3b'), dirt = K('#ad8259');
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i), h = landH(x, z), e = edgeD(x, z); p.setY(i, h);
+    const n = fbm(x * 0.006, z * 0.006), m = fbm(x * 0.03 + 5, z * 0.03 + 2);
+    if (e <= 0) C.copy(lawn).lerp(dry, sstep(0.45, 0.75, n) * 0.8);
+    else { C.copy(dry).lerp(gold, sstep(0.3, 0.7, n)); C.lerp(bush, sstep(0.45, 0.7, fbm(x * 0.004 + 9, z * 0.004)) * sstep(10, 120, e)); C.lerp(dark, sstep(40, 160, h) * 0.6); }
+    if (m > 0.68) C.lerp(dirt, sstep(0.68, 0.8, m) * (e > 0 ? 0.8 : 0.35));
+    col[i * 3] = C.r; col[i * 3 + 1] = C.g; col[i * 3 + 2] = C.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const im = x.createImageData(128, 128);
+  for (let i = 0; i < 128 * 128; i++) { const v = 205 + ((lrnd() * 50) | 0); im.data[i * 4] = v; im.data[i * 4 + 1] = v; im.data[i * 4 + 2] = v - 8; im.data[i * 4 + 3] = 255; } x.putImageData(im, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(S / 9, S / 9); t.colorSpace = THREE.SRGBColorSpace;
+  const ground = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, map: t })); ground.position.y = -0.02; ground.receiveShadow = true; land.add(ground);
+  // lake with a sandy shore
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r + 10, 40).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: 0xd9c79a })); sh.position.set(LAKE.x, -1.15, LAKE.z); land.add(sh);
+  const wa = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r, 40).rotateX(-Math.PI / 2), new THREE.MeshPhongMaterial({ color: 0x4f8fae, shininess: 80, specular: 0x88aacc })); wa.position.set(LAKE.x, -0.9, LAKE.z); land.add(wa);
+}
+{ // eucalypt bush + scrub (instanced)
+  const NT = LITE ? 600 : 1400, NS = LITE ? 0 : 1000, m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s3 = new THREE.Vector3(), v3 = new THREE.Vector3(), C = new THREE.Color();
+  const trunkG = new THREE.CylinderGeometry(0.22, 0.4, 1, 5, 1, true).translate(0, 0.5, 0), canG = new THREE.IcosahedronGeometry(1, 0);
+  const trunks = new THREE.InstancedMesh(trunkG, new THREE.MeshLambertMaterial({ color: 0xe6ddcf }), NT), cans = new THREE.InstancedMesh(canG, new THREE.MeshLambertMaterial({ color: 0xffffff }), NT * 2);
+  const GUM = ['#7f9567', '#8ea37a', '#6d8557', '#9aa784', '#74895e'];
+  let n = 0, nc = 0, tries = 0;
+  while (n < NT && tries++ < NT * 30) { const a = lrnd() * Math.PI * 2, r = 30 + lrnd() ** 1.6 * 1350, x = LAND.cx + Math.cos(a) * (LAND.hx + r), z = LAND.cz + Math.sin(a) * (LAND.hz + r), e = edgeD(x, z);
+    if (e < 12 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 14) continue; const b = fbm(x * 0.004 + 9, z * 0.004); if (lrnd() > sstep(0.3, 0.65, b) * 0.95 + 0.05 + (e < 120 ? 0.25 : 0)) continue;
+    const y = landH(x, z), ht = 5 + lrnd() * 7, ry = lrnd() * 6.28;
+    q.setFromAxisAngle(v3.set(0, 1, 0), ry); m4.compose(v3.set(x, y - 0.2, z), q, s3.set(1 + ht * 0.05, ht, 1 + ht * 0.05)); trunks.setMatrixAt(n, m4);
+    for (let k = 0; k < 2; k++) { const w = ht * (0.45 + lrnd() * 0.25); m4.compose(v3.set(x + (lrnd() - 0.5) * w * 0.8, y + ht * (0.85 + k * 0.25), z + (lrnd() - 0.5) * w * 0.8), q, s3.set(w, w * (0.55 + lrnd() * 0.2), w * (0.8 + lrnd() * 0.3)));
+      cans.setMatrixAt(nc, m4); cans.setColorAt(nc, C.set(GUM[(lrnd() * GUM.length) | 0])); nc++; }
+    n++; }
+  trunks.count = n; cans.count = nc; cans.instanceColor.needsUpdate = true; land.add(trunks, cans);
+  if (NS) { const scr = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshLambertMaterial({ color: 0xffffff }), NS), SC = ['#9aa36e', '#b3a970', '#8b9a62', '#a7ad7c', '#c2b27a']; let k = 0, tr = 0;
+    while (k < NS && tr++ < NS * 20) { const a = lrnd() * Math.PI * 2, r = 8 + lrnd() * 900, x = LAND.cx + Math.cos(a) * (LAND.hx + r), z = LAND.cz + Math.sin(a) * (LAND.hz + r);
+      if (edgeD(x, z) < 6 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r + 4) continue; const w = 1.2 + lrnd() * 2.2;
+      m4.compose(v3.set(x, landH(x, z) + w * 0.25, z), q.setFromAxisAngle(v3.set(0, 1, 0), lrnd() * 6), s3.set(w, w * 0.6, w * (0.8 + lrnd() * 0.4))); m4.setPosition(x, landH(x, z) + w * 0.25, z); scr.setMatrixAt(k, m4); scr.setColorAt(k, C.set(SC[(lrnd() * SC.length) | 0])); k++; }
+    scr.count = k; scr.instanceColor.needsUpdate = true; land.add(scr); }
+}
+{ // landmarks on the hills: water tower, farm windpump, radio mast, a homestead
+  const M = (c) => new THREE.MeshLambertMaterial({ color: c }), at = (o, x, z) => { o.position.set(x, landH(x, z), z); land.add(o); return o; };
+  const wt = new THREE.Group(); for (const [dx, dz] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 14, 4), M(0xd8d4cc)); l.position.set(dx, 7, dz); wt.add(l); }
+  const tank = new THREE.Mesh(new THREE.CylinderGeometry(5, 5, 6, 14), M(0xeef0f2)); tank.position.y = 17; wt.add(tank); const cap = new THREE.Mesh(new THREE.ConeGeometry(5.3, 2, 14), M(0x9fb7c9)); cap.position.y = 21; wt.add(cap);
+  at(wt, LAND.cx - LAND.hx - 200, LAND.cz - LAND.hz - 120);
+  const wp = new THREE.Group(); const tw = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.6, 12, 4), M(0x8a8f94)); tw.position.y = 6; wp.add(tw);
+  const fan = new THREE.Mesh(new THREE.CircleGeometry(3, 12), new THREE.MeshLambertMaterial({ color: 0xc9cdd1, side: THREE.DoubleSide })); fan.position.set(0, 12.5, 0.6); wp.add(fan);
+  const tankF = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 3, 12), M(0x9aa8a0)); tankF.position.set(6, 1.5, 0); wp.add(tankF);
+  at(wp, LAND.cx + LAND.hx + 90, LAND.cz + LAND.hz + 70);
+  const ms = new THREE.Group(); const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 1.4, 60, 4), M(0xc9c2bb)); mast.position.y = 30; ms.add(mast);
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(1.2, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff3b2f })); tip.position.y = 61; ms.add(tip);
+  { let bx = 0, bz = 0, bh = -1; for (let i = 0; i < 60; i++) { const a = i / 60 * 6.28, x = LAND.cx + Math.cos(a) * (LAND.hx + 520), z = LAND.cz + Math.sin(a) * (LAND.hz + 520), h = landH(x, z); if (h > bh) { bh = h; bx = x; bz = z; } } at(ms, bx, bz); }
+  const hs = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(14, 4, 10), M(0xf2ead8)); body.position.y = 2; hs.add(body);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(10.5, 3.5, 4), M(0xb34a3a)); roof.position.y = 5.7; roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, 0.75); hs.add(roof);
+  const shed = new THREE.Mesh(new THREE.BoxGeometry(10, 5, 8), M(0x9aa3a8)); shed.position.set(16, 2.5, 4); hs.add(shed);
+  at(hs, LAND.cx - LAND.hx - 120, LAND.cz + LAND.hz + 160);
+}
+{ // distant ridges: 3 hazy silhouette layers (no straight horizon line); colour follows the fog/sky each frame
+  const layers = [[1520, 70, 0.78], [1700, 120, 0.62], [1880, 190, 0.48]], dark = new THREE.Color(0x5d7186), tmp = new THREE.Color();
+  layers.forEach(([R, H, k], li) => { const seg = 160, pos = [], idx = [];
+    for (let i = 0; i <= seg; i++) { const a = i / seg * Math.PI * 2, x = LAND.cx + Math.cos(a) * R, z = LAND.cz + Math.sin(a) * R, h = H * (0.35 + 0.65 * fbm(Math.cos(a) * 3 + li * 7, Math.sin(a) * 3 + li * 3));
+      pos.push(x, -30, z, x, h, z); if (i < seg) { const j = i * 2; idx.push(j, j + 2, j + 1, j + 1, j + 2, j + 3); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
+    const mt = new THREE.MeshBasicMaterial({ color: 0x9fb4c8, fog: false, side: THREE.DoubleSide }); const m = new THREE.Mesh(g, mt); m.frustumCulled = false; m.renderOrder = -0.5;
+    m.onBeforeRender = () => { mt.color.copy(scene.fog.color).lerp(tmp.copy(dark).lerp(scene.fog.color, 0.35), 1 - k); };
+    land.add(m); });
+}
 
 // ---------- overlays: home badge, owned outlines, selection outline ----------
 function outline(color, y = 0.35) { const m = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ color })); m.userData.y = y; m.visible = false; m.renderOrder = 3; scene.add(m); return m; }
@@ -3197,8 +3287,45 @@ function applyDayNight(t) {
   const env = night > 0.5 ? ENV_NIGHT : ENV_DAY;
   for (const k of ENVMATS) { if (MAT[k].envMap !== env) { MAT[k].envMap = env; MAT[k].needsUpdate = true; } }
   powerLines.material.color.set(night > 0.5 ? 0x050608 : 0x2a2a2a);
+  if (typeof SUN_STATE !== 'undefined' && SUN_STATE && SUN_STATE.morning) { sunDir.x = -sunDir.x; sunDir.z = -sunDir.z; skyMat.uniforms.sunDir.value.copy(sunDir); }
 }
 applyDayNight(0);
+// ---------- automatic day / night from the player's real local time (1 Nov 2026) ----------
+// Sunrise/sunset computed on the device (SunCalc / NOAA style). No network, nothing stored or sent.
+// Location: geolocation only if ALREADY granted (never prompts); else the device time zone's capital city; default Brisbane.
+const SUN_TZ = { 'Australia/Brisbane': [-27.47, 153.03], 'Australia/Lindeman': [-20.45, 149.0], 'Australia/Sydney': [-33.87, 151.21], 'Australia/Canberra': [-35.28, 149.13], 'Australia/ACT': [-35.28, 149.13], 'Australia/NSW': [-33.87, 151.21],
+  'Australia/Melbourne': [-37.81, 144.96], 'Australia/Victoria': [-37.81, 144.96], 'Australia/Adelaide': [-34.93, 138.6], 'Australia/South': [-34.93, 138.6], 'Australia/Broken_Hill': [-31.95, 141.45], 'Australia/Perth': [-31.95, 115.86], 'Australia/West': [-31.95, 115.86],
+  'Australia/Darwin': [-12.46, 130.84], 'Australia/North': [-12.46, 130.84], 'Australia/Hobart': [-42.88, 147.33], 'Australia/Tasmania': [-42.88, 147.33], 'Australia/Currie': [-39.93, 143.85], 'Australia/Lord_Howe': [-31.55, 159.08], 'Australia/Eucla': [-31.68, 128.88], 'Australia/Queensland': [-27.47, 153.03] };
+const SUN = (() => {
+  const rad = Math.PI / 180, J1970 = 2440588, J2000 = 2451545, e = rad * 23.4397, J0 = 0.0009;
+  const toJ = (d) => d / 86400000 - 0.5 + J1970, fromJ = (j) => (j + 0.5 - J1970) * 86400000, toDays = (d) => toJ(d) - J2000;
+  const M = (d) => rad * (357.5291 + 0.98560028 * d), L = (m) => m + rad * (1.9148 * Math.sin(m) + 0.02 * Math.sin(2 * m) + 0.0003 * Math.sin(3 * m)) + rad * 102.9372 + Math.PI;
+  const dec = (l) => Math.asin(Math.sin(e) * Math.sin(l));
+  function times(date, lat, lng) { const lw = rad * -lng, phi = rad * lat, d = toDays(+date), n = Math.round(d - J0 - lw / (2 * Math.PI)), ds = J0 + lw / (2 * Math.PI) + n;
+    const m = M(ds), l = L(m), dc = dec(l), Jnoon = J2000 + ds + 0.0053 * Math.sin(m) - 0.0069 * Math.sin(2 * l);
+    const h0 = -0.833 * rad, w = Math.acos((Math.sin(h0) - Math.sin(phi) * Math.sin(dc)) / (Math.cos(phi) * Math.cos(dc)));
+    const Jset = J2000 + (J0 + (w + lw) / (2 * Math.PI) + n) + 0.0053 * Math.sin(m) - 0.0069 * Math.sin(2 * l), Jrise = Jnoon - (Jset - Jnoon);
+    return { rise: new Date(fromJ(Jrise)), set: new Date(fromJ(Jset)), noon: new Date(fromJ(Jnoon)) }; }
+  return { times };
+})();
+let SUN_LOC = (() => { let tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {} return { ll: SUN_TZ[tz] || SUN_TZ['Australia/Brisbane'], src: SUN_TZ[tz] ? 'timezone ' + tz : 'default Brisbane' }; })();
+try { if (navigator.permissions && navigator.geolocation) navigator.permissions.query({ name: 'geolocation' }).then((p) => { if (p.state === 'granted') navigator.geolocation.getCurrentPosition((g) => { SUN_LOC = { ll: [+g.coords.latitude.toFixed(1), +g.coords.longitude.toFixed(1)], src: 'device (already allowed)' }; sunTick(true); }, () => {}, { maximumAge: 864e5, timeout: 8000 }); }).catch(() => {}); } catch (e) {}
+// dev/test override: ?time=HH:MM (local time today)
+const SUN_FORCE = (() => { const m = /[?&]time=(\d{1,2}):?(\d{2})/.exec(location.search); return m ? [+m[1], +m[2]] : null; })();
+function sunNow() { const d = new Date(); if (SUN_FORCE) d.setHours(SUN_FORCE[0], SUN_FORCE[1], 0, 0); return d; }
+// t for applyDayNight: 0 = day, ~0.42 = golden dusk/dawn glow, 1 = full night. morning = sun on the east side.
+function sunPhase(now, ll) { const T = SUN.times(now, ll[0], ll[1]), mins = (a, b) => (a - b) / 60000, r = mins(now, T.rise), s = mins(now, T.set);
+  const sm = (a, b, x) => THREE.MathUtils.smoothstep(x, a, b);
+  let t, phase;
+  if (r >= -40 && r <= 20) { t = 1 - sm(-40, 20, r); phase = 'dawn'; }      // 40 min before sunrise .. 20 min after
+  else if (s >= -20 && s <= 40) { t = sm(-20, 40, s); phase = 'dusk'; }     // 20 min before sunset .. 40 min after
+  else if (r > 20 && s < -20) { t = 0; phase = 'day'; } else { t = 1; phase = 'night'; }
+  return { t, phase, morning: now < T.noon, rise: T.rise, set: T.set }; }
+var SUN_STATE = null;
+function sunTick(instant) { SUN_STATE = sunPhase(sunNow(), SUN_LOC.ll); dnGoal = SUN_STATE.t; if (instant) dn = dnGoal; mark(); }
+window.__sun = { times: SUN.times, phase: sunPhase, state: () => SUN_STATE && { ...SUN_STATE, loc: SUN_LOC.src, ll: SUN_LOC.ll }, tz: SUN_TZ };
+
+sunTick(true);setInterval(()=>sunTick(false),60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)sunTick(true);});
 
 // ---------- loop (renders only when something changed: saves phone battery) ----------
 function resize() { const el = canvas.parentElement, w = el.clientWidth || innerWidth, h = el.clientHeight || innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); mark(); }
@@ -3253,8 +3380,8 @@ Object.assign(W3D, {
   focusUpper(i, fy) { const l = byIdx(i); if (!l) return; const k = cam.dist * 0.28; const tx = l.cx + Math.sin(cam.yaw) * k, tz = l.cz + Math.cos(cam.yaw) * k; flyTo = { tx, tz, t0: performance.now(), fx: cam.tx, fz: cam.tz }; mark(); },
   zoom(f) { cam.dist = THREE.MathUtils.clamp(cam.dist * f, 40, 520); mark(); },
   toggleView() { cam.topDown = !cam.topDown; cam.pitchGoal = cam.topDown ? TOP : ANGLED; mark(); return cam.topDown; },
-  toggleNight() { dnGoal = dnGoal ? 0 : 1; mark(); return !!dnGoal; },
-  setNight(on) { dnGoal = dn = on ? 1 : 0; mark(); },
+  toggleNight() { return dn > 0.5; }, /* manual night button removed: day/night follows real local time */
+  setNight(on) { dnGoal = dn = on ? 1 : 0; mark(); }, sun: () => window.__sun.state(),
   pulse(ids) { if (pulseT) pulseT.o.forEach((o) => { scene.remove(o); o.geometry.dispose(); }); const o = ids.map(byIdx).filter(Boolean).map((l) => { const m = outline(0xff8a1f, 0.5); fitOutline(m, l, 1.2); return m; }); pulseT = { o, t0: performance.now() }; },
   screenOf(i) { const l = byIdx(i); applyCam(); camera.updateMatrixWorld(); const v = new THREE.Vector3(l.cx, 0, l.cz).project(camera), r = canvas.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; },
   overview() { this.fit(-110, -120, 110, 170, true); },
