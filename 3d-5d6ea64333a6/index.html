@@ -950,9 +950,9 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 #listings .lsub{opacity:.85;font-size:13px;margin:4px 0 12px}
 #listings .ltabs{display:flex;gap:6px}#listings .ltabs button{flex:1;background:transparent;color:#dbe6f5;border:0;border-bottom:3px solid transparent;padding:10px 0 12px;font-weight:700;font-size:15px;font-family:inherit}
 #listings .ltabs button.on{color:#fff;border-bottom-color:#fff}
-#listings .lbody{flex:1;overflow:auto;padding:12px 14px 30px}
+#listings .lbody{flex:1;overflow:auto;padding:12px 14px 30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;align-content:start;grid-auto-rows:max-content;box-sizing:border-box;width:100%;max-width:1280px;margin:0 auto}#listings .lbody>:not(.lcard){grid-column:1/-1}
 #listings .lfil{display:flex;align-items:center;gap:10px;font-size:12px;color:#5a6780;margin-bottom:10px}#listings .lfil select{border:1px solid #dfe5ef;border-radius:10px;padding:7px;background:#fff;font-family:inherit}
-#listings .lcard{display:block;width:100%;text-align:left;background:#fff;border:0;border-radius:18px;padding:0;margin:0 0 14px;overflow:hidden;box-shadow:0 4px 18px rgba(11,37,69,.10),0 1px 3px rgba(11,37,69,.06);font-family:inherit;color:inherit}
+#listings .lcard{display:block;width:100%;text-align:left;background:#fff;border:0;border-radius:18px;padding:0;margin:0;overflow:hidden;box-shadow:0 4px 18px rgba(11,37,69,.10),0 1px 3px rgba(11,37,69,.06);font-family:inherit;color:inherit}
 #listings .lcard:active{transform:scale(.99)}
 #listings .lpic{position:relative;display:block;aspect-ratio:16/10;background:linear-gradient(135deg,#dfe9f7,#eef3fa)}
 #listings .lpic img{display:block;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .25s}#listings .lpic img[src]{opacity:1}
@@ -965,6 +965,7 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 #listings .lwarn{background:#fff;border:1px solid #dfe5ef;border-left:4px solid #0a3a8c;border-radius:10px;padding:10px;font-size:13px;margin-bottom:10px}
 #listings .lempty{background:#fff;border-radius:18px;padding:28px 20px;text-align:center;box-shadow:0 4px 18px rgba(11,37,69,.10);color:#14213d}#listings .lempty p{color:#5a6780;font-size:14px;margin:8px 0 0}
 #listings .rcard .rbtn{display:block;width:100%;margin:8px 0 0}
+#buyshort .hwr{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid #eef2f7;font-size:14px}#buyshort .hwr.hi b{color:#0a3a8c;font-size:16px}#buyshort>b{display:block;margin-bottom:4px}
 </style><style>#date{display:block!important;min-width:44px;text-align:center}#date.nohome{opacity:.75}</style><style>#map canvas#w3dc{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}body.map3d #map{background:#cfe6f6}</style></head><body>
 <div id="map"></div><div id="osmattr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
 <header><button class="hbtn" id="menubtn" aria-label="Menu" onclick="UI.menu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><i class="ypico" aria-hidden="true"></i><div class="logo">Your <b>Plot</b><small id="cityname">—</small></div><div class="stats"><div class="pill coins" id="coins" data-l="Bank" onclick="UI.port()" style="cursor:pointer" title="Money in your bank">$0</div><div class="pill" id="nw" data-l="Net worth" onclick="UI.port()" style="cursor:pointer" title="Cash + property values − loans">$0</div><div class="pill" id="date">—</div></div><button class="hbtn" id="bell" aria-label="Notifications" onclick="UI.notifs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span id="badge"></span></button></header>
@@ -975,7 +976,7 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 <div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
 <script>/*TEST: one-time fresh start (v16 real map)*/try{if(!localStorage.getItem('mt.reset2')){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.reset2','1');localStorage.setItem('mt.reset1','1');}}catch(e){}
-/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='3d-20261101-145612';
+/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='3d-20261101-165243';
 /* v29: full wipe on a new build. Also wipes if the save itself was written by a different build (e.g. an old tab still open). */
 /*TEST: TEST_ALWAYS_FRESH=true -> EVERY page load (new tab, reload, reopened browser, home-screen launch) wipes all game data and starts at the Welcome screen. Set to false when Troy says things are flowing right. Test build only (lives next to TEST_BUILD_ID).
   window.__MT_TEST_KEEP is a code-level hook for automated tests only (set by a Playwright init script before the page runs); it is not a URL parameter or anything a player can reach.*/
@@ -1660,7 +1661,7 @@ function offerOwned(id){const o=+document.getElementById('offer').value;if(!(o>0
   const owner=rivalWith(id);G.tried[id]=G.week;if(o>=protOf(id)){contract(id,o,curLvr(),'protection-price buy',owner.id);UI.plot(id);toast('⚡ Met protection price — instant purchase!');return;}
   const pr=acceptOdds(o,value(id));if(Math.random()<pr){contract(id,o,curLvr(),'private treaty offer',owner.id);UI.plot(id);toast('✅ '+owner.name+' accepted '+fmt(o));}else{save();UI.plot(id);toast('❌ '+owner.name+' declined ('+Math.round(pr*100)+'% chance)');}}
 function answerOffer(i,yes){const o=G.offers[i];G.offers.splice(i,1);const p=propOf(o.id);if(yes&&p&&p.status==='leased'){const rv=RIVALS.find(x=>x.id===o.from),net=o.amt-p.loan;G.cash+=net;rivalTake(cityOf(o.id),rv.id,o.id,0);log(`Accepted ${rv.name}'s ${fmt(o.amt)} for ${pname(o.id)}`,net);delete CS[cityOf(o.id)].props[o.id];redraw(o.id);toast('🤝 Sold for '+fmt(o.amt));}save();hud();UI.port();}
-function needCoins(){UI.open(`<h2>Not enough coins</h2><div class="sub">You need more cash for the deposit, duty and settlement.</div><button class="btn buy" onclick="UI.shop()">🪙 Get more coins (demo shop)</button><button class="btn sec" onclick="sel&&UI.plot(sel)">‹ Back</button>`);}
+function needCoinsOld(){UI.open(`<h2>Not enough coins</h2><div class="sub">You need more cash for the deposit, duty and settlement.</div><button class="btn buy" onclick="UI.shop()">🪙 Get more coins (demo shop)</button><button class="btn sec" onclick="sel&&UI.plot(sel)">‹ Back</button>`);}
 /* ======================= SELLING: list for sale or auction ======================= */
 /* Commission 2.5% (QLD avg 2.57%, OpenAgent Aug 2026). Marketing ~$2,000 (OpenAgent "from ~$2,000"). Auction: + ~$1,900 auction marketing (Bundaberg agents quote $800–3,000) + auctioneer $700 ($400–1,000). */
 function listChance(ask,v){const r=ask/v;if(r<=1)return .35;if(r<=1.1)return .35-(r-1)/.1*.27;if(r<=1.2)return .08-(r-1.1)/.1*.07;return .002;}
@@ -1699,7 +1700,7 @@ const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',pri
   purchase(){return new Promise(r=>setTimeout(()=>r({ok:true,demo:true}),300));}};
 const Payments=DemoPayments; /* swap for Stripe / Apple IAP / Google Play Billing with the same API; verify receipts server-side */
 async function buyCoins(sku){const p=Payments.listProducts().find(x=>x.sku===sku);if(Payments.demo&&!confirm(`DEMO PURCHASE — no real money will be charged.\n\nCredit ${p.coins.toLocaleString()} coins (A$${p.priceAUD})?`))return;
-  const r=await Payments.purchase(sku);if(!r.ok)return toast('Purchase failed');G.cash+=p.coins;G.shopBought=shopBought()+p.coins;log(`🪙 DEMO coin pack "${p.label}"`,p.coins);save();hud();toast('✅ Demo purchase — coins credited, nothing charged');UI.shop();}
+  const r=await Payments.purchase(sku);if(!r.ok)return toast('Purchase failed');const c0=G.cash;G.cash+=p.coins;G.shopBought=shopBought()+p.coins;log(`🪙 DEMO coin pack "${p.label}"`,p.coins);save();hud();toast('✅ Demo purchase — coins credited, nothing charged');if(!coinReturn(p,c0))UI.shop();}
 /* ======================= MAP VIEW (Leaflet CRS.Simple, illustrated) ======================= */
 const MapView={m:null,base:null,bld:null,lbl:null,st:null,own:null,drawn:new Map(),
   init(){this.m=L.map('map',{crs:L.CRS.Simple,minZoom:-3.5,maxZoom:2,zoomSnap:.25,zoomDelta:.5,preferCanvas:true,attributionControl:false,zoomControl:false});
@@ -1935,6 +1936,7 @@ function land3D(){const g=GEN.c1;if(!g||!g.threeD)return;const S0=supplyStats(),
 /* ---- LISTINGS: first screen after the start choice ---- */
 let LIST_TAB='rent',LIST_N=40,LIST_SUB=-1;
 function listOpen(t){if(t)LIST_TAB=t;LIST_N=40;let d=document.getElementById('listings');if(!d){d=document.createElement('div');d.id='listings';d.setAttribute('role','dialog');d.setAttribute('aria-label','Listings');document.body.appendChild(d);}listRender();}
+window.addEventListener('resize',()=>{clearTimeout(window.__ltT);window.__ltT=setTimeout(()=>{if(document.getElementById('listings'))listThumbs();},300);});
 function listClose(){const d=document.getElementById('listings');if(d)d.remove();}
 function listRender(){const d=document.getElementById('listings');if(!d)return;const g=GEN.c1,S=supplyStats(),sale=LIST_TAB==='sale',room=LIST_TAB==='room';
   let ls=g.lots.filter(l=>lotAvail(l)&&(sale||l.type!=='vacant')&&(LIST_SUB<0||l.si===LIST_SUB)).map(l=>({l,p:sale?value(l.id):weeklyRent(l.id)})).sort((a,b)=>a.p-b.p);
@@ -1944,11 +1946,11 @@ function listRender(){const d=document.getElementById('listings');if(!d)return;c
   const dev=DEV?`<div class="ldev"><b>Test: simulated players</b> <button onclick="listPlayers(-100)">−100</button> <span id="ldevp">${S.players.toLocaleString()}</span> <button onclick="listPlayers(100)">+100</button><div id="ldevs">Built homes ${S.built} · vacant land ${S.vacant} (counts ${S.vacCounted}/${SUPPLY.vacCap} max) · counted ${S.counted} / floor ${S.floor} (players + ${SUPPLY.buffer}; built needed ≥ ${S.builtNeed}) · estate blocks released ${S.rel}/${S.max}</div></div>`:'';
   d.innerHTML=`<div class="lhead"><div class="lbar"><b>Listings</b><button type="button" id="list_map" onclick="listClose()">Map</button></div><div class="lsub">Coralwood · ${S.rent.toLocaleString()} for rent · ${S.sale.toLocaleString()} for sale · ${roomFree().length} room${roomFree().length===1?'':'s'}</div>
   <div class="ltabs"><button type="button" id="lt_rent" class="${sale||room?'':'on'}" onclick="LIST_TAB='rent';LIST_N=40;listRender()">For rent</button><button type="button" id="lt_sale" class="${sale?'on':''}" onclick="LIST_TAB='sale';LIST_N=40;listRender()">For sale</button><button type="button" id="lt_room" class="${room?'on':''}" onclick="LIST_TAB='room';listRender()">Room share</button></div></div>
-  <div class="lbody">${room?roomListHTML():dev}${S.short?'<div class="lwarn">Supply is below the minimum and no more estate land is defined in this test town.</div>':''}${room?'':`<div class="lfil"><select id="lsub" onchange="LIST_SUB=+this.value;listRender()"><option value="-1">All suburbs</option>${g.subs.map(s=>`<option value="${s.si}" ${LIST_SUB===s.si?'selected':''}>${esc(s.name)}</option>`).join('')}</select><span>${tot} ${sale?'for sale':'for rent'} · cheapest first</span></div>${ls.map(card).join('')}${tot>ls.length?`<button type="button" class="lmore" onclick="LIST_N+=40;listRender()">Show more (${tot-ls.length} left)</button>`:''}`}</div>`;listThumbs();}
+  <div class="lbody">${room?roomListHTML():dev}${sale?listCashNote():''}${S.short?'<div class="lwarn">Supply is below the minimum and no more estate land is defined in this test town.</div>':''}${room?'':`<div class="lfil"><select id="lsub" onchange="LIST_SUB=+this.value;listRender()"><option value="-1">All suburbs</option>${g.subs.map(s=>`<option value="${s.si}" ${LIST_SUB===s.si?'selected':''}>${esc(s.name)}</option>`).join('')}</select><span>${tot} ${sale?'for sale':'for rent'} · cheapest first</span></div>${ls.map(card).join('')}${tot>ls.length?`<button type="button" class="lmore" onclick="LIST_N+=40;listRender()">Show more (${tot-ls.length} left)</button>`:''}`}</div>`;listThumbs();}
 /* lazy thumbnails: only cards near the viewport ask the 3D world for a picture (rendered offscreen, cached) */
 const LIST_THUMB={};let LIST_IO=null;
-function listThumbs(){const d=document.getElementById('listings');if(!d)return;if(LIST_IO)LIST_IO.disconnect();
-  LIST_IO=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){const im=e.target,i=+im.dataset.idx;LIST_IO.unobserve(im);if(LIST_THUMB[i]){im.src=LIST_THUMB[i];continue;}w3(w=>w.thumb(i).then(u=>{if(u){LIST_THUMB[i]=u;im.src=u;im.classList.add('on');}}));}},{root:d.querySelector('.lbody'),rootMargin:'300px 0px'});
+let LIST_TW=0;function listThumbs(){const d=document.getElementById('listings');if(!d)return;if(LIST_IO)LIST_IO.disconnect();{const im0=d.querySelector('img.lthumb'),cw=im0?im0.getBoundingClientRect().width:400,tw=W3D.thumbTier?W3D.thumbTier(Math.ceil(cw*Math.min(2,window.devicePixelRatio||1))):320;if(tw!==LIST_TW){LIST_TW=tw;for(const k in LIST_THUMB)delete LIST_THUMB[k];d.querySelectorAll('img.lthumb[src]').forEach(im=>im.removeAttribute('src'));}}
+  LIST_IO=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){const im=e.target,i=+im.dataset.idx;LIST_IO.unobserve(im);if(LIST_THUMB[i]){im.src=LIST_THUMB[i];continue;}w3(w=>w.thumb(i,LIST_TW).then(u=>{if(u){LIST_THUMB[i]=u;im.src=u;im.classList.add('on');}}));}},{root:d.querySelector('.lbody'),rootMargin:'300px 0px'});
   d.querySelectorAll('img.lthumb:not([src])').forEach(im=>LIST_IO.observe(im));}
 function listGo(id){listClose();tab('map');UI.plot(id);MapView.focus(id);}
 function listPlayers(dv){const v=Math.max(0,players()+dv);localStorage.setItem('fe.dev.players',v);const dp=document.getElementById('dp');if(dp)dp.textContent=v.toLocaleString();checkReleases();listRender();}
@@ -2019,6 +2021,33 @@ function resPrompt(nid){const hs=allProps().filter(([i])=>canLive(i));if(hs.leng
 /* old saves from the removed family/friends option: that stay is ended and the player picks a start again (rent, buy or room share). Room share stays (famHome.room) are kept. */
 function roomMigrate(){try{if(G.housing==='family'&&!(G.famHome&&G.famHome.room)&&!myHome()){delete G.famHome;G.board=0;G.housing='rent';G.homeChosen=0;if(G.statusPick==='family')G.statusPick=null;delete G.statusPend;}if(G.statusPick==='family')G.statusPick=null;}catch(e){}}
 
+/* ===== BUY FLOW (1 Nov 2026, Troy approved): not enough money -> buy coins is the only fix; after buying coins you come back to the same page with a pop-up.
+   Uses the game's own rules: quoteFor() for the cash needed and lenderCheck() for whether the bank says yes. Coins go straight to cash (no loan). */
+function buyPrice(id){const o=ownerOf(id);return o&&!o.you?protOf(id):openPrice(id);}
+function buyStatus(id,price){price=price||buyPrice(id);const q=quoteFor(price,id),L=curLender(),c=lenderCheck(q,L,weeklyRent(id));
+  return{price,q,need:q.cash,have:G.cash,short:Math.max(0,Math.ceil(q.cash-G.cash)),ok:c.ok,bankNo:!c.ok&&G.cash>=q.cash,why:c.why||[],fix:c.fix};}
+function buyShort(id,price){const s=buyStatus(id,price);if(s.ok)return '';
+  const R=(t,v,hi)=>`<div class="hwr${hi?' hi':''}"><span>${t}</span><b>${v}</b></div>`;
+  if(s.short>0)return `<div class="fin hcard" id="buyshort"><b>You don't have enough money to buy this yet</b>${R('You have',fmt(s.have))}${R('You need (deposit + buying costs)',fmt(s.need))}${R('You are short by',fmt(s.short),1)}<small>The way to get more money is to buy coins. Coins go straight into your bank balance. They are not a loan.</small><button class="btn buy" id="buyshort_coins" onclick="coinsFor('${id}')">🪙 Buy coins</button></div>`;
+  return `<div class="fin hcard" id="buyshort"><b>The bank would say no right now</b><small> You have enough for the deposit, but the bank won't lend the rest yet.</small>${s.why[0]?`<div class="sub">${esc(s.why[0])}</div>`:''}<small>In this game, buying coins adds to your bank balance and helps how much a bank will lend you.</small><button class="btn buy" id="buyshort_coins" onclick="coinsFor('${id}')">🪙 Buy coins</button></div>`;}
+let COIN_RET=null;
+function coinsFor(id){const sc=UI.el?UI.el.scrollTop:0,bs=document.getElementById('buystep');COIN_RET={kind:'plot',id,scroll:sc,buyOpen:!!(bs&&!bs.hidden),price:buyPrice(id)};UI.shop();}
+function coinsFromList(){const b=document.querySelector('#listings .lbody');COIN_RET={kind:'list',tab:LIST_TAB,scroll:b?b.scrollTop:0,n:LIST_N};listClose();UI.shop();}
+function needCoins(){if(sel&&lot(sel)&&!propOf(sel)){const s=buyShort(sel);if(s){UI.open(`<h2>Not enough money</h2>${s}<button class="btn sec" onclick="UI.plot(sel)">‹ Back</button>`);return;}}
+  UI.open(`<h2>Not enough coins</h2><div class="sub">You need more cash for the deposit, duty and settlement.</div><button class="btn buy" onclick="UI.shop()">🪙 Get more coins (demo shop)</button><button class="btn sec" onclick="sel&&UI.plot(sel)">‹ Back</button>`);}
+function coinReturn(p,c0){const r=COIN_RET;if(!r)return false;COIN_RET=null;const R=(t,v,hi)=>`<div class="hwr${hi?' hi':''}"><span>${t}</span><b>${v}</b></div>`;
+  const bought=R('You bought',`${p.label} · ${p.coins.toLocaleString()} coins`)+R('Cost',`A$${p.priceAUD}${Payments.demo?' (demo, nothing charged)':''}`)+R('Bank before',fmt(c0))+R('Bank now',fmt(G.cash),1);
+  if(r.kind==='list'){listOpen(r.tab);LIST_N=r.n||40;listRender();const b=document.querySelector('#listings .lbody');if(b)b.scrollTop=r.scroll;
+    lsPop(`<h3>Coins added</h3>${bought}<p>Tap a home to see if you can buy it now.</p><button class="hwb" id="cr_ok" onclick="lsClose()">OK</button>`);return true;}
+  UI.plot(r.id);if(r.buyOpen){const b=document.getElementById('buystep'),w=document.getElementById('buyopenwrap');if(b){b.hidden=false;if(w)w.remove();}}UI.el.scrollTop=r.scroll;
+  const s=buyStatus(r.id,r.price);
+  const res=s.ok?`<div class="hwr hi" id="cr_yes"><span>✅ You can now buy this home</span><b>${fmt(s.price)}</b></div><button class="hwb" id="cr_go" onclick="lsClose();coinGoBuy('${r.id}')">Continue buying</button>`
+    :s.short>0?`<div class="hwr hi" id="cr_no"><span>Not enough yet. You still need</span><b>${fmt(s.short)}</b></div><button class="hwb" id="cr_more" onclick="lsClose();coinsFor('${r.id}')">🪙 Buy more coins</button>`
+    :`<div class="hwr hi" id="cr_no"><span>You have the deposit, but the bank would still say no</span><b>${fmt(s.price)}</b></div><p>${esc(s.why[0]||'')}</p><button class="hwb" id="cr_more" onclick="lsClose();coinsFor('${r.id}')">🪙 Buy more coins</button>`;
+  lsPop(`<h3>Coins added</h3>${bought}${res}<button class="hwx" id="cr_close" onclick="lsClose()">Close</button>`);return true;}
+function coinGoBuy(id){if(sel!==id)UI.plot(id);UI.buyStep();}
+function listCashNote(){return `<div class="lwarn" id="lcash" style="background:#fff;color:#14213d;border:1px solid #dfe5ef">You have <b>${fmt(G.cash)}</b> in the bank. To buy, you need a deposit plus buying costs. Not enough? <button type="button" class="lmore" id="lcash_coins" style="width:auto;padding:6px 12px;display:inline-block;background:#f47b20;color:#fff;border:0" onclick="coinsFromList()">🪙 Buy coins</button></div>`;}
+
 /* ---- search: street or suburb ---- */
 function rsNorm(s){return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();}
 function rsSearch(q){const g=GEN[G.cur];if(!g||!g.parcels)return[];q=rsNorm(q);if(q.length<2)return[];const out=[];
@@ -2082,12 +2111,12 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
       h+=this.sellPanel(id);
       if(p.status==='leased'&&lot(id).parcel)h+=this.subdPanel(id);
       if(p.status==='leased'&&!p.subd)h+=this.devPanel(id);}
-    else if(o){const pp=protOf(id),tried=G.tried[id]===G.week;h+=`<div class="cta" id="buyopenwrap"><button class="btn buy" id="buyopen" onclick="UI.buyStep()">Buy this property · ${fmtK(pp)}</button></div><div id="buystep" hidden><h3 style="margin:12px 0 4px">Buying ${esc(lot(id).addr)}</h3>${this.finance(id,pp)}
+    else if(o){const pp=protOf(id),tried=G.tried[id]===G.week;h+=`${buyShort(id,pp)}<div class="cta" id="buyopenwrap"><button class="btn buy" id="buyopen" onclick="UI.buyStep()">Buy this property · ${fmtK(pp)}</button></div><div id="buystep" hidden><h3 style="margin:12px 0 4px">Buying ${esc(lot(id).addr)}</h3>${this.finance(id,pp)}
       <input id="offer" type="number" step="1000" value="${Math.round(v/1000)*1000}" oninput="odds.textContent=(this.value>=${pp}?100:Math.round(acceptOdds(+this.value,${v})*100))+'%'">
       <div class="sub">Chance owner accepts: <b id="odds">${Math.round(acceptOdds(v,v)*100)}%</b> · offers ≥ protection price buy instantly · one offer per week</div>
       <div class="row"><button class="btn buy" ${tried?'disabled':''} onclick="offerOwned('${id}')">${tried?'Wait a week':'Make offer'}</button><button class="btn sec" onclick="G.cash<quoteFor(${pp}).cash?needCoins():contract('${id}',${pp},curLvr(),'protection-price buy','${o.id}')&&UI.plot('${id}')">⚡ Buy at protection</button></div></div>`;}
     else if(housing()==='family'&&G.homeChosen&&canLive(id)){/* settled family player: no price or buy on the Unhappy sheet */}
-    else{const op=openPrice(id);h+=`<details class="more"><summary>ⓘ How the price is set</summary><div class="sub">Never sold — asking price = current value (the same price shown on the listing card). ${weeklyRent(id)?'Rent is automatic from NPC tenants (real '+P_(id).label+' rents).':'Vacant land: no rent until you develop it.'}</div></details><div class="cta" id="buyopenwrap"><button class="btn buy" id="buyopen" onclick="UI.buyStep()">Buy this property · ${fmtK(op)}</button></div><div id="buystep" hidden><h3 style="margin:12px 0 4px">Buying ${esc(lot(id).addr)}</h3>${this.finance(id,op)}
+    else{const op=openPrice(id);h+=`<details class="more"><summary>ⓘ How the price is set</summary><div class="sub">Never sold — asking price = current value (the same price shown on the listing card). ${weeklyRent(id)?'Rent is automatic from NPC tenants (real '+P_(id).label+' rents).':'Vacant land: no rent until you develop it.'}</div></details>${buyShort(id,op)}<div class="cta" id="buyopenwrap"><button class="btn buy" id="buyopen" onclick="UI.buyStep()">Buy this property · ${fmtK(op)}</button></div><div id="buystep" hidden><h3 style="margin:12px 0 4px">Buying ${esc(lot(id).addr)}</h3>${this.finance(id,op)}
       ${(()=>{const c=(G.counter||{})[id],tried=G.tried[id]===G.week,d0=Math.round(op*.98/500)*500;return `<div class="fin">💬 <b>Make an offer</b> to the vendor (any amount)
         <input id="voffer" type="number" step="500" value="${d0}" oninput="vodds.textContent=Math.round(vendorOdds(+this.value,${op})*100)+'%';vdisc.textContent=(Math.max(0,1-this.value/${op})*100).toFixed(1)+'%'">
         <small>Discount <b id="vdisc">2.0%</b> · chance accepted <b id="vodds">${Math.round(vendorOdds(d0,op)*100)}%</b> (≤2% under ~90%, 5% ~60%, 10% ~25%, 15%+ ~5%). The vendor may counter-offer. One offer per game week.</small>
@@ -3391,12 +3420,13 @@ Object.assign(W3D, {
 if (T3.released) W3D.release(T3.released(), false);
 cam.tx = 0; cam.tz = 20; resize();
 requestAnimationFrame(frame2);
-// ---------- listing thumbnails: offscreen camera -> 320x200 JPEG, cached, at most 2 renders per frame ----------
-const TW = 320, TH = 200, thumbQ = [], thumbCache = new Map(), thumbCam = new THREE.PerspectiveCamera(38, TW / TH, 1, 700);
-let thumbRT = null, thumbCv = null, thumbBuf = null;
-function renderThumb(i) {
-  const l = byIdx(i); if (!l) return '';
-  if (!thumbRT) { thumbRT = new THREE.WebGLRenderTarget(TW, TH, { samples: 2 }); thumbRT.texture.colorSpace = THREE.SRGBColorSpace; thumbCv = document.createElement('canvas'); thumbCv.width = TW; thumbCv.height = TH; thumbBuf = new Uint8Array(TW * TH * 4); }
+// ---------- listing thumbnails: offscreen camera -> JPEG sized to the card (CSS width x devicePixelRatio, max 2x, 320-800 px), cached per size, at most 2 renders per frame ----------
+const thumbQ = [], thumbCache = new Map(), thumbCam = new THREE.PerspectiveCamera(38, 1.6, 1, 700);
+let thumbRT = null, thumbCv = null, thumbBuf = null, thumbW = 0;
+const THUMB_TIERS = [320, 480, 640, 800], thumbTier = (w) => THUMB_TIERS.find((t) => t >= w) || 800;
+function renderThumb(i, TW) {
+  const l = byIdx(i); if (!l) return ''; const TH = Math.round(TW / 1.6);
+  if (!thumbRT || thumbW !== TW) { if (thumbRT) thumbRT.dispose(); thumbRT = new THREE.WebGLRenderTarget(TW, TH, { samples: 4 }); thumbRT.texture.colorSpace = THREE.SRGBColorSpace; thumbCv = document.createElement('canvas'); thumbCv.width = TW; thumbCv.height = TH; thumbBuf = new Uint8Array(TW * TH * 4); thumbW = TW; }
   const fx = Math.sin(l.ry), fz = Math.cos(l.ry), rx = fz, rz = -fx, vac = l.type === 'Vacant land', D = vac ? 30 : 27, side = vac ? 8 : 10;
   thumbCam.position.set(l.cx + fx * D + rx * side, vac ? 26 : 13, l.cz + fz * D + rz * side); thumbCam.lookAt(l.cx - fx * 1.5, vac ? 0 : 2.6, l.cz - fz * 1.5); thumbCam.updateMatrixWorld();
   const au = renderer.shadowMap.autoUpdate, bv = badge.visible; renderer.shadowMap.autoUpdate = false; badge.visible = false;
@@ -3404,11 +3434,12 @@ function renderThumb(i) {
   renderer.shadowMap.autoUpdate = au; badge.visible = bv;
   const cx = thumbCv.getContext('2d'), im = cx.createImageData(TW, TH), row = TW * 4;
   for (let y = 0; y < TH; y++) im.data.set(thumbBuf.subarray((TH - 1 - y) * row, (TH - y) * row), y * row);
-  cx.putImageData(im, 0, 0); return thumbCv.toDataURL('image/jpeg', 0.78);
+  cx.putImageData(im, 0, 0); return thumbCv.toDataURL('image/jpeg', 0.86);
 }
-function thumbTick() { for (let k = 0; k < 2 && thumbQ.length; k++) { const q = thumbQ.shift(); let u = thumbCache.get(q.i); if (!u) { try { u = renderThumb(q.i); } catch (e) { console.warn(e); u = ''; } thumbCache.set(q.i, u); W3D.thumbStats.renders++; } q.res(u); } }
+function thumbTick() { for (let k = 0; k < 2 && thumbQ.length; k++) { const q = thumbQ.shift(), key = q.i + '@' + q.w; let u = thumbCache.get(key); if (!u) { try { u = renderThumb(q.i, q.w); } catch (e) { console.warn(e); u = ''; } thumbCache.set(key, u); W3D.thumbStats.renders++; } q.res(u); } }
 W3D.thumbStats = { renders: 0, maxPerFrame: 2 };
-W3D.thumb = (i) => thumbCache.has(i) ? Promise.resolve(thumbCache.get(i)) : new Promise((res) => { thumbQ.push({ i, res }); });
+W3D.thumbTier = thumbTier;
+W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return thumbCache.has(key) ? Promise.resolve(thumbCache.get(key)) : new Promise((res) => { thumbQ.push({ i, w, res }); }); };
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script></body></html>
