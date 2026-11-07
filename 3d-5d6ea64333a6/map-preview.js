@@ -107,15 +107,6 @@ function ypShouldHideLabel(layer){
  return false;
 }
 function ypSuburbKey(name){return String(name||'').normalize('NFKC').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
-function ypPostcodeAssignment(place){
- const raw=[];
- if(place&&Array.isArray(place.postcodes))raw.push(...place.postcodes);
- if(place&&place.postcode!=null&&place.postcode!=='')raw.push(place.postcode);
- const codes=[...new Set(raw.flatMap(v=>String(v).split(/[^0-9]+/)).map(v=>v.trim()).filter(v=>/^\d{4}$/.test(v)))];
- if(codes.length===1)return {status:'one',postcode:codes[0],note:'Postcode '+codes[0]+' is the code on the place result you chose. It groups this preview list. It is not a suburb boundary, and it is not verified at each sample pin.'};
- if(codes.length>1)return {status:'many',postcodes:codes,note:'This place result included more than one postcode. Choose one of these returned codes. No other code is added.'};
- return {status:'none',note:'No 4-digit Australian postcode came with the place you chose. The rental list stays empty. No postcode was guessed.'};
-}
 function ypPreviewWeeklyRent(id){let h=2166136261;for(const c of String(id)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return 380+((h>>>0)%9)*20;}
 function ypDestination(lon,lat,bearingDeg,distanceM){
  const R=6371000,delta=distanceM/R,theta=bearingDeg*Math.PI/180,phi1=lat*Math.PI/180,lambda1=lon*Math.PI/180;
@@ -130,28 +121,31 @@ function ypDistanceM(lon1,lat1,lon2,lat2){
  return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));
 }
 function ypRadiusPin(lon,lat,n){return ypDestination(lon,lat,(n-1)*36,400+(n-1)*160);}
+function ypRadiusRing(lon,lat,distanceM){const ring=[];for(let i=0;i<=64;i++){const p=ypDestination(lon,lat,i/64*360,distanceM);ring.push([p.lon,p.lat]);}return ring;}
 function ypStockId(suburbKey,n){return 'preview:'+suburbKey+':'+n;}
 function ypFreshStock(){return {version:1,rentals:[]};}
 function ypEnsureSuburbStock(store,place){
  const next={version:1,rentals:(store&&Array.isArray(store.rentals)?store.rentals:[]).map(r=>({...r}))};
  const key=ypSuburbKey(place&&place.label);
- if(!key||!place||!Number.isFinite(place.lon)||!Number.isFinite(place.lat)||!/^\d{4}$/.test(String(place.postcode||'')))return next;
+ if(!key||!place||!Number.isFinite(place.lon)||!Number.isFinite(place.lat))return next;
  const have=new Set(next.rentals.filter(r=>r.suburbKey===key).map(r=>r.id));
  for(let n=1;n<=10;n++){
   const id=ypStockId(key,n);if(have.has(id))continue;
   const pin=ypRadiusPin(place.lon,place.lat,n),weekly=ypPreviewWeeklyRent(id);
-  next.rentals.push({id,suburbKey:key,placeLabel:String(place.label),postcode:String(place.postcode),postcodeSource:'chosen-place-result',placement:'sample-pin',radiusM:2000,centreLon:+place.lon,centreLat:+place.lat,n,lon:pin.lon,lat:pin.lat,weeklyRent:weekly,bond:weekly*4,kind:'game-starter',status:'available'});
+  next.rentals.push({id,suburbKey:key,placeLabel:String(place.label),placement:'sample-pin',radiusM:2000,centreLon:+place.lon,centreLat:+place.lat,n,lon:pin.lon,lat:pin.lat,weeklyRent:weekly,bond:weekly*4,kind:'game-starter',status:'available'});
  }
  next.rentals.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
  return next;
 }
-function ypPostcodeList(store,postcode){
- if(!/^\d{4}$/.test(String(postcode||'')))return {status:'unavailable',postcode:null,items:[]};
- return {status:'ready',postcode:String(postcode),items:(store&&store.rentals||[]).filter(r=>r.postcode===String(postcode)).sort((a,b)=>a.suburbKey<b.suburbKey?-1:a.suburbKey>b.suburbKey?1:a.n-b.n)};
+function ypRadiusList(store,centre){
+ if(!centre||!Number.isFinite(centre.lon)||!Number.isFinite(centre.lat))return {status:'none',items:[]};
+ const items=(store&&store.rentals||[]).filter(r=>Number.isFinite(r.lon)&&Number.isFinite(r.lat)&&ypDistanceM(centre.lon,centre.lat,r.lon,r.lat)<=2000);
+ items.sort((a,b)=>String(a.placeLabel)<String(b.placeLabel)?-1:String(a.placeLabel)>String(b.placeLabel)?1:a.n-b.n);
+ return {status:'ready',items};
 }
 function ypPage(items,page,size){size=size||20;const pages=Math.max(1,Math.ceil((items||[]).length/size));const p=Math.min(Math.max(1,page|0),pages);return {page:p,pages,items:(items||[]).slice((p-1)*size,p*size)};}
 function ypInView(rental,bounds){if(!bounds)return true;return rental.lon>=bounds.west&&rental.lon<=bounds.east&&rental.lat>=bounds.south&&rental.lat<=bounds.north;}
-function ypRentalDetail(r){return {id:r.id,title:'Preview starter rental '+r.n,place:r.placeLabel,postcode:r.postcode,weeklyRent:r.weeklyRent,bond:r.bond,placement:'sample-pin',pin:'Sample pin inside a 2 km test radius of the chosen town or suburb centre. This nearby area is not a suburb boundary. It does not mark a real building, address, occupant, or vacancy.',tag:'Postcode '+r.postcode+' is a list tag copied from the chosen place result. Sitting inside the 2 km radius does not show that this pin is in that postcode.',ongoing:'Not calculated. This is not a measured building, so insurance and rates are not applied.',availability:r.status==='application-pending'?'Application already recorded on this preview sample.':'Preview sample. Not a real vacancy, occupant, or landlord.',kind:r.kind,applyNote:'Apply records a preview application only. It does not charge your game balance and does not start a tenancy. A home listed by another player would wait for that player to approve.'};}
+function ypRentalDetail(r){return {id:r.id,title:'Preview starter rental '+r.n,place:r.placeLabel,weeklyRent:r.weeklyRent,bond:r.bond,placement:'sample-pin',pin:'Sample pin inside the 2 km search area around the town or suburb you chose. The circle stays on that place when the map moves. It is not this device, not a suburb boundary, and not a real building, address, occupant, or vacancy.',ongoing:'Not calculated. This is not a measured building, so insurance and rates are not applied.',availability:r.status==='application-pending'?'Application already recorded on this preview sample.':'Preview sample. Not a real vacancy, occupant, or landlord.',kind:r.kind,applyNote:'Apply records a preview application only. It does not charge your game balance and does not start a tenancy. A home listed by another player would wait for that player to approve.'};}
 function ypApplyPreview(store,id){return {version:1,rentals:(store&&store.rentals||[]).map(r=>r.id===id&&r.status==='available'?{...r,status:'application-pending'}:{...r})};}
 // END TESTABLE STOCK
 
@@ -174,6 +168,7 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-where p,#yp-where-status,#yp-prop p,#yp-rent-list p,#yp-rent-detail p{margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
 #yp-rent-list,#yp-rent-detail{align-items:flex-start;padding-top:118px}
 #yp-show-rentals{position:absolute;left:50%;bottom:calc(96px + var(--sab));transform:translateX(-50%);z-index:6;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 15px Inter,system-ui,sans-serif;min-height:44px;padding:0 16px;cursor:pointer}
+#yp-radius-note{position:absolute;left:8px;bottom:28px;z-index:4;margin:0;max-width:240px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.9);color:#5a6780;font:500 11px Inter,system-ui,sans-serif;pointer-events:none}
 #yp-rent-list .yp-rent-row{display:block;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
 #yp-where-town{display:block;width:100%;box-sizing:border-box;border-radius:14px;border:1px solid rgba(20,33,61,.12);background:#fff;padding:11px 14px;font:500 16px Inter,system-ui,sans-serif;color:#14213d}
 #yp-where-town:focus,#yp-where-town:focus-visible{outline:none;border-color:#0a3a8c;box-shadow:0 0 0 4px rgba(10,58,140,.15)}
@@ -260,10 +255,12 @@ function ypReadStock(){try{const o=JSON.parse(localStorage.getItem(YP_STOCK_KEY)
 function ypWriteStock(store){try{localStorage.setItem(YP_STOCK_KEY,JSON.stringify(store));}catch(e){}}
 function ypApplyLabelPolicy(map){const layers=map&&map.getStyle&&map.getStyle()&&map.getStyle().layers||[];for(const layer of layers){if(ypShouldHideLabel(layer)){try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}}}}
 function ypSyncRentalMarkers(){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-rentals'))return;const b=ypMap.getBounds&&ypMap.getBounds();const bounds=b?{west:b.getWest(),east:b.getEast(),south:b.getSouth(),north:b.getNorth()}:null;const features=ypReadStock().rentals.filter(r=>ypInView(r,bounds)).map(r=>({type:'Feature',properties:{id:r.id},geometry:{type:'Point',coordinates:[r.lon,r.lat]}}));ypMap.getSource('yp-rentals').setData({type:'FeatureCollection',features});}
-function ypOpenSelectedList(){ypCloseWhere();window.__ypListPostcode=window.__ypPlace&&window.__ypPlace.postcode||null;window.__ypListPage=1;ypRenderRentalList();}
+function ypOpenSelectedList(){ypCloseWhere();window.__ypListPage=1;ypRenderRentalList();}
+function ypMountRadiusNote(){let n=document.getElementById('yp-radius-note');if(!n){const host=document.getElementById('map');if(!host)return;n=document.createElement('p');n.id='yp-radius-note';n.textContent='2 km search area around the place you chose. Not this device.';host.appendChild(n);}n.hidden=!window.__ypListCentre;}
+function ypSyncRadius(){ypMountRadiusNote();const c=window.__ypListCentre;if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-search-radius'))return;if(!c){ypMap.getSource('yp-search-radius').setData(ypEmpty());return;}const ring=ypRadiusRing(c.lon,c.lat,2000);ypMap.getSource('yp-search-radius').setData({type:'FeatureCollection',features:[{type:'Feature',properties:{kind:'search-area'},geometry:{type:'Polygon',coordinates:[ring]}}]});}
 function ypMountShowRentals(){if(document.getElementById('yp-show-rentals'))return;const host=document.getElementById('map');if(!host)return;const b=document.createElement('button');b.type='button';b.id='yp-show-rentals';b.textContent='Show available rentals';host.appendChild(b);b.addEventListener('click',ypOpenSelectedList);}
-function ypRenderRentalList(){let panel=document.getElementById('yp-rent-list');if(!panel){panel=document.createElement('div');panel.id='yp-rent-list';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Available rentals');document.body.appendChild(panel);}const card=document.createElement('div');card.className='card';const result=ypPostcodeList(ypReadStock(),window.__ypListPostcode);const page=ypPage(result.items,window.__ypListPage||1,20);const head=document.createElement('div');head.className='hwh';const h=document.createElement('h2');h.textContent='Available rentals';head.appendChild(h);const note=document.createElement('p');note.textContent=result.status==='ready'?'List tag '+result.postcode+' from the place result you chose. That tag is not a check that each pin is in that postcode. '+result.items.length+' sample pins sit inside a 2 km test radius of the chosen town or suburb centre. This nearby area is not a suburb boundary. Moving the map does not change this list. These are not real buildings, addresses, or vacancies.':(window.__ypPlace&&window.__ypPlace.assignment&&window.__ypPlace.assignment.note)||'A postcode list is unavailable for this place. No postcode was invented. The map can still be moved.';card.append(head,note);page.items.forEach(r=>{const btn=document.createElement('button');btn.type='button';btn.className='yp-rent-row';btn.dataset.id=r.id;const d=ypRentalDetail(r);btn.textContent=d.title+' · '+d.place+' · test $'+d.weeklyRent+' a week';btn.addEventListener('click',()=>ypOpenRentalDetail(r.id));card.appendChild(btn);});if(page.pages>1){const prev=document.createElement('button');prev.type='button';prev.id='yp-rent-prev';prev.className='hwx';prev.textContent='Previous';prev.disabled=page.page<=1;const next=document.createElement('button');next.type='button';next.id='yp-rent-next';next.className='hwx';next.textContent='Next';next.disabled=page.page>=page.pages;prev.addEventListener('click',()=>{window.__ypListPage=page.page-1;ypRenderRentalList();});next.addEventListener('click',()=>{window.__ypListPage=page.page+1;ypRenderRentalList();});card.append(prev,next);}const back=document.createElement('button');back.type='button';back.className='hwx';back.id='yp-rent-list-back';back.textContent='Back to map';back.addEventListener('click',()=>panel.remove());card.appendChild(back);panel.replaceChildren(card);}
-function ypOpenRentalDetail(id){const rental=(ypReadStock().rentals||[]).find(r=>r.id===id);if(!rental)return;const d=ypRentalDetail(rental);let panel=document.getElementById('yp-rent-detail');if(panel)panel.remove();panel=document.createElement('div');panel.id='yp-rent-detail';panel.setAttribute('role','dialog');panel.setAttribute('aria-label',d.title);const card=document.createElement('div');card.className='card';const head=document.createElement('div');head.className='hwh';const h=document.createElement('h2');h.textContent=d.title;head.appendChild(h);const body=document.createElement('p');body.id='yp-rent-detail-copy';body.textContent=d.place+'. '+d.tag+' '+d.pin+' Test weekly rent $'+d.weeklyRent+'. Test bond $'+d.bond+'. These are test amounts for this preview, not a market rent or a quoted bond. '+d.ongoing+' '+d.availability+' '+d.applyNote;const apply=document.createElement('button');apply.type='button';apply.className='hwb';apply.id='yp-rent-apply';apply.textContent='Apply to rent';apply.disabled=rental.status==='application-pending';const back=document.createElement('button');back.type='button';back.className='hwx';back.textContent='Back';apply.addEventListener('click',()=>{ypWriteStock(ypApplyPreview(ypReadStock(),id));ypOpenRentalDetail(id);});back.addEventListener('click',()=>panel.remove());card.append(head,body,apply,back);panel.appendChild(card);document.body.appendChild(panel);}
+function ypRenderRentalList(){let panel=document.getElementById('yp-rent-list');if(!panel){panel=document.createElement('div');panel.id='yp-rent-list';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Available rentals');document.body.appendChild(panel);}const card=document.createElement('div');card.className='card';const centre=window.__ypListCentre;const result=ypRadiusList(ypReadStock(),centre);const page=ypPage(result.items,window.__ypListPage||1,20);const head=document.createElement('div');head.className='hwh';const h=document.createElement('h2');h.textContent='Available rentals';head.appendChild(h);const note=document.createElement('p');note.textContent=result.status==='ready'?result.items.length+' sample pins are inside the 2 km search area around '+centre.label+'. The circle stays on that place when the map moves. These are not real buildings, addresses, or vacancies.':'Choose a town or suburb first. The rental list stays empty until that place has a map centre.';card.append(head,note);page.items.forEach(r=>{const btn=document.createElement('button');btn.type='button';btn.className='yp-rent-row';btn.dataset.id=r.id;const d=ypRentalDetail(r);btn.textContent=d.title+' · '+d.place+' · test $'+d.weeklyRent+' a week';btn.addEventListener('click',()=>ypOpenRentalDetail(r.id));card.appendChild(btn);});if(page.pages>1){const prev=document.createElement('button');prev.type='button';prev.id='yp-rent-prev';prev.className='hwx';prev.textContent='Previous';prev.disabled=page.page<=1;const next=document.createElement('button');next.type='button';next.id='yp-rent-next';next.className='hwx';next.textContent='Next';next.disabled=page.page>=page.pages;prev.addEventListener('click',()=>{window.__ypListPage=page.page-1;ypRenderRentalList();});next.addEventListener('click',()=>{window.__ypListPage=page.page+1;ypRenderRentalList();});card.append(prev,next);}const back=document.createElement('button');back.type='button';back.className='hwx';back.id='yp-rent-list-back';back.textContent='Back to map';back.addEventListener('click',()=>panel.remove());card.appendChild(back);panel.replaceChildren(card);}
+function ypOpenRentalDetail(id){const rental=(ypReadStock().rentals||[]).find(r=>r.id===id);if(!rental)return;const d=ypRentalDetail(rental);let panel=document.getElementById('yp-rent-detail');if(panel)panel.remove();panel=document.createElement('div');panel.id='yp-rent-detail';panel.setAttribute('role','dialog');panel.setAttribute('aria-label',d.title);const card=document.createElement('div');card.className='card';const head=document.createElement('div');head.className='hwh';const h=document.createElement('h2');h.textContent=d.title;head.appendChild(h);const body=document.createElement('p');body.id='yp-rent-detail-copy';body.textContent=d.place+'. '+d.pin+' Test weekly rent $'+d.weeklyRent+'. Test bond $'+d.bond+'. These are test amounts for this preview, not a market rent or a quoted bond. '+d.ongoing+' '+d.availability+' '+d.applyNote;const apply=document.createElement('button');apply.type='button';apply.className='hwb';apply.id='yp-rent-apply';apply.textContent='Apply to rent';apply.disabled=rental.status==='application-pending';const back=document.createElement('button');back.type='button';back.className='hwx';back.textContent='Back';apply.addEventListener('click',()=>{ypWriteStock(ypApplyPreview(ypReadStock(),id));ypOpenRentalDetail(id);});back.addEventListener('click',()=>panel.remove());card.append(head,body,apply,back);panel.appendChild(card);document.body.appendChild(panel);}
 
 function ypMountSearch(){
  const box=document.getElementById('rsearch'),town=document.getElementById('rsq');
@@ -327,6 +324,9 @@ async function ypEnterRealMap(){
   const before=layers.find(l=>l.type==='symbol')?.id;
   ypMap.addLayer({id:'yp-highlight-fill',type:'fill',source:'yp-highlight',paint:{'fill-color':'#f8a51b','fill-opacity':0.6}},before);
   ypMap.addLayer({id:'yp-highlight-line',type:'line',source:'yp-highlight',paint:{'line-color':'#b65b00','line-width':3}},before);
+  ypMap.addSource('yp-search-radius',{type:'geojson',data:ypEmpty()});
+  ypMap.addLayer({id:'yp-search-radius-fill',type:'fill',source:'yp-search-radius',paint:{'fill-color':'#5a6780','fill-opacity':0.08}});
+  ypMap.addLayer({id:'yp-search-radius-line',type:'line',source:'yp-search-radius',paint:{'line-color':'#5a6780','line-width':1.5,'line-dasharray':[2,2]}});
   ypMap.addSource('yp-rentals',{type:'geojson',data:ypEmpty(),cluster:true,clusterRadius:48,clusterMaxZoom:14});
   ypMap.addLayer({id:'yp-rental-cluster',type:'circle',source:'yp-rentals',filter:['has','point_count'],paint:{'circle-color':'#0a3a8c','circle-radius':18,'circle-opacity':.9}});
   const glyphStyle=ypMap.getStyle()||{};
@@ -335,6 +335,7 @@ async function ypEnterRealMap(){
   if(tiles&&!document.getElementById('yp-logo')){const logo=document.createElement('a');logo.id='yp-logo';logo.href='https://www.maptiler.com/';logo.target='_blank';logo.rel='noopener';const img=document.createElement('img');img.src='https://api.maptiler.com/resources/logo.svg';img.alt='MapTiler logo';logo.appendChild(img);box.appendChild(logo);}
   ypReady=true;
   ypRematch();
+  ypSyncRadius();
   ypSyncRentalMarkers();
  });
  ypMap.on('click','yp-rental-cluster',e=>{const f=e.features&&e.features[0];if(!f)return;const cid=f.properties.cluster_id;ypMap.getSource('yp-rentals').getClusterExpansionZoom(cid,(err,zoom)=>{if(!err)ypMap.easeTo({center:f.geometry.coordinates,zoom});});});
@@ -440,6 +441,7 @@ function ypShowWherePopup(){
  const title=document.createElement('h2');title.id='yp-where-title';title.textContent='Choose location';
  head.appendChild(title);
  const input=document.createElement('input');input.id='yp-where-town';input.maxLength=100;input.autocomplete='off';input.placeholder='enter town or suburb';input.setAttribute('aria-label','enter town or suburb');input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-controls','yp-where-suggestions');input.setAttribute('aria-expanded','false');
+ const moveNote=document.createElement('p');moveNote.id='yp-where-move';moveNote.textContent='You can also move and search on the map.';
  const suggestions=document.createElement('div');suggestions.id='yp-where-suggestions';suggestions.setAttribute('role','listbox');suggestions.setAttribute('aria-label','Town and suburb suggestions');
  const status=document.createElement('p');status.id='yp-where-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  const close=document.createElement('button');close.type='button';close.id='yp-where-close';close.className='hwx';close.textContent='Close';
@@ -448,7 +450,7 @@ function ypShowWherePopup(){
  info.addEventListener('click',()=>{privacy.hidden=!privacy.hidden;info.setAttribute('aria-expanded',privacy.hidden?'false':'true');});
  close.addEventListener('click',ypCloseWhere);
  wrap.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();ypCloseWhere();}});
- card.append(head,input,suggestions,status,info,privacy,close);
+ card.append(head,input,moveNote,suggestions,status,info,privacy,close);
  wrap.appendChild(card);
  document.body.appendChild(wrap);
  ypWireWhere();
@@ -477,28 +479,22 @@ function ypWireWhere(){
  });
 }
 function ypChooseTown(item){
- const assignment=ypPostcodeAssignment(item);
- window.__ypPlace={label:item.label||item.name||'Chosen place',lon:item.lon,lat:item.lat,center:Number.isFinite(item.lon)&&Number.isFinite(item.lat)?[item.lon,item.lat]:null,assignment,postcode:assignment.status==='one'?assignment.postcode:null};
- if(assignment.status==='many'){ypAskPostcode(assignment);return;}
- ypCommitPlace();
-}
-function ypAskPostcode(assignment){
- const status=document.getElementById('yp-where-status'),box=document.getElementById('yp-where-suggestions');
- if(status)status.textContent=assignment.note;
- if(!box)return;box.replaceChildren();
- assignment.postcodes.forEach(code=>{const b=document.createElement('button');b.type='button';b.textContent=code;b.addEventListener('click',()=>{window.__ypPlace.postcode=code;ypCommitPlace();});box.appendChild(b);});
-}
-function ypCommitPlace(){
- const place=window.__ypPlace||{};
- if(place.postcode&&Number.isFinite(place.lon)&&Number.isFinite(place.lat))ypWriteStock(ypEnsureSuburbStock(ypReadStock(),{label:place.label,lon:place.lon,lat:place.lat,postcode:place.postcode}));
- if(place.center&&ypMap)ypMap.jumpTo({center:place.center,zoom:13});
+ const lon=item&&item.lon,lat=item&&item.lat;
+ if(!Number.isFinite(lon)||!Number.isFinite(lat)){const status=document.getElementById('yp-where-status');if(status)status.textContent='That suggestion has no map centre. No rentals were added.';return;}
+ const label=item.label||item.name||'Chosen place';
+ window.__ypPlace={label,lon,lat,center:[lon,lat]};
+ window.__ypListCentre={label,lon,lat};
+ const kept=ypReadStock();
+ ypWriteStock(ypEnsureSuburbStock(kept,{label,lon,lat}));
+ if(ypMap)ypMap.jumpTo({center:[lon,lat],zoom:13});
+ ypSyncRadius();
  ypCloseWhere();
  ypMountShowRentals();
  ypSyncRentalMarkers();
 }
-function ypPostcodeTagLine(){
- const code=window.__ypPlace&&window.__ypPlace.postcode;
- return /^\d{4}$/.test(String(code||''))?'List tag '+code+' from the place you chose. Moving the map does not change it.':'No postcode was established for the chosen place. No postcode was invented.';
+function ypPlaceLine(){
+ const p=window.__ypListCentre;
+ return p&&Number.isFinite(p.lon)&&Number.isFinite(p.lat)?'Search area: 2 km around '+p.label+'. Moving the map does not move it.':'Choose a town or suburb first.';
 }
 function ypOpenListingsChoice(){
  ypCloseWhere();
@@ -509,7 +505,7 @@ function ypOpenListingsChoice(){
  const card=document.createElement('div');card.className='card';
  const head=document.createElement('div');head.className='hwh';
  const title=document.createElement('h2');title.textContent='Listings';head.appendChild(title);
- const copy=document.createElement('p');copy.textContent='Choose a category. For Rent uses the postcode from the place you chose. For Sale, Room Share, and Auctions have no stock in this preview.';
+ const copy=document.createElement('p');copy.textContent='Choose a category. For Rent lists sample pins inside the 2 km search area around the place you chose. For Sale, Room Share, and Auctions have no stock in this preview.';
  const rent=document.createElement('button');rent.type='button';rent.id='yp-cat-rent';rent.className='hwb';rent.textContent='For Rent';
  const sale=document.createElement('button');sale.type='button';sale.id='yp-cat-sale';sale.className='hwb';sale.textContent='For Sale';
  const room=document.createElement('button');room.type='button';room.id='yp-cat-room';room.className='hwb';room.textContent='Room Share';
@@ -530,7 +526,7 @@ function ypShowEmptyCategory(kind){
  card.replaceChildren();
  const head=document.createElement('div');head.className='hwh';
  const title=document.createElement('h2');title.textContent=titles[kind];head.appendChild(title);
- const copy=document.createElement('p');copy.id='yp-prop-note';copy.textContent=ypPostcodeTagLine()+' '+empty[kind];
+ const copy=document.createElement('p');copy.id='yp-prop-note';copy.textContent=ypPlaceLine()+' '+empty[kind];
  const back=document.createElement('button');back.type='button';back.id='yp-cat-back';back.className='hwx';back.textContent='Back';
  back.addEventListener('click',ypOpenListingsChoice);
  card.append(head,copy,back);
@@ -538,4 +534,5 @@ function ypShowEmptyCategory(kind){
 window.ypChooseTown=ypChooseTown;
 window.ypEnterRealMap=ypEnterRealMap;
 window.ypDistanceM=ypDistanceM;
+window.ypDestination=ypDestination;
 window.ypOpenRentalDetail=ypOpenRentalDetail;
