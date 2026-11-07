@@ -3368,7 +3368,7 @@ function applyDayNight(t) {
 applyDayNight(0);
 // ---------- automatic day / night from the player's real local time (1 Nov 2026) ----------
 // Sunrise/sunset computed on the device (SunCalc / NOAA style). No network, nothing stored or sent.
-// Location: geolocation only if ALREADY granted (never prompts); else the device time zone's capital city; default Brisbane.
+// Day and night use the device time zone city, or Brisbane. This preview does not read device location.
 const SUN_TZ = { 'Australia/Brisbane': [-27.47, 153.03], 'Australia/Lindeman': [-20.45, 149.0], 'Australia/Sydney': [-33.87, 151.21], 'Australia/Canberra': [-35.28, 149.13], 'Australia/ACT': [-35.28, 149.13], 'Australia/NSW': [-33.87, 151.21],
   'Australia/Melbourne': [-37.81, 144.96], 'Australia/Victoria': [-37.81, 144.96], 'Australia/Adelaide': [-34.93, 138.6], 'Australia/South': [-34.93, 138.6], 'Australia/Broken_Hill': [-31.95, 141.45], 'Australia/Perth': [-31.95, 115.86], 'Australia/West': [-31.95, 115.86],
   'Australia/Darwin': [-12.46, 130.84], 'Australia/North': [-12.46, 130.84], 'Australia/Hobart': [-42.88, 147.33], 'Australia/Tasmania': [-42.88, 147.33], 'Australia/Currie': [-39.93, 143.85], 'Australia/Lord_Howe': [-31.55, 159.08], 'Australia/Eucla': [-31.68, 128.88], 'Australia/Queensland': [-27.47, 153.03] };
@@ -3385,7 +3385,6 @@ const SUN = (() => {
   return { times };
 })();
 let SUN_LOC = (() => { let tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {} return { ll: SUN_TZ[tz] || SUN_TZ['Australia/Brisbane'], src: SUN_TZ[tz] ? 'timezone ' + tz : 'default Brisbane' }; })();
-try { if (navigator.permissions && navigator.geolocation) navigator.permissions.query({ name: 'geolocation' }).then((p) => { if (p.state === 'granted') navigator.geolocation.getCurrentPosition((g) => { SUN_LOC = { ll: [+g.coords.latitude.toFixed(1), +g.coords.longitude.toFixed(1)], src: 'device (already allowed)' }; sunTick(true); }, () => {}, { maximumAge: 864e5, timeout: 8000 }); }).catch(() => {}); } catch (e) {}
 // dev/test override: ?time=HH:MM (local time today)
 const SUN_FORCE = (() => { const m = /[?&]time=(\d{1,2}):?(\d{2})/.exec(location.search); return m ? [+m[1], +m[2]] : null; })();
 function sunNow() { const d = new Date(); if (SUN_FORCE) d.setHours(SUN_FORCE[0], SUN_FORCE[1], 0, 0); return d; }
