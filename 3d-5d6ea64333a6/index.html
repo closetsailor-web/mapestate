@@ -889,6 +889,18 @@ body:not(.dark) .sheet .close{background:rgba(255,255,255,.18)!important;color:#
 body:not(.dark) .sheet .grab{background:rgba(255,255,255,.45)!important}
 #hwov .hwh{margin:-26px -22px 16px;padding:20px 22px 16px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);border-radius:24px 24px 0 0;color:#fff}
 #hwov .hwh h3{color:#fff;margin:0}#hwov .hwh .hwd{margin-bottom:10px}#hwov .hwh .hwd i{background:rgba(255,255,255,.35)}#hwov .hwh .hwd i.on{background:#ff8a33}
+/* Compact sizing for the 4-slide how-it-works run-down only. Starting picture and choose-home pop-ups do not use .hwrun. */
+#hwov.hwrun{padding:12px}
+#hwov.hwrun .hwc{border-radius:18px;max-width:340px;padding:14px 16px 12px;max-height:min(92dvh,640px);overflow:auto}
+#hwov.hwrun .hwd{gap:6px;margin-bottom:8px}#hwov.hwrun .hwd i{width:7px;height:7px}
+#hwov.hwrun h3{margin:0 0 4px;font-size:18px;letter-spacing:-.3px;line-height:1.2}
+#hwov.hwrun p{margin:0 0 8px;font-size:14.5px;line-height:1.35}
+#hwov.hwrun .hwbig{font-size:30px;letter-spacing:-.6px;margin:2px 0 6px}
+#hwov.hwrun .hwr{border-radius:10px;padding:8px 10px;margin:0 0 6px;font-size:14px;gap:8px}#hwov.hwrun .hwr b{font-size:15px}
+#hwov.hwrun .hwb{min-height:48px;font-size:16px;margin-top:8px}
+#hwov.hwrun .hwrow{gap:16px}#hwov.hwrun .hwx{font-size:14px;margin-top:2px;min-height:44px;padding:10px 14px}
+#hwov.hwrun .hwh{margin:-14px -16px 10px;padding:12px 16px 10px;border-radius:18px 18px 0 0}#hwov.hwrun .hwh .hwd{margin-bottom:6px}
+@media (max-width:380px){#hwov.hwrun{padding:10px}#hwov.hwrun .hwc{max-width:100%;padding:12px 12px 10px;max-height:calc(100dvh - 20px)}#hwov.hwrun .hwh{margin:-12px -12px 8px;padding:10px 12px 8px}#hwov.hwrun .hwbig{font-size:28px}#hwov.hwrun h3{font-size:17px}}
 /* v30 tip close / drag / reopen */
 #coach{padding-right:50px;touch-action:none;cursor:grab}#coach button,#coach a{touch-action:manipulation}
 #coachx{position:absolute;top:4px;right:4px;width:44px;height:44px;border:0;border-radius:999px;background:transparent;color:var(--fblue,#0a3a8c);display:grid;place-items:center;cursor:pointer;padding:0}
@@ -2523,7 +2535,7 @@ function stRender(step){stStep=step;const d=document.getElementById('status');if
 /* v41 "How it works" pop-up on the Start your Simulation screen: 3 short cards (start money, what a home costs, save first). Numbers come from the game. */
 let hwCache=null;
 function hwNums(){if(hwCache&&hwCache.w===G.cur)return hwCache;try{const g=GEN[G.cur];let h=Infinity,v0=Infinity;g.lots.forEach(l=>{if(l.type==='house'||l.type==='vacant'){const v=value(l.id);if(l.type==='house'){if(v<h)h=v;}else if(v<v0)v0=v;}});if(!isFinite(h))h=385000;if(!isFinite(v0))v0=159000;const qh=quote(h,.95),ql=quote(v0,LAND_LVR);hwCache={w:G.cur,house:h,houseCash:qh.cash,land:v0,landCash:ql.cash};}catch(e){hwCache={w:G.cur,house:385000,houseCash:46285,land:159000,landCash:46000};}return hwCache;}
-function hwShow(i){i=i||0;let o=document.getElementById('hwov');if(!o){o=document.createElement('div');o.id='hwov';o.setAttribute('role','dialog');o.setAttribute('aria-label','How it works');document.body.appendChild(o);}
+function hwShow(i){i=i||0;let o=document.getElementById('hwov');if(!o){o=document.createElement('div');o.id='hwov';o.setAttribute('role','dialog');o.setAttribute('aria-label','How it works');document.body.appendChild(o);}o.classList.add('hwrun');
   const n=hwNums(),start=CFG.startCash,R=(t,v,hi)=>`<div class="hwr${hi?' hi':''}"><span>${t}</span><b>${fmt(v)}</b></div>`,more=c=>Math.max(0,c-start);
   const buy=(t,pr,cash)=>`<h3>${t}</h3>${R('Cheapest price',pr)}${R('Deposit and fees',cash)}${R('You still need',more(cash),1)}`;
   const C=[
