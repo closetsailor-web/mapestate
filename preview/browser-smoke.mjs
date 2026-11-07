@@ -4,7 +4,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 
 const OUT = '/opt/cursor/artifacts/map-preview';
 mkdirSync(OUT, {recursive: true});
-const server = spawn('python3', ['preview/localhost-server.py'], {cwd: '/workspace', stdio: 'ignore'});
+const server = spawn('python3', ['preview/localhost-server.py', '--port', '8766'], {cwd: '/workspace', stdio: 'ignore'});
 const chrome = spawn('google-chrome', [
   '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage',
   '--remote-debugging-port=9233', '--user-data-dir=/tmp/chrome-yp-map', 'about:blank',
@@ -56,7 +56,7 @@ ws.addEventListener('message', ev => {
   if (msg.method === 'Network.requestWillBeSent' && msg.sessionId === sessionId) urls.push(msg.params.request.url);
 });
 await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
-await cdp.send('Page.navigate', {url: 'http://127.0.0.1:8765/'}, sessionId);
+await cdp.send('Page.navigate', {url: 'http://127.0.0.1:8766/'}, sessionId);
 const ready = await cdp.send('Runtime.evaluate', {
   expression: `new Promise(r=>{const t=Date.now();const tick=()=>{if(typeof hwChoose==='function'&&document.getElementById('flow'))r(1);else if(Date.now()-t>25000)r(0);else setTimeout(tick,100)};tick()})`,
   awaitPromise: true,

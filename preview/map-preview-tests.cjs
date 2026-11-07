@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const http = require('node:http');
-const {spawn} = require('node:child_process');
+const {spawn, execFileSync} = require('node:child_process');
 
 const root = path.join(__dirname, '..');
 const jsPath = path.join(root, '3d-5d6ea64333a6', 'map-preview.js');
@@ -146,44 +146,73 @@ function once(port, pathName, headers = {}) {
     const req = http.request({hostname: '127.0.0.1', port, path: pathName, headers}, res => {
       const chunks = [];
       res.on('data', c => chunks.push(c));
-      res.on('end', () => resolve({status: res.statusCode, body: Buffer.concat(chunks).toString('utf8'), type: res.headers['content-type'] || ''}));
+      res.on('end', () => resolve({status: res.statusCode, body: Buffer.concat(chunks).toString('utf8'), type: res.headers['content-type'] || '', acao: res.headers['access-control-allow-origin']}));
     });
     req.on('error', reject);
     req.end();
   });
 }
 
+check('alternate port rules stay localhost-only', () => {
+  const out = execFileSync('python3', ['-c', `
+import importlib.util
+spec = importlib.util.spec_from_file_location('srv', ${JSON.stringify(path.join(root, 'preview', 'localhost-server.py'))})
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+assert mod.preview_port([]) == 8765
+hosts, origins = mod.loopback_rules(8766)
+assert hosts == {'localhost:8766', '127.0.0.1:8766'}
+assert origins == {'http://localhost:8766', 'http://127.0.0.1:8766'}
+assert '*' not in origins and not any(item.endswith(':*') for item in origins)
+`], {encoding: 'utf8'});
+  assert.equal(out, '');
+});
+
 async function serverChecks() {
-  const child = spawn('python3', [path.join(root, 'preview', 'localhost-server.py')], {stdio: 'ignore'});
+  const port = 8766;
+  const child = spawn('python3', [path.join(root, 'preview', 'localhost-server.py'), '--port', String(port)], {stdio: 'ignore'});
+  const host = `127.0.0.1:${port}`;
   try {
     let ready = false;
     for (let i = 0; i < 40 && !ready; i++) {
-      try { await once(8765, '/runtime-config'); ready = true; } catch { await new Promise(r => setTimeout(r, 50)); }
+      try { await once(port, '/runtime-config', {Host: host}); ready = true; } catch { await new Promise(r => setTimeout(r, 50)); }
     }
     assert.equal(ready, true);
-    const config = await once(8765, '/runtime-config');
+    const config = await once(port, '/runtime-config', {Host: host, Origin: `http://127.0.0.1:${port}`});
     assert.equal(config.status, 200);
+    assert.notEqual(config.acao, '*');
     const parsed = JSON.parse(config.body);
     assert.equal(typeof parsed.key, 'string');
     assert.equal(typeof parsed.geoapifyKey, 'string');
     assert.equal(config.body.includes('apiKey'), false);
-    const page = await once(8765, '/');
+    const named = await once(port, '/runtime-config', {Host: `localhost:${port}`, Origin: `http://localhost:${port}`});
+    assert.equal(named.status, 200);
+    assert.notEqual(named.acao, '*');
+    const page = await once(port, '/', {Host: host});
     assert.equal(page.status, 200);
     assert.ok(page.body.includes('map-preview.js'));
     assert.ok(page.body.includes('Choose your Rental'));
-    const script = await once(8765, '/map-preview.js');
+    const script = await once(port, '/map-preview.js', {Host: host});
     assert.equal(script.status, 200);
     assert.ok(script.body.includes('END TESTABLE SELECTION'));
-    const missing = await once(8765, '/test/index.html');
+    const missing = await once(port, '/test/index.html', {Host: host});
     assert.equal(missing.status, 404);
-    const rootPage = await once(8765, '/index.html');
+    const rootPage = await once(port, '/index.html', {Host: host});
     assert.ok(rootPage.body.includes('3d-5d6ea64333a6') === false);
     assert.ok(rootPage.body.includes('map-preview.js'));
-    const foreign = await once(8765, '/runtime-config', {Host: 'example.com', Origin: 'http://example.com'});
+    const foreign = await once(port, '/runtime-config', {Host: host, Origin: 'http://example.com'});
     assert.equal(foreign.status, 403);
-    const cross = await once(8765, '/runtime-config', {'Sec-Fetch-Site': 'cross-site'});
+    const otherPort = await once(port, '/runtime-config', {Host: host, Origin: 'http://127.0.0.1:8765'});
+    assert.equal(otherPort.status, 403);
+    const wildcard = await once(port, '/runtime-config', {Host: host, Origin: '*'});
+    assert.equal(wildcard.status, 403);
+    const wrongHost = await once(port, '/runtime-config', {Host: 'example.com', Origin: `http://127.0.0.1:${port}`});
+    assert.equal(wrongHost.status, 403);
+    const pilotHost = await once(port, '/runtime-config', {Host: '127.0.0.1:8765'});
+    assert.equal(pilotHost.status, 403);
+    const cross = await once(port, '/runtime-config', {Host: host, 'Sec-Fetch-Site': 'cross-site'});
     assert.equal(cross.status, 403);
-    console.log('PASS localhost server injects config without printing secrets and refuses other origins');
+    console.log('PASS chosen localhost port accepts runtime config and foreign origins stay forbidden');
     passed++;
   } finally {
     child.kill('SIGTERM');
