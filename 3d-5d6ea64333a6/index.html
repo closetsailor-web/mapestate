@@ -899,6 +899,7 @@ body:not(.dark) .sheet .grab{background:rgba(255,255,255,.45)!important}
 #hwov.hwrun .hwr{border-radius:10px;padding:8px 10px;margin:0 0 6px;font-size:14.5px;line-height:1.35;gap:8px;background:#fff}#hwov.hwrun .hwr.hi{background:#fff}#hwov.hwrun .hwr span{font-size:14.5px;line-height:1.35}#hwov.hwrun .hwr b{font-size:15px}
 #hwov.hwrun .hwb{min-height:48px;font-size:16px;margin-top:8px}
 #hwov.hwrun .hwb.hw-got{margin-top:24px}
+#hwov.hwrun p.hw-follow{margin-top:16px}
 #hwov.hwrun .hwrow{gap:16px}#hwov.hwrun .hwx{font-size:14px;margin-top:2px;min-height:44px;padding:10px 14px}
 #hwov.hwrun .hwh{margin:-14px -16px 10px;padding:12px 16px 10px;border-radius:18px 18px 0 0}#hwov.hwrun .hwh .hwd{margin-bottom:6px}
 @media (max-width:380px){#hwov.hwrun{padding:10px}#hwov.hwrun .hwc{max-width:100%;padding:12px 12px 10px;max-height:calc(100dvh - 20px)}#hwov.hwrun .hwh{margin:-12px -12px 8px;padding:10px 12px 8px}#hwov.hwrun .hwbig{font-size:28px}#hwov.hwrun h3{font-size:17px}}
@@ -2544,7 +2545,7 @@ function hwShow(i){i=i||0;let o=document.getElementById('hwov');if(!o){o=documen
     `<h3>Everyone starts with the same</h3><div class="hwbig">${fmt(start)}</div><p>This is your savings, in coins.</p><p>Time moves faster here than in real life: every 30 seconds is one week. Your money changes week by week, just as it would in real life.</p>`,
     buyHouse(),
    buy('Buying a Block of Land',n.land,n.landCash),
-   `<h3>Save up first?</h3><p>Looks like you may have to start saving towards your first home deposit. Room share or boarding is usually the best way to save if other players have something available. You can live with family or friends for free also.</p>`];
+   `<h3>Save up first?</h3><p>Looks like you may have to start saving towards your first home deposit. If any are available, room share or boarding is usually the best way to save.</p><p class="hw-follow">Once you have family or friends in the game, you may choose to live with them for free.</p>`];
   const last=i>=C.length-1;
   o.innerHTML=`<div class="hwc"><div class="hwd">${C.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>${C[i]}<button class="hwb${last?' hw-got':''}" id="hw_next" onclick="${last?'hwClose()':`hwShow(${i+1})`}">${last?'Got it':'Next'}</button>${last?(i>0?`<div class="hwrow"><button class="hwx" id="hw_back" onclick="hwShow(${i-1})">Back</button></div>`:''):`<div class="hwrow">${i>0?`<button class="hwx" id="hw_back" onclick="hwShow(${i-1})">Back</button>`:''}<button class="hwx" onclick="hwClose()">Skip</button></div>`}</div>`;}
 /* v42 final breakdown pop-up: shown first on the map after the start choice (coins in bank, take-home pay, expenses, left over). Closing it reveals the choose-a-home message. */

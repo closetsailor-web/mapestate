@@ -22,10 +22,12 @@ function check(name, fn) {
 }
 
 const marker = '\n<script src="map-preview.js"></script>\n';
-check('save-up body is one centred paragraph and income bands are unchanged', () => {
+check('save-up body is two centred paragraphs and income bands are unchanged', () => {
   assert.ok(html.includes(marker));
-  const sentence = 'Looks like you may have to start saving towards your first home deposit. Room share or boarding is usually the best way to save if other players have something available. You can live with family or friends for free also.';
-  assert.ok(html.includes('<h3>Save up first?</h3><p>' + sentence + '</p>'));
+  const first = 'Looks like you may have to start saving towards your first home deposit. If any are available, room share or boarding is usually the best way to save.';
+  const second = 'Once you have family or friends in the game, you may choose to live with them for free.';
+  assert.ok(html.includes('<h3>Save up first?</h3><p>' + first + '</p><p class="hw-follow">' + second + '</p>'));
+  assert.equal(html.includes('for free also.'), false);
   assert.equal(html.includes('deposit.</p><div class="hwr hi">'), false);
   const flow = Buffer.from(html.match(/const FLOW_SRC_B64='([^']+)'/)[1], 'base64').toString();
   const bands = '[[0,10000],[10000,20000],[20000,30000],[30000,40000],[40000,50000],[50000,60000],[60000,70000],[70000,80000],[80000,90000],[90000,100000],[100000,110000],[110000,120000],[120000,130000],[130000,140000],[140000,150000],[150000,160000],[160000,170000],[170000,180000],[180000,190000],[190000,200000]]';
