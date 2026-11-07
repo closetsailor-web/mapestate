@@ -2542,7 +2542,7 @@ function hwShow(i){i=i||0;let o=document.getElementById('hwov');if(!o){o=documen
    `<h3>Everyone starts with the same</h3><div class="hwbig">${fmt(start)}</div><p>This is your savings, in coins.</p><p>Time moves faster here than in real life: every 30 seconds is one week. Your money changes week by week, just as it would in real life.</p>`,
    buy('Buying a House',n.house,n.houseCash),
    buy('Buying a Block of Land',n.land,n.landCash),
-   `<h3>Save up first?</h3><p>Renting, or boarding in a room share, costs less. Your savings grow, and you can buy sooner.</p><div class="hwr hi"><span>A room share is usually the cheapest</span></div>`];
+   `<h3>Save up first?</h3><p>Renting, or boarding in a room share, costs less. Your savings grow, and you can buy sooner.</p><div class="hwr hi"><span>Room share or boarding is usually the cheapest, if other players have a vacancy.</span></div>`];
   const last=i>=C.length-1;
   o.innerHTML=`<div class="hwc"><div class="hwd">${C.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>${C[i]}<button class="hwb" id="hw_next" onclick="${last?'hwClose()':`hwShow(${i+1})`}">${last?'Got it':'Next'}</button>${last?(i>0?`<div class="hwrow"><button class="hwx" id="hw_back" onclick="hwShow(${i-1})">Back</button></div>`:''):`<div class="hwrow">${i>0?`<button class="hwx" id="hw_back" onclick="hwShow(${i-1})">Back</button>`:''}<button class="hwx" onclick="hwClose()">Skip</button></div>`}</div>`;}
 /* v42 final breakdown pop-up: shown first on the map after the start choice (coins in bank, take-home pay, expenses, left over). Closing it reveals the choose-a-home message. */
