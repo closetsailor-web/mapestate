@@ -2539,7 +2539,7 @@ function hwShow(i){i=i||0;let o=document.getElementById('hwov');if(!o){o=documen
   const n=hwNums(),start=CFG.startCash,R=(t,v,hi)=>`<div class="hwr${hi?' hi':''}"><span>${t}</span><b>${fmt(v)}</b></div>`,more=c=>Math.max(0,c-start);
   const buy=(t,pr,cash)=>`<h3>${t}</h3>${R('Cheapest price',pr)}${R('Deposit and fees',cash)}${R('You still need',more(cash),1)}`;
   const C=[
-   `<h3>Everyone starts with the same</h3><div class="hwbig">${fmt(start)}</div><p>This is your savings, in coins.</p><p>Time moves faster here than in real life: every 30 seconds is one week. Your game clock starts when you choose where to live. After that, your money changes week by week, just as it would in real life.</p>`,
+   `<h3>Everyone starts with the same</h3><div class="hwbig">${fmt(start)}</div><p>This is your savings, in coins.</p><p>Time moves faster here than in real life: every 30 seconds is one week. Your money changes week by week, just as it would in real life.</p>`,
    buy('Buying a house',n.house,n.houseCash),
    buy('Buying a block of land',n.land,n.landCash),
    `<h3>Save up first?</h3><p>Renting, or boarding in a room share, costs less. Your savings grow, and you can buy sooner.</p><div class="hwr hi"><span>A room share is usually the cheapest</span></div>`];
