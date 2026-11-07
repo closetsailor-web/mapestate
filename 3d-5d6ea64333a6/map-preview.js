@@ -164,7 +164,7 @@ body.sheetopen #yp-foot{display:none}
 #yp-map-status{position:absolute;left:12px;right:76px;top:52%;z-index:4;background:#fff;color:#14213d;border-radius:14px;padding:12px;font:600 13px/1.4 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(11,37,69,.18)}
 #yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
 #yp-logo img{width:88px;background:#ffffffc9;display:block}
-body.ypbasemap #w3dc{visibility:hidden!important;pointer-events:none!important}
+html.yp-preview #w3dc,html.yp-preview #map canvas#w3dc,body.ypbasemap #w3dc{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw}
 #yp-locate{position:absolute;left:12px;bottom:calc(230px + var(--sab));z-index:11;min-width:44px;min-height:44px;padding:12px 16px;border:1px solid #9aa8b8;border-radius:12px;background:#fff;color:#14213d;font:700 15px/1.2 Inter,system-ui,sans-serif;box-shadow:0 6px 16px rgba(11,37,69,.16)}
 #yp-locate:focus{outline:3px solid #0a3a8c;outline-offset:3px}
@@ -172,15 +172,29 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw}
 #yp-locate:disabled{opacity:.72}
 #yp-locate-note,#yp-locate-status{position:absolute;left:12px;right:76px;z-index:11;margin:0;background:rgba(255,255,255,.96);color:#14213d;border-radius:10px;padding:8px 10px;font:500 12px/1.35 Inter,system-ui,sans-serif}
 #yp-locate-note{bottom:calc(286px + var(--sab))}
-#yp-locate-status{bottom:calc(348px + var(--sab))}`
+#yp-locate-status{bottom:calc(348px + var(--sab))}
+#yp-where{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;justify-content:center;pointer-events:none;padding:12px 12px calc(92px + var(--sab))}
+#yp-where .card{pointer-events:auto;width:min(420px,100%);max-height:46vh;overflow:auto;background:#fff;color:#14213d;border-radius:16px;padding:14px;box-shadow:0 12px 40px rgba(11,37,69,.28)}
+#yp-where h2{margin:0 0 6px;font-size:18px}
+#yp-where p,#yp-where-status{margin:6px 0;font-size:13px;line-height:1.35}
+#yp-where input{display:block;width:100%;box-sizing:border-box;margin:8px 0;padding:10px;font:500 16px Inter,system-ui,sans-serif}
+#yp-where button,#yp-properties,#yp-prop button{min-width:44px;min-height:44px;margin:4px 4px 0 0;padding:10px 14px;border-radius:12px;border:1px solid #9aa8b8;background:#fff;font:700 15px/1.2 Inter,system-ui,sans-serif}
+#yp-where button:focus,#yp-where button:focus-visible,#yp-properties:focus,#yp-properties:focus-visible,#yp-prop button:focus,#yp-prop button:focus-visible{outline:3px solid #0a3a8c;outline-offset:3px}
+#yp-where-suggestions button{display:block;width:100%;text-align:left}
+#yp-properties{position:absolute;left:12px;bottom:calc(150px + var(--sab));z-index:46}
+#yp-prop{position:fixed;inset:0;z-index:90;background:rgba(11,37,69,.35);display:flex;align-items:flex-end;justify-content:center;padding:12px 12px calc(92px + var(--sab))}
+#yp-prop .card{width:min(420px,100%);background:#fff;color:#14213d;border-radius:16px;padding:14px}`;
 
 (function ypBoot(){
  if(window.__ypMapBoot)return;window.__ypMapBoot=1;
+ document.documentElement.classList.add('yp-preview');
+ window.__ypBlockAutoLists=true;
  const prevBoot=window.W3D_BOOT;
  window.W3D_BOOT=function(){try{prevBoot&&prevBoot();}catch(e){console.error(e);}if(window.G&&G.started)ypEnterRealMap();};
  const prevStart=window.startView;
  if(typeof prevStart==='function')window.startView=function(){const r=prevStart.apply(this,arguments);ypEnterRealMap();return r;};
  if(window.W3D&&W3D.ready&&window.G&&G.started)ypEnterRealMap();
+ ypInstallHandoff();
 })();
 
 function ypFoot(extra){const el=document.getElementById('yp-foot');if(!el)return;el.textContent=extra?extra+' '+YP_LIMIT:YP_LIMIT;}
@@ -226,7 +240,8 @@ function ypMountChrome(){
  const host=document.getElementById('map');
  let box=document.getElementById('ypbasemap');
  if(!box&&host){box=document.createElement('div');box.id='ypbasemap';host.appendChild(box);}
- if(!document.getElementById('yp-foot')){const foot=document.createElement('div');foot.id='yp-foot';foot.setAttribute('role','status');host.appendChild(foot);} 
+ if(!document.getElementById('yp-foot')){const foot=document.createElement('div');foot.id='yp-foot';foot.setAttribute('role','status');host.appendChild(foot);}
+ if(host&&!document.getElementById('yp-properties')){const b=document.createElement('button');b.type='button';b.id='yp-properties';b.textContent='Properties';b.addEventListener('click',ypOpenPropChoice);host.appendChild(b);} 
 }
 function ypStatusPanel(text){const box=document.getElementById('ypbasemap');if(!box)return;let el=document.getElementById('yp-map-status');if(!el){el=document.createElement('div');el.id='yp-map-status';box.appendChild(el);}el.textContent=text;}
 function ypClearStatusPanel(){const el=document.getElementById('yp-map-status');if(el)el.remove();}
@@ -296,12 +311,13 @@ async function ypEnterRealMap(){
  }catch{key='';geoapifyKey='';}
  ypGeoKey=geoapifyKey;
  if(ui)ypWireSearch(ui,geoapifyKey);
+ ypWireWhere();
  if(!key){ypStatusPanel('Map key missing. The localhost preview server must inject MAPTILER_TEST_API_KEY. No tiles were requested and no buildings were invented.');ypFoot('Map key missing. Basemap not loaded.');return;}
  try{await ypLoadMapLibre();}catch{ypStatusPanel('Map library unavailable. Check internet access, then reload. No buildings were invented.');return;}
  if(!window.maplibregl){ypStatusPanel('Map library unavailable. Check internet access, then reload. No buildings were invented.');return;}
  ypRecord=ypReadSelection();
  const box=document.getElementById('ypbasemap');
- ypMap=new maplibregl.Map({container:box,style:'https://api.maptiler.com/maps/base-v4/style.json',center:ypRecord?.coordinate||YP_DEMO,zoom:18,maxZoom:20,minZoom:12,maxPitch:0,renderWorldCopies:false,attributionControl:false,transformRequest(url){const u=new URL(url,location.href);if(u.hostname==='api.maptiler.com'){u.searchParams.set('key',key);return {url:u.href};}return {url};}});
+ ypMap=new maplibregl.Map({container:box,style:'https://api.maptiler.com/maps/base-v4/style.json',center:(window.__ypPlace&&window.__ypPlace.center)||ypRecord?.coordinate||YP_DEMO,zoom:window.__ypPlace?12:18,maxZoom:20,minZoom:12,maxPitch:0,renderWorldCopies:false,attributionControl:false,transformRequest(url){const u=new URL(url,location.href);if(u.hostname==='api.maptiler.com'){u.searchParams.set('key',key);return {url:u.href};}return {url};}});
  window.__ypMap=ypMap;
  ypMap.addControl(new maplibregl.NavigationControl({showCompass:false}));
  ypMap.addControl(new maplibregl.AttributionControl({compact:false,customAttribution:'<a href="https://www.maptiler.com/copyright/">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>'}));
@@ -395,4 +411,106 @@ function ypWireSearch(ui,geoapifyKey){
  go.addEventListener('click',()=>{clearTimeout(streetTimer);loadStreet();});
  msg(geoapifyKey?'Choose a town, suburb or postcode area first, then type a street.':'Search key missing; no search request will be sent. Map selection still needs a map key.');
 }
+function ypCloseAutoOverlays(){
+ const listings=document.getElementById('listings');if(listings)listings.remove();
+ const hw=document.getElementById('hwov');if(hw&&window.__ypBlockAutoLists)hw.remove();
+}
+function ypInstallHandoff(){
+ if(window.__ypHandoff)return;window.__ypHandoff=1;
+ if(typeof listOpen==='function'){const orig=listOpen;window.listOpen=function(){if(window.__ypBlockAutoLists)return;return orig.apply(this,arguments);};}
+ if(typeof hwSummary==='function'){const orig=hwSummary;window.hwSummary=function(){if(window.__ypBlockAutoLists)return;return orig.apply(this,arguments);};}
+ if(typeof hwChoose==='function'){const orig=hwChoose;window.hwChoose=function(){if(window.__ypBlockAutoLists)return;return orig.apply(this,arguments);};}
+ if(typeof statusDone==='function'){const orig=statusDone;window.statusDone=function(){const result=orig.apply(this,arguments);ypEnterRealMap();ypCloseAutoOverlays();ypShowWherePopup();return result;};}
+ if(window.UI&&typeof UI.sale==='function')UI.sale=function(){ypOpenPropChoice();};
+ const mapBtn=document.querySelector('nav button[data-v="map"]');
+ if(mapBtn)mapBtn.addEventListener('click',()=>{ypCloseAutoOverlays();document.getElementById('yp-prop')?.remove();document.documentElement.classList.add('yp-preview');});
+}
+function ypShowWherePopup(){
+ if(document.getElementById('yp-where'))return;
+ const wrap=document.createElement('div');wrap.id='yp-where';wrap.setAttribute('role','dialog');wrap.setAttribute('aria-label','Choose a town or suburb');
+ const card=document.createElement('div');card.className='card';
+ const title=document.createElement('h2');title.textContent='Choose a town or suburb';
+ const copy=document.createElement('p');copy.textContent='The new map is already open behind this. Type a town or suburb, or use My Location. GPS is not required. This does not open listings.';
+ const input=document.createElement('input');input.id='yp-where-town';input.maxLength=100;input.autocomplete='off';input.placeholder='Town or suburb';input.setAttribute('aria-label','Town or suburb');input.setAttribute('role','combobox');input.setAttribute('aria-controls','yp-where-suggestions');input.setAttribute('aria-expanded','false');
+ const suggestions=document.createElement('div');suggestions.id='yp-where-suggestions';suggestions.setAttribute('role','listbox');
+ const status=document.createElement('p');status.id='yp-where-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent='The old 3D town is not the map. No listings are opened from this step.';
+ const locate=document.createElement('button');locate.type='button';locate.id='yp-where-locate';locate.textContent='My Location';
+ const close=document.createElement('button');close.type='button';close.id='yp-where-close';close.textContent='Close';
+ close.addEventListener('click',ypCloseWhere);
+ locate.addEventListener('click',()=>{
+  if(!ypLocateCtrl)ypMountLocate();
+  if(!ypLocateCtrl){status.textContent='Location is unavailable. Search for a town or suburb instead.';return;}
+  const res=ypLocateCtrl.tap(outcome=>{locate.disabled=false;locate.removeAttribute('aria-busy');const live=document.getElementById('yp-where-status');if(live)live.textContent=ypLocateMessage(outcome.status,outcome.view);ypApplyLocate(outcome);if(outcome.status==='found')ypCloseWhere();});
+  if(res.accepted){locate.disabled=true;locate.setAttribute('aria-busy','true');status.textContent=ypLocateMessage('locating');}
+  else if(res.status&&res.status!=='locating')status.textContent=ypLocateMessage(res.status);
+ });
+ card.append(title,copy,input,suggestions,status,locate,close);
+ wrap.appendChild(card);
+ document.body.appendChild(wrap);
+ ypWireWhere();
+}
+function ypCloseWhere(){const el=document.getElementById('yp-where');if(el)el.remove();}
+function ypWireWhere(){
+ const input=document.getElementById('yp-where-town'),box=document.getElementById('yp-where-suggestions'),status=document.getElementById('yp-where-status');
+ if(!input||input.dataset.wired)return;input.dataset.wired='1';
+ let timer=0,items=[],active=-1;const gate=pilotSuggest.gate();
+ input.addEventListener('input',()=>{clearTimeout(timer);gate.next();box.replaceChildren();items=[];active=-1;input.setAttribute('aria-expanded','false');
+  const text=input.value.trim();
+  let params;try{params=autocompleteQuery('area',text,null,'Australia');}catch(e){status.textContent=e.message;return;}
+  if(!ypGeoKey){status.textContent='Search key missing. No town request was sent. Use My Location or Close. The old map stays hidden.';return;}
+  const token=gate.next();
+  timer=setTimeout(async()=>{status.textContent='Finding towns and suburbs…';try{
+   const url=geocodeUrl(params,ypGeoKey);
+   const response=await fetch(url.href,{...YP_MAP_REQUEST,signal:token.signal});
+   if(!response.ok||!gate.current(token.version))throw Error('bad');
+   items=pilotSuggest.areas(await response.json(),'Australia',/^\d{4}$/.test(text)?text:null);
+   box.replaceChildren();
+   items.forEach((item,i)=>{const b=document.createElement('button');b.type='button';b.id='yp-where-opt-'+i;b.setAttribute('role','option');b.textContent=item.label;b.addEventListener('click',()=>ypChooseTown(item));box.appendChild(b);});
+   input.setAttribute('aria-expanded',items.length?'true':'false');
+   status.textContent=items.length?'Choose a town or suburb. None is selected automatically.':'No matching town or suburb. Nothing was invented.';
+  }catch{if(gate.current(token.version))status.textContent='Town suggestions are unavailable. The old map was not opened.';}},450);
+ });
+}
+function ypChooseTown(item){
+ ypCancelLocate();
+ const center=Number.isFinite(item.lon)&&Number.isFinite(item.lat)?[item.lon,item.lat]:null;
+ window.__ypPlace={label:item.label||item.name||'Chosen place',center};
+ const status=document.getElementById('yp-where-status');
+ if(!center){if(status)status.textContent='That suggestion has no map position. Listings were not opened.';return;}
+ if(ypMap){ypMap.jumpTo({center,zoom:12});}
+ else if(status)status.textContent='Place noted: '+window.__ypPlace.label+'. The basemap has no key, so the camera was not moved. The old 3D map stays hidden and no listings were opened.';
+ if(ypMap)ypCloseWhere();
+}
+function ypOpenPropChoice(){
+ ypCloseWhere();
+ let panel=document.getElementById('yp-prop');if(panel)panel.remove();
+ panel=document.createElement('div');panel.id='yp-prop';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Properties');
+ const card=document.createElement('div');card.className='card';
+ const title=document.createElement('h2');title.textContent='Properties';
+ const copy=document.createElement('p');copy.textContent='Choose a list. Nothing here is stock in the town on the map. Fictional Coralwood lots are not local listings, and this preview has no auctions.';
+ const rent=document.createElement('button');rent.type='button';rent.id='yp-prop-rent';rent.textContent='For rent';
+ const sale=document.createElement('button');sale.type='button';sale.id='yp-prop-sale';sale.textContent='For sale';
+ const auction=document.createElement('button');auction.type='button';auction.id='yp-prop-auction';auction.textContent='Auctions';
+ const back=document.createElement('button');back.type='button';back.id='yp-prop-back';back.textContent='Back to map';
+ rent.addEventListener('click',()=>ypShowPropSection('rent'));
+ sale.addEventListener('click',()=>ypShowPropSection('sale'));
+ auction.addEventListener('click',()=>ypShowPropSection('auction'));
+ back.addEventListener('click',()=>panel.remove());
+ card.append(title,copy,rent,sale,auction,back);panel.appendChild(card);document.body.appendChild(panel);
+}
+function ypShowPropSection(kind){
+ const panel=document.getElementById('yp-prop');if(!panel)return;
+ const place=window.__ypPlace&&window.__ypPlace.label?window.__ypPlace.label:'the place on the map';
+ const text=kind==='auction'
+  ?'Auctions are not part of this map preview. None were created for '+place+'.'
+  :'No '+(kind==='sale'?'for-sale':'for-rent')+' records are available for '+place+'. Fictional Coralwood lots are not listings in that town.';
+ const card=panel.querySelector('.card');
+ card.replaceChildren();
+ const title=document.createElement('h2');title.textContent=kind==='auction'?'Auctions':kind==='sale'?'For sale':'For rent';
+ const copy=document.createElement('p');copy.id='yp-prop-note';copy.textContent=text;
+ const back=document.createElement('button');back.type='button';back.id='yp-prop-back';back.textContent='Back to map';
+ back.addEventListener('click',()=>panel.remove());
+ card.append(title,copy,back);
+}
+window.ypChooseTown=ypChooseTown;
 window.ypEnterRealMap=ypEnterRealMap;

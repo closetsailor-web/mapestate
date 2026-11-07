@@ -209,6 +209,8 @@ check('my location reads only after a tap and does not override a chosen search'
   const missing = [];
   api.ypLocateSession(null, true).tap(result => missing.push(result));
   assert.equal(missing[0].status, 'unsupported');
+  assert.ok(code.includes('__ypBlockAutoLists'));
+  assert.ok(code.includes('yp-where'));
   assert.ok(code.includes('min-height:44px'));
   assert.ok(code.includes('focus-visible'));
   assert.ok(code.includes('aria-live'));
