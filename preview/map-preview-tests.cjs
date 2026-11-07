@@ -171,7 +171,7 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.equal(code.includes('yp-accuracy'), false);
   assert.ok(code.includes("title.textContent='Choose location'"));
   assert.ok(code.includes("placeholder='enter town or suburb'"));
-  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypPostcodeAssignment,ypEnsureSuburbStock,ypFreshStock,ypPostcodeList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey})', {});
+  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypPostcodeAssignment,ypEnsureSuburbStock,ypFreshStock,ypPostcodeList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM})', {});
   assert.equal(api.ypShouldHideLabel({id:'road_label', type:'symbol', 'source-layer':'transportation_name'}), true);
   assert.equal(api.ypShouldHideLabel({id:'road', type:'line', 'source-layer':'transportation'}), false);
   assert.equal(api.ypShouldHideLabel({id:'building', type:'fill', 'source-layer':'building'}), false);
@@ -186,6 +186,12 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   const place = {label:'Avenell Heights', lon:152.35, lat:-24.88, postcode:'4670'};
   const first = api.ypEnsureSuburbStock(api.ypFreshStock(), place);
   assert.equal(first.rentals.length, 10);
+  assert.equal(first.rentals.every(r => r.postcodeSource === 'chosen-place-result' && r.radiusM === 2000), true);
+  assert.equal(first.rentals.every(r => api.ypDistanceM(place.lon, place.lat, r.lon, r.lat) <= 2000), true);
+  assert.equal(first.rentals.every(r => api.ypDistanceM(place.lon, place.lat, r.lon, r.lat) > 100), true);
+  const twentyFive = Array.from({length: 25}, (_, i) => ({id: 't' + i}));
+  assert.equal(api.ypPage(twentyFive, 1, 20).items.length, 20);
+  assert.equal(api.ypPage(twentyFive, 2, 20).items.length, 5);
   assert.equal(new Set(first.rentals.map(r => r.id)).size, 10);
   const again = api.ypEnsureSuburbStock(first, place);
   assert.equal(again.rentals.length, 10);
@@ -212,6 +218,9 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   const detail = api.ypRentalDetail(listed.items[0]);
   assert.equal(detail.id, listed.items[0].id);
   assert.ok(detail.availability.includes('Not a real vacancy'));
+  assert.ok(detail.pin.includes('2 km'));
+  assert.ok(detail.pin.includes('not a suburb boundary'));
+  assert.ok(detail.tag.includes('does not show that this pin is in that postcode'));
   assert.equal(detail.weeklyRent, listed.items[0].weeklyRent);
   const applied = api.ypApplyPreview(other, listed.items[0].id);
   assert.equal(applied.rentals.find(r => r.id === listed.items[0].id).status, 'application-pending');
@@ -219,6 +228,13 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.equal(JSON.stringify(applied).includes('G.cash'), false);
   assert.ok((code.match(/ypOpenRentalDetail/g) || []).length >= 2);
   assert.ok(code.includes('Show available rentals'));
+  assert.ok(code.includes("n.textContent='Listings'"));
+  assert.ok(code.includes("textContent='For Sale'"));
+  assert.ok(code.includes("textContent='For Rent'"));
+  assert.ok(code.includes("textContent='Room Share'"));
+  assert.ok(code.includes("textContent='Auctions'"));
+  assert.ok(code.includes('ypOpenListingsChoice'));
+  assert.equal((code.match(/<button[^>]*data-v="sale"/g) || []).length, 0);
   assert.equal(code.includes('Search this area'), false);
   assert.ok(code.includes('style.load'));
   assert.ok(code.includes("ypMap.on('moveend',()=>{if(ypReady)ypSyncRentalMarkers();}"));

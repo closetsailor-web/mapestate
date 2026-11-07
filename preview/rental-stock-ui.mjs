@@ -49,7 +49,7 @@ const {targetId} = await cdp.send('Target.createTarget', {url: 'about:blank'});
 const {sessionId} = await cdp.send('Target.attachToTarget', {targetId, flatten: true});
 await cdp.send('Page.enable', {}, sessionId);
 await cdp.send('Runtime.enable', {}, sessionId);
-await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: `window.__geoReads=0;window.__geoWatch=0;const g={getCurrentPosition(){window.__geoReads++;},watchPosition(){window.__geoWatch++; return 1;}};try{Object.defineProperty(navigator,'geolocation',{configurable:true,get(){return g;}});}catch(e){}`}, sessionId);
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: `window.__geoReads=0;window.__geoWatch=0;window.__geoPerm=0;window.__locCalls=[];const g={getCurrentPosition(){window.__geoReads++;window.__locCalls.push('getCurrentPosition');},watchPosition(){window.__geoWatch++;window.__locCalls.push('watchPosition');return 1;},clearWatch(){window.__locCalls.push('clearWatch');}};try{Object.defineProperty(navigator,'geolocation',{configurable:true,get(){return g;}});}catch(e){}try{const perms=navigator.permissions;if(perms&&perms.query){const orig=perms.query.bind(perms);perms.query=function(desc){if(desc&&desc.name==='geolocation'){window.__geoPerm++;window.__locCalls.push('permissions:geolocation');return Promise.resolve({state:'prompt',addEventListener(){},removeEventListener(){}});}return orig(desc);};}}catch(e){}`}, sessionId);
 await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
 
 async function evalJson(expression) {
@@ -72,7 +72,7 @@ async function boot() {
 try {
   await boot();
   await evalJson(`localStorage.removeItem('yp.previewStock.v1');1`);
-  const beforeList = await evalJson(`(()=>({where:document.getElementById('yp-where-title')?.textContent,placeholder:document.getElementById('yp-where-town')?.placeholder,locate:!!document.getElementById('yp-where-locate'),home:getComputedStyle(document.getElementById('home')).display,list:!!document.getElementById('yp-rent-list'),geo:window.__geoReads||0,watch:window.__geoWatch||0}))()`);
+  const beforeList = await evalJson(`(()=>({where:document.getElementById('yp-where-title')?.textContent,placeholder:document.getElementById('yp-where-town')?.placeholder,locate:!!document.getElementById('yp-where-locate'),home:getComputedStyle(document.getElementById('home')).display,list:!!document.getElementById('yp-rent-list'),geo:window.__geoReads||0,watch:window.__geoWatch||0,perm:window.__geoPerm||0,loc:(window.__locCalls||[]).slice()}))()`);
   await evalJson(`ypChooseTown({label:'Split Town',name:'Split Town',lon:152.36,lat:-24.87,postcodes:['4670','4671']});1`);
   await delay(200);
   await shot('no-key-mocked-postcode-choice.png');
@@ -104,21 +104,70 @@ try {
   await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
   await delay(150);
   await shot('no-key-mocked-rental-list-desktop.png');
+  await evalJson(`ypChooseTown({label:'Bargara',name:'Bargara',lon:152.42,lat:-24.86,postcode:'4670'});document.getElementById('yp-show-rentals').click();1`);
+  await delay(200);
+  const page1 = await evalJson(`(()=>{const rows=[...document.querySelectorAll('#yp-rent-list .yp-rent-row')].map(b=>b.textContent);return {rows:rows.length,first:rows[0]||''};})()`);
+  await evalJson(`document.getElementById('yp-rent-next').click();1`);
+  await delay(100);
+  const page2 = await evalJson(`(()=>{const rows=[...document.querySelectorAll('#yp-rent-list .yp-rent-row')].map(b=>b.textContent);return {rows:rows.length,first:rows[0]||'',page:window.__ypListPage};})()`);
+  await evalJson(`(()=>{if(window.__ypMap)window.__ypMap.jumpTo({center:[151,-33],zoom:4});return 1;})()`);
+  await delay(300);
+  const page2AfterPan = await evalJson(`(()=>{const rows=[...document.querySelectorAll('#yp-rent-list .yp-rent-row')].map(b=>b.textContent);return {rows:rows.length,first:rows[0]||'',filter:window.__ypListPostcode,page:window.__ypListPage};})()`);
+  await evalJson(`document.getElementById('yp-rent-list-back').click();1`);
+  const mapReady = await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const map=window.__ypMap;if(map&&map.isStyleLoaded()&&map.getLayer('yp-rental-cluster'))r(1);else if(Date.now()-t>20000)r(0);else setTimeout(tick,100)};tick()})`);
+  const clusters = await evalJson(`new Promise(r=>{const map=window.__ypMap;const t=Date.now();const read=()=>{const feats=map.queryRenderedFeatures({layers:['yp-rental-cluster']});if(feats.length)r({count:feats.length,points:feats.map(f=>f.properties.point_count)});else if(Date.now()-t>8000)r({count:0,points:[]});else setTimeout(read,120)};map.jumpTo({center:[152.36,-24.87],zoom:4});map.once('idle',read);setTimeout(read,400)})`);
+  await shot('no-key-mocked-clusters.png');
+  const pinTarget = await evalJson(`(()=>{const row=JSON.parse(localStorage.getItem('yp.previewStock.v1')).rentals.find(r=>r.id==='preview:split town:1');window.__ypMap.jumpTo({center:[row.lon,row.lat],zoom:16});return {id:row.id,lon:row.lon,lat:row.lat};})()`);
+  await evalJson(`new Promise(r=>{window.__ypMap.once('idle',()=>r(1));setTimeout(()=>r(0),8000)})`);
+  const pinHit = await evalJson(`(()=>{const map=window.__ypMap;const feats=map.queryRenderedFeatures({layers:['yp-rental-point']});const hit=feats.find(f=>f.properties.id==='preview:split town:1')||feats[0];if(!hit)return null;const p=map.project(hit.geometry.coordinates);const rect=map.getCanvas().getBoundingClientRect();return {id:hit.properties.id,x:rect.left+p.x,y:rect.top+p.y,points:feats.length};})()`);
+  if (pinHit) {
+    await cdp.send('Input.dispatchMouseEvent', {type: 'mousePressed', x: pinHit.x, y: pinHit.y, button: 'left', clickCount: 1}, sessionId);
+    await cdp.send('Input.dispatchMouseEvent', {type: 'mouseReleased', x: pinHit.x, y: pinHit.y, button: 'left', clickCount: 1}, sessionId);
+  }
+  await delay(250);
+  const pinDetail = await evalJson(`document.getElementById('yp-rent-detail')?.innerText.replace(/\\s+/g,' ').trim()||''`);
+  await shot('no-key-mocked-pin-detail.png');
+  await evalJson(`document.querySelector('#yp-rent-detail .hwx')?.click();document.getElementById('yp-show-rentals').click();1`);
+  await delay(150);
+  const listDetail = await evalJson(`(()=>{if(!document.querySelector('#yp-rent-list .yp-rent-row[data-id="preview:split town:1"]'))document.getElementById('yp-rent-next').click();const row=document.querySelector('#yp-rent-list .yp-rent-row[data-id="preview:split town:1"]');if(!row)return 'missing-row';row.click();return document.getElementById('yp-rent-detail')?.innerText.replace(/\\s+/g,' ').trim()||'';})()`);
+  const distances = await evalJson(`(()=>{const rows=JSON.parse(localStorage.getItem('yp.previewStock.v1')).rentals;return {n:rows.length,max:Math.max(...rows.map(r=>ypDistanceM(r.centreLon,r.centreLat,r.lon,r.lat))),min:Math.min(...rows.map(r=>ypDistanceM(r.centreLon,r.centreLat,r.lon,r.lat))),source:rows.every(r=>r.postcodeSource==='chosen-place-result')};})()`);
+  await evalJson(`(()=>{if(window.L&&L.Map&&L.Map.prototype.locate)L.Map.prototype.locate.call({on(){return this;},fire(){return this;}});return 1;})()`);
+  const locAfter = await evalJson(`({reads:window.__geoReads||0,watch:window.__geoWatch||0,perm:window.__geoPerm||0,calls:(window.__locCalls||[]).slice(),accuracy:!!document.querySelector('[id*=accuracy]'),home:getComputedStyle(document.getElementById('home')).display})`);
+  await evalJson(`document.querySelector('nav button[data-v="sale"]').click();1`);
+  await delay(150);
+  await shot('no-key-mocked-listings-categories.png');
+  const cats = await evalJson(`(()=>{const p=document.getElementById('yp-prop');return {labels:p?[...p.querySelectorAll('button')].map(b=>b.textContent):[],rent:!!document.getElementById('yp-rent-list')};})()`);
+  await evalJson(`document.getElementById('yp-cat-sale').click();1`);
+  const saleTagged = await evalJson(`document.getElementById('yp-prop-note')?.textContent||''`);
+  await evalJson(`document.getElementById('yp-cat-back').click();document.getElementById('yp-cat-room').click();1`);
+  const roomTagged = await evalJson(`document.getElementById('yp-prop-note')?.textContent||''`);
+  await evalJson(`document.getElementById('yp-cat-back').click();document.getElementById('yp-cat-auction').click();1`);
+  const auctionTagged = await evalJson(`document.getElementById('yp-prop-note')?.textContent||''`);
+  await evalJson(`document.getElementById('yp-cat-back').click();document.getElementById('yp-cat-rent').click();1`);
+  const rentFromTab = await evalJson(`(()=>{const p=document.getElementById('yp-rent-list');return {filter:window.__ypListPostcode,rows:p?p.querySelectorAll('.yp-rent-row').length:0,tag:!!p&&p.innerText.includes('4670')};})()`);
   await evalJson(`ypChooseTown({label:'No Code Hills',name:'No Code Hills',lon:152.2,lat:-24.7});document.getElementById('yp-show-rentals').click();1`);
   await delay(150);
   await shot('no-key-mocked-empty-postcode-list.png');
-  const empty = await evalJson(`(()=>({text:document.getElementById('yp-rent-list').innerText.replace(/\\s+/g,' ').trim(),rows:document.querySelectorAll('#yp-rent-list .yp-rent-row').length,stock:JSON.parse(localStorage.getItem('yp.previewStock.v1')).rentals.length,geo:window.__geoReads||0,watch:window.__geoWatch||0}))()`);
-  const report = {label:'no API key; mocked place result with a postcode attribute; not live tiles or live vacancies', beforeList, choice, afterChoice:{show:afterChoice.show,list:afterChoice.list,count:ids.length}, list, cashBefore, detail, applied, ids, reloaded, filterBefore, filterAfter, empty};
+  const empty = await evalJson(`(()=>({text:document.getElementById('yp-rent-list').innerText.replace(/\\s+/g,' ').trim(),rows:document.querySelectorAll('#yp-rent-list .yp-rent-row').length,stock:JSON.parse(localStorage.getItem('yp.previewStock.v1')).rentals.length,geo:window.__geoReads||0,watch:window.__geoWatch||0,perm:window.__geoPerm||0}))()`);
+  const report = {label:'no API key; mocked place result; 2 km sample pins; not live tiles or live vacancies', beforeList, choice, afterChoice:{show:afterChoice.show,list:afterChoice.list,count:ids.length}, list, cashBefore, detail, applied, ids, reloaded, filterBefore, filterAfter, page1, page2, page2AfterPan, mapReady, clusters, pinTarget, pinHit, pinDetail, listDetail, distances, locAfter, cats, saleTagged, roomTagged, auctionTagged, rentFromTab, empty};
   writeFileSync(`${OUT}/rental-stock-ui.json`, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
-  const ok = beforeList.where === 'Choose location' && beforeList.placeholder === 'enter town or suburb' && !beforeList.locate && beforeList.home === 'none' && !beforeList.list && beforeList.geo === 0
+  const ok = beforeList.where === 'Choose location' && beforeList.placeholder === 'enter town or suburb' && !beforeList.locate && beforeList.home === 'none' && !beforeList.list && beforeList.geo === 0 && beforeList.perm === 0 && beforeList.loc.length === 0
     && choice.includes('4670') && choice.includes('4671') && afterChoice.show && !afterChoice.list && ids.length === 10 && new Set(ids).size === 10
-    && list.rows === 10 && list.filter === '4670' && list.text.includes('Not real') === false && list.text.includes('not real vacancies')
-    && detail.includes('Preview weekly rent') && detail.includes('Bond') && detail.includes('Not a real vacancy') && detail.includes('Apply to rent')
+    && list.rows === 10 && list.filter === '4670' && list.text.includes('2 km') && list.text.includes('not a suburb boundary') && list.text.includes('not a check that each pin')
+    && detail.includes('Test weekly rent') && detail.includes('Test bond') && detail.includes('2 km') && detail.includes('Not a real vacancy') && detail.includes('Apply to rent') && detail.includes('does not show that this pin is in that postcode')
     && applied.cash === cashBefore.cash && JSON.stringify(applied.fe) === JSON.stringify(cashBefore.fe) && applied.status === 'application-pending'
     && reloaded.split.join() === ids.join() && reloaded.avenell === 10 && reloaded.total === 20 && reloaded.pending === 'application-pending'
     && filterAfter.filter === filterBefore && filterAfter.rows === 20 && filterAfter.text
-    && empty.rows === 0 && empty.text.includes('No postcode was guessed') && empty.stock === 20 && empty.geo === 0 && empty.watch === 0;
+    && page1.rows === 20 && page2.rows === 10 && page2.page === 2 && page2AfterPan.rows === 10 && page2AfterPan.filter === '4670' && page2AfterPan.page === 2 && page2AfterPan.first === page2.first
+    && mapReady === 1 && clusters.count >= 1 && clusters.points.some(n => n >= 10)
+    && pinHit && pinHit.id === 'preview:split town:1' && pinDetail.includes('Preview starter rental 1') && pinDetail.includes('Test weekly rent') && listDetail === pinDetail
+    && distances.n === 30 && distances.max <= 2000 && distances.min > 100 && distances.source
+    && locAfter.reads === 0 && locAfter.watch === 0 && locAfter.perm === 0 && locAfter.calls.length === 0 && locAfter.home === 'none' && !locAfter.accuracy
+    && cats.labels.slice(0,4).join('|') === 'For Sale|For Rent|Room Share|Auctions' && !cats.rent
+    && saleTagged.includes('4670') && saleTagged.includes('For Sale has no listings') && roomTagged.includes('Room Share has no listings') && auctionTagged.includes('Auctions has no listings')
+    && rentFromTab.filter === '4670' && rentFromTab.rows === 20 && rentFromTab.tag
+    && empty.rows === 0 && empty.text.includes('No postcode was guessed') && empty.stock === 30 && empty.geo === 0 && empty.watch === 0 && empty.perm === 0;
   if (!ok) process.exitCode = 1;
 } catch (error) {
   console.error(error);

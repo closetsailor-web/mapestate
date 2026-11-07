@@ -54,7 +54,7 @@ ws.addEventListener('message', ev => {
   const msg = JSON.parse(ev.data);
   if (msg.method === 'Runtime.exceptionThrown' && msg.sessionId === sessionId) pageErrors.push(msg.params.exceptionDetails?.exception?.description || msg.params.exceptionDetails?.text);
 });
-await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: `window.__geoReads=0;window.__geoWatch=0;const g={getCurrentPosition(){window.__geoReads++;},watchPosition(){window.__geoWatch++; return 1;}};try{Object.defineProperty(navigator,'geolocation',{configurable:true,get(){return g;}});}catch(e){}`}, sessionId);
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: `window.__geoReads=0;window.__geoWatch=0;window.__geoPerm=0;window.__locCalls=[];const g={getCurrentPosition(){window.__geoReads++;window.__locCalls.push('getCurrentPosition');},watchPosition(){window.__geoWatch++;window.__locCalls.push('watchPosition');return 1;},clearWatch(){window.__locCalls.push('clearWatch');}};try{Object.defineProperty(navigator,'geolocation',{configurable:true,get(){return g;}});}catch(e){}try{const perms=navigator.permissions;if(perms&&perms.query){const orig=perms.query.bind(perms);perms.query=function(desc){if(desc&&desc.name==='geolocation'){window.__geoPerm++;window.__locCalls.push('permissions:geolocation');return Promise.resolve({state:'prompt',addEventListener(){},removeEventListener(){}});}return orig(desc);};}}catch(e){}`}, sessionId);
 await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
 
 async function evalJson(expression) {
@@ -80,7 +80,7 @@ async function setup(kind) {
   else if (kind === 'buy') await evalJson(`document.getElementById('st_buy').click();document.getElementById('st_go').click();1`);
   else await evalJson(`document.getElementById('st_room').click();document.getElementById('st_go').click();1`);
   await delay(600);
-  return evalJson(`(()=>{const canvas=document.getElementById('w3dc');const style=canvas?getComputedStyle(canvas):null;const where=document.getElementById('yp-where');return {kind:${JSON.stringify(kind)},statusPick:G.statusPick,listings:!!document.getElementById('listings'),cards:document.querySelectorAll('.lcard').length,hw:document.getElementById('hwov')?.getAttribute('aria-label')||'',where:!!where,whereText:where?.innerText?.replace(/\\s+/g,' ').trim().slice(0,180)||'',basemap:!!document.getElementById('ypbasemap'),preview:document.documentElement.classList.contains('yp-preview'),canvasDisplay:style?style.display:'',canvasVisibility:style?style.visibility:'',geoReads:window.__geoReads||0,geoWatch:window.__geoWatch||0,mapKey:!!document.getElementById('yp-map-status')};})()`);
+  return evalJson(`(()=>{const canvas=document.getElementById('w3dc');const style=canvas?getComputedStyle(canvas):null;const where=document.getElementById('yp-where');return {kind:${JSON.stringify(kind)},statusPick:G.statusPick,listings:!!document.getElementById('listings'),cards:document.querySelectorAll('.lcard').length,hw:document.getElementById('hwov')?.getAttribute('aria-label')||'',where:!!where,whereText:where?.innerText?.replace(/\\s+/g,' ').trim().slice(0,180)||'',basemap:!!document.getElementById('ypbasemap'),preview:document.documentElement.classList.contains('yp-preview'),canvasDisplay:style?style.display:'',canvasVisibility:style?style.visibility:'',geoReads:window.__geoReads||0,geoWatch:window.__geoWatch||0,geoPerm:window.__geoPerm||0,loc:(window.__locCalls||[]).join(','),mapKey:!!document.getElementById('yp-map-status')};})()`);
 }
 
 await openFresh();
@@ -95,11 +95,14 @@ await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, 
 await delay(150);
 await shot('no-key-location-popup-desktop.png');
 await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
-await evalJson(`(()=>{const h=document.getElementById('yp-where-title'),i=document.getElementById('yp-where-town');if(h.textContent!=='Choose location'||i.placeholder!=='enter town or suburb')throw Error(h.textContent+' | '+i.placeholder);document.getElementById('yp-where-close').click();document.querySelector('nav button[data-v="sale"]').click();return 1;})()`);
+await evalJson(`(()=>{const h=document.getElementById('yp-where-title'),i=document.getElementById('yp-where-town');if(h.textContent!=='Choose location'||i.placeholder!=='enter town or suburb')throw Error(h.textContent+' | '+i.placeholder);if(document.getElementById('yp-rent-list'))throw Error('list opened before Listings');document.getElementById('yp-where-close').click();document.querySelector('nav button[data-v="sale"]').click();return 1;})()`);
 await delay(200);
-const choice = await evalJson(`(()=>{const p=document.getElementById('yp-prop');return {open:!!p,text:p?.innerText?.replace(/\\s+/g,' ').trim()||'',listings:!!document.getElementById('listings')};})()`);
-await shot('no-key-properties-choice.png');
-await evalJson(`document.getElementById('yp-prop-rent').click();1`);
+const choice = await evalJson(`(()=>{const buttons=[...document.querySelectorAll('nav button')].map(b=>b.innerText.replace(/\\s+/g,' ').trim());const p=document.getElementById('yp-prop');const cats=p?[...p.querySelectorAll('button')].map(b=>b.textContent):[];return {label:document.querySelector('nav button[data-v="sale"]')?.innerText.replace(/\\s+/g,' ').trim()||'',count:buttons.length,buttons,cats,rentOpen:!!document.getElementById('yp-rent-list'),listings:!!document.getElementById('listings')};})()`);
+await shot('no-key-listings-categories.png');
+await evalJson(`document.getElementById('yp-cat-sale').click();1`);
+const saleEmpty = await evalJson(`document.getElementById('yp-prop')?.innerText.replace(/\\s+/g,' ').trim()||''`);
+await shot('no-key-listings-sale-empty.png');
+await evalJson(`document.getElementById('yp-cat-back').click();document.getElementById('yp-cat-rent').click();1`);
 await delay(100);
 const rentList = await evalJson(`(()=>{const p=document.getElementById('yp-rent-list');return {text:p?.innerText?.replace(/\\s+/g,' ').trim()||'',cards:document.querySelectorAll('.lcard').length,listings:!!document.getElementById('listings'),myLocation:!!document.getElementById('yp-where-locate')||!!document.getElementById('yp-locate')};})()`);
 await shot('no-key-empty-postcode-list.png');
@@ -110,12 +113,13 @@ await openFresh();
 const buy = await setup('buy');
 await openFresh();
 const room = await setup('room');
-const report = {label: 'no API key; basemap container only, not live MapTiler tiles', rent, choice, rentList, back, buy, room};
+const report = {label: 'no API key; basemap container only, not live MapTiler tiles', rent, choice, saleEmpty, rentList, back, buy, room};
 writeFileSync(`${OUT}/flow-handoff.json`, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 server.kill('SIGTERM');
 chrome.kill('SIGTERM');
 const paths = [rent, buy, room];
-const bad = paths.find(item => item.listings || item.cards || item.hw || !item.where || !item.basemap || item.canvasDisplay !== 'none' || item.geoReads || item.geoWatch);
-if (bad || choice.listings || rentList.listings || rentList.cards || rentList.myLocation || !rentList.text.includes('No postcode was invented') || back.listings || back.canvasDisplay !== 'none' || !back.basemap || (rent.whereText||'').includes('My Location')) process.exit(1);
+const bad = paths.find(item => item.listings || item.cards || item.hw || !item.where || !item.basemap || item.canvasDisplay !== 'none' || item.geoReads || item.geoWatch || item.geoPerm || item.loc);
+const catsOk = choice.label === 'Listings' && choice.count === 5 && choice.cats.join('|') === 'For Sale|For Rent|Room Share|Auctions|Back to map' && !choice.rentOpen;
+if (bad || !catsOk || choice.listings || !saleEmpty.includes('For Sale has no listings') || !saleEmpty.includes('No postcode was invented') || rentList.listings || rentList.cards || rentList.myLocation || !rentList.text.includes('No postcode was invented') || back.listings || back.canvasDisplay !== 'none' || !back.basemap || (rent.whereText||'').includes('My Location')) process.exit(1);
 process.exit(0);
