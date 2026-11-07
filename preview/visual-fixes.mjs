@@ -73,12 +73,13 @@ const interact = await evalJson(`(()=>{const w=document.getElementById('flowfram
 await size(390, 844);
 await evalJson(`document.getElementById('flow').style.display='none';hwShow(3);1`);
 await delay(200);
-const popup = await evalJson(`(()=>{const o=document.getElementById('hwov'),ps=[...o.querySelectorAll('p')],p=ps[0],cs=getComputedStyle(p);return {text:p.textContent,paragraphs:ps.length,heading:o.querySelector('h3').textContent,buttons:[...o.querySelectorAll('button')].map(b=>b.textContent),rows:o.querySelectorAll('.hwr').length,font:cs.fontFamily,size:cs.fontSize,weight:cs.fontWeight,color:cs.color,align:cs.textAlign};})()`);
+const popup = await evalJson(`(()=>{const o=document.getElementById('hwov'),ps=[...o.querySelectorAll('p')],p=ps[0],cs=getComputedStyle(p),btn=o.querySelector('#hw_next'),back=o.querySelector('#hw_back');const card=o.querySelector('.hwc'),cardBox=card.getBoundingClientRect();return {text:p.textContent,paragraphs:ps.length,heading:o.querySelector('h3').textContent,buttons:[...o.querySelectorAll('button')].map(b=>b.textContent),rows:o.querySelectorAll('.hwr').length,font:cs.fontFamily,size:cs.fontSize,weight:cs.fontWeight,color:cs.color,align:cs.textAlign,gotMargin:getComputedStyle(btn).marginTop,backMargin:back?getComputedStyle(back).marginTop:'',overflow:card.scrollHeight-card.clientHeight,cardBottom:Math.round(cardBox.bottom),view:window.innerHeight};})()`);
 await shot('save-up-popup-mobile.png');
 await size(1280, 800);
 await delay(150);
 await shot('save-up-popup-desktop.png');
-const report = {label: 'visual checks, no map key and no live tiles', income, interact, popup};
+const popupDesktop = await evalJson(`(()=>{const o=document.getElementById('hwov'),card=o.querySelector('.hwc'),box=card.getBoundingClientRect();return {gotMargin:getComputedStyle(o.querySelector('#hw_next')).marginTop,backMargin:getComputedStyle(o.querySelector('#hw_back')).marginTop,overflow:card.scrollHeight-card.clientHeight,cardBottom:Math.round(box.bottom),view:window.innerHeight};})()`);
+const report = {label: 'visual checks, no map key and no live tiles', income, interact, popup, popupDesktop};
 writeFileSync(`${OUT}/visual-fixes.json`, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 server.kill('SIGTERM');
@@ -89,5 +90,6 @@ if (income.count !== 20 || JSON.stringify(income.labels) !== JSON.stringify(expe
 if (income.placeholder !== 'Select your income' || income.disabled !== true || income.expanded !== 'true' || income.nativeHidden !== 'none') fail = 1;
 if (interact.picked.value !== '1' || interact.picked.button !== '$10,000 – $20,000' || interact.picked.goDisabled !== false || !interact.picked.closed || !interact.escaped || !interact.outside) fail = 1;
 const body = 'Looks like you may have to start saving towards your first home deposit. Room share or boarding is usually the best way to save if other players have something available. You can live with family or friends for free also.';
-if (popup.text !== body || popup.paragraphs !== 1 || popup.heading !== 'Save up first?' || popup.rows !== 0 || popup.align !== 'center' || popup.color !== 'rgb(90, 103, 128)') fail = 1;
+if (popup.text !== body || popup.paragraphs !== 1 || popup.heading !== 'Save up first?' || popup.rows !== 0 || popup.align !== 'center' || popup.color !== 'rgb(90, 103, 128)' || popup.gotMargin !== '24px' || popup.backMargin !== '2px' || popup.overflow > 1 || popup.cardBottom > popup.view) fail = 1;
+if (!popupDesktop || popupDesktop.gotMargin !== '24px' || popupDesktop.backMargin !== '2px' || popupDesktop.overflow > 1 || popupDesktop.cardBottom > popupDesktop.view) fail = 1;
 process.exit(fail);

@@ -33,6 +33,14 @@ check('save-up body is one centred paragraph and income bands are unchanged', ()
   assert.ok(flow.includes("$('band').onchange=e=>{const [lo,hi]=BANDS[+e.target.value];P.income.band={min:lo,max:hi,mid:(lo+hi)/2};if(!P.income.touched){P.income.touched=1;setExpFreq(P.income.freq||'fortnight')}saveP();renderIncome()};"));
   assert.ok(flow.includes('id="band-btn"') || flow.includes("btn.id='band-btn'"));
   assert.ok(flow.includes("sel.dispatchEvent(new Event('change'"));
+  assert.equal(flow.includes("row('Starting place'"), false);
+  assert.ok(flow.includes("row('Take-home pay'"));
+  assert.ok(flow.includes("row('Starting savings'"));
+  assert.ok(flow.includes("row('Expenses'"));
+  assert.ok(flow.includes('Left over (after tax)'));
+  assert.ok(flow.includes("Good to see you, <b>'+escH(who)+'</b>. Your properties are right where you left them."));
+  assert.equal(flow.includes("You\\'re starting in"), false);
+  assert.ok(flow.includes("We\\'re starting you in"));
 });
 check('root and test pages are the published files', () => {
   const sha = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
