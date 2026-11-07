@@ -90,8 +90,12 @@ if (rent.setupFailed || !rent.where) {
   server.kill('SIGTERM'); chrome.kill('SIGTERM');
   process.exit(1);
 }
-await shot('no-key-rental-new-map-with-popup.png');
-await evalJson(`document.getElementById('yp-where-close').click();document.getElementById('yp-properties').click();1`);
+await shot('no-key-location-popup-mobile.png');
+await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
+await delay(150);
+await shot('no-key-location-popup-desktop.png');
+await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
+await evalJson(`(()=>{const h=document.getElementById('yp-where-title'),i=document.getElementById('yp-where-town');if(h.textContent!=='Choose location'||i.placeholder!=='enter town or suburb')throw Error(h.textContent+' | '+i.placeholder);document.getElementById('yp-where-close').click();document.querySelector('nav button[data-v="sale"]').click();return 1;})()`);
 await delay(200);
 const choice = await evalJson(`(()=>{const p=document.getElementById('yp-prop');return {open:!!p,text:p?.innerText?.replace(/\\s+/g,' ').trim()||'',listings:!!document.getElementById('listings')};})()`);
 await shot('no-key-properties-choice.png');

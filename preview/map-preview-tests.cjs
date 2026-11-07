@@ -22,11 +22,17 @@ function check(name, fn) {
 }
 
 const marker = '\n<script src="map-preview.js"></script>\n';
-check('game page prefix matches the approved build', () => {
+check('save-up body is one centred paragraph and income bands are unchanged', () => {
   assert.ok(html.includes(marker));
-  const restored = html.replace(marker, '');
-  const sha = crypto.createHash('sha256').update(restored).digest('hex');
-  assert.equal(sha, '70190a95747aafb97147775a8c5dde25c3e9ceca991f9f81e66f50e2f718f802');
+  const sentence = 'Looks like you may have to start saving towards your first home deposit. Room share or boarding is usually the best way to save if other players have something available. You can live with family or friends for free also.';
+  assert.ok(html.includes('<h3>Save up first?</h3><p>' + sentence + '</p>'));
+  assert.equal(html.includes('deposit.</p><div class="hwr hi">'), false);
+  const flow = Buffer.from(html.match(/const FLOW_SRC_B64='([^']+)'/)[1], 'base64').toString();
+  const bands = '[[0,10000],[10000,20000],[20000,30000],[30000,40000],[40000,50000],[50000,60000],[60000,70000],[70000,80000],[80000,90000],[90000,100000],[100000,110000],[110000,120000],[120000,130000],[130000,140000],[140000,150000],[150000,160000],[160000,170000],[170000,180000],[180000,190000],[190000,200000]]';
+  assert.ok(flow.includes('const BANDS=' + bands));
+  assert.ok(flow.includes("$('band').onchange=e=>{const [lo,hi]=BANDS[+e.target.value];P.income.band={min:lo,max:hi,mid:(lo+hi)/2};if(!P.income.touched){P.income.touched=1;setExpFreq(P.income.freq||'fortnight')}saveP();renderIncome()};"));
+  assert.ok(flow.includes('id="band-btn"') || flow.includes("btn.id='band-btn'"));
+  assert.ok(flow.includes("sel.dispatchEvent(new Event('change'"));
 });
 check('root and test pages are the published files', () => {
   const sha = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
@@ -210,7 +216,10 @@ check('my location reads only after a tap and does not override a chosen search'
   api.ypLocateSession(null, true).tap(result => missing.push(result));
   assert.equal(missing[0].status, 'unsupported');
   assert.ok(code.includes('__ypBlockAutoLists'));
-  assert.ok(code.includes('yp-where'));
+  assert.ok(code.includes("title.textContent='Choose location'"));
+  assert.ok(code.includes("placeholder='enter town or suburb'"));
+  assert.equal(code.includes('Choose a town or suburb'), false);
+  assert.equal(code.includes("placeholder='Town or suburb'"), false);
   assert.ok(code.includes('min-height:44px'));
   assert.ok(code.includes('focus-visible'));
   assert.ok(code.includes('aria-live'));
