@@ -99,6 +99,53 @@ function geocodeUrl(params,key){
 const YP_MAP_REQUEST={cache:'no-store',credentials:'omit'};
 // END TESTABLE IDENTITY
 
+function ypLocateView(lon,lat,accuracy){
+ if(!Number.isFinite(lon)||!Number.isFinite(lat)||Math.abs(lon)>180||Math.abs(lat)>90)return null;
+ const known=Number.isFinite(accuracy)&&accuracy>=0;
+ const meters=known?Math.max(accuracy,8):600;
+ const dLat=meters/110540,dLon=meters/(111320*Math.max(.2,Math.cos(lat*Math.PI/180)));
+ return {center:[lon,lat],accuracy:known?accuracy:null,maxZoom:17,bounds:[[lon-dLon,lat-dLat],[lon+dLon,lat+dLat]],showCircle:known,meters:known?accuracy:null};
+}
+function ypAccuracyRing(lon,lat,meters){
+ const ring=[],steps=32,dLat=meters/110540,dLon=meters/(111320*Math.max(.2,Math.cos(lat*Math.PI/180)));
+ for(let i=0;i<=steps;i++){const b=2*Math.PI*i/steps;ring.push([lon+dLon*Math.sin(b),lat+dLat*Math.cos(b)]);}
+ return ring;
+}
+function ypLocateError(code){return code===1?'denied':code===3?'timeout':'unavailable';}
+function ypLocateMessage(status,view){
+ const metres=view&&Number.isFinite(view.accuracy)?Math.round(view.accuracy):null;
+ const rough=metres==null?'No accuracy was provided, so this is only a rough area.':'The shaded circle is about '+metres+' metres across.';
+ const text={
+  locating:'Finding this device. Nothing is saved.',
+  found:'Map moved to this device. '+rough+' This is not an address, a house, or a game property. Loading this view requests map tiles from the map provider.',
+  denied:'Location permission was denied. No further request was sent. Search for a town or suburb, or tap My Location again.',
+  timeout:'Location timed out. No further request was sent. Search for a town or suburb, or tap My Location again.',
+  unavailable:'Location is unavailable. Search for a town or suburb, or tap My Location again.',
+  unsupported:'This browser cannot share location. Search for a town or suburb instead.',
+  insecure:'This page is not a secure context, so location was not requested. Search for a town or suburb instead.'
+ };
+ return text[status]||text.unavailable;
+}
+function ypLocateSession(geo,isSecure){
+ let generation=0,busy=false,closed=false;
+ return {
+  tap(done){
+   if(closed)return {accepted:false,status:'closed'};
+   if(busy)return {accepted:false,status:'locating'};
+   if(!isSecure){done&&done({status:'insecure'});return {accepted:false,status:'insecure'};}
+   if(!geo||typeof geo.getCurrentPosition!=='function'){done&&done({status:'unsupported'});return {accepted:false,status:'unsupported'};}
+   const token=++generation;busy=true;let settled=false;
+   const finish=payload=>{if(settled)return;settled=true;busy=false;if(closed||token!==generation)return;done&&done(payload);};
+   try{geo.getCurrentPosition(pos=>{const c=pos&&pos.coords,view=c&&ypLocateView(c.longitude,c.latitude,c.accuracy);finish(view?{status:'found',view}:{status:'unavailable'});},err=>finish({status:ypLocateError(err&&err.code)}),{enableHighAccuracy:true,timeout:12000,maximumAge:0});}
+   catch{finish({status:'unsupported'});}
+   return {accepted:true,status:'locating'};
+  },
+  cancel(){generation++;busy=false;},
+  close(){closed=true;generation++;busy=false;}
+ };
+}
+// END TESTABLE LOCATE
+
 /* Preview map adapter. Runs in the game page after the existing scripts. It does not change intro copy, finance, or c1 lot records. */
 const YP_LIMIT='This highlight is one basemap footprint only. It is not a Your Plot lot, it has no game owner, and it has no game price. The saved id is a new UUID plus the click coordinate, not a vendor id and not a stable property identity.';
 const YP_GAMELOT='This listing is an existing Coralwood game record. It is not a building on the basemap, so the camera was not moved and no real owner or price was created.';
@@ -118,7 +165,14 @@ body.sheetopen #yp-foot{display:none}
 #yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
 #yp-logo img{width:88px;background:#ffffffc9;display:block}
 body.ypbasemap #w3dc{visibility:hidden!important;pointer-events:none!important}
-body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw}`;
+body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw}
+#yp-locate{position:absolute;left:12px;bottom:calc(230px + var(--sab));z-index:11;min-width:44px;min-height:44px;padding:12px 16px;border:1px solid #9aa8b8;border-radius:12px;background:#fff;color:#14213d;font:700 15px/1.2 Inter,system-ui,sans-serif;box-shadow:0 6px 16px rgba(11,37,69,.16)}
+#yp-locate:focus{outline:3px solid #0a3a8c;outline-offset:3px}
+#yp-locate:focus-visible{outline:3px solid #0a3a8c;outline-offset:3px}
+#yp-locate:disabled{opacity:.72}
+#yp-locate-note,#yp-locate-status{position:absolute;left:12px;right:76px;z-index:11;margin:0;background:rgba(255,255,255,.96);color:#14213d;border-radius:10px;padding:8px 10px;font:500 12px/1.35 Inter,system-ui,sans-serif}
+#yp-locate-note{bottom:calc(286px + var(--sab))}
+#yp-locate-status{bottom:calc(348px + var(--sab))}`
 
 (function ypBoot(){
  if(window.__ypMapBoot)return;window.__ypMapBoot=1;
@@ -134,7 +188,7 @@ function ypReadSelection(){try{return ypSelection(JSON.parse(localStorage.getIte
 function ypWriteSelection(record){const body=ypPersistable(record);if(!body)return false;try{localStorage.setItem(YP_STORE,JSON.stringify(body));return true;}catch{return false;}}
 function ypGameLotNote(){try{toast(YP_GAMELOT);}catch(e){ypFoot(YP_GAMELOT);}}
 
-let ypMap,ypReady=false,ypRecord=null,ypBuildingLayers=[],ypHighlightSignature='',ypGeoKey='',ypMapFailed=false,ypEntered=false;
+let ypMap,ypReady=false,ypRecord=null,ypBuildingLayers=[],ypHighlightSignature='',ypGeoKey='',ypMapFailed=false,ypEntered=false,ypLocateCtrl=null;
 function ypEmpty(){return {type:'FeatureCollection',features:[]};}
 function ypHighlight(data){if(!ypMap)return;const signature=JSON.stringify(data);if(signature===ypHighlightSignature)return;ypHighlightSignature=signature;const src=ypMap.getSource('yp-highlight');if(src)src.setData(data);}
 function ypAt(coordinate){if(!ypMap||!ypReady)return [];const pt=ypMap.project(coordinate),c=ypMap.getCanvas();if(pt.x<0||pt.y<0||pt.x>c.clientWidth||pt.y>c.clientHeight)return [];return pilotSelection.components(ypMap.queryRenderedFeatures(pt,{layers:ypBuildingLayers}),coordinate);}
@@ -176,6 +230,30 @@ function ypMountChrome(){
 }
 function ypStatusPanel(text){const box=document.getElementById('ypbasemap');if(!box)return;let el=document.getElementById('yp-map-status');if(!el){el=document.createElement('div');el.id='yp-map-status';box.appendChild(el);}el.textContent=text;}
 function ypClearStatusPanel(){const el=document.getElementById('yp-map-status');if(el)el.remove();}
+function ypClearAccuracy(){const src=ypMap&&ypMap.getSource&&ypMap.getSource('yp-accuracy');if(src)src.setData(ypEmpty());}
+function ypCancelLocate(){if(ypLocateCtrl)ypLocateCtrl.cancel();ypClearAccuracy();}
+function ypApplyLocate(outcome){
+ const status=document.getElementById('yp-locate-status');
+ if(status)status.textContent=ypLocateMessage(outcome.status,outcome.view);
+ if(outcome.status!=='found'||!outcome.view||!ypMap)return;
+ if(outcome.view.showCircle){const src=ypMap.getSource('yp-accuracy');if(src)src.setData({type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[ypAccuracyRing(outcome.view.center[0],outcome.view.center[1],Math.max(outcome.view.accuracy,8))]}}]});}
+ ypMap.fitBounds(outcome.view.bounds,{padding:48,maxZoom:outcome.view.maxZoom,animate:true});
+}
+function ypMountLocate(){
+ if(document.getElementById('yp-locate'))return;
+ const host=document.getElementById('map');if(!host)return;
+ const btn=document.createElement('button');btn.type='button';btn.id='yp-locate';btn.textContent='My Location';btn.setAttribute('aria-describedby','yp-locate-note');
+ const note=document.createElement('p');note.id='yp-locate-note';note.textContent='One tap asks this browser for this device. The map provider still receives the view it loads. This is not an address.';
+ const status=document.createElement('p');status.id='yp-locate-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.setAttribute('aria-atomic','true');
+ host.append(btn,note,status);
+ const secure=window.isSecureContext===true;
+ ypLocateCtrl=ypLocateSession(secure&&navigator.geolocation?navigator.geolocation:null,secure);
+ btn.addEventListener('click',()=>{
+  const res=ypLocateCtrl.tap(outcome=>{btn.disabled=false;btn.removeAttribute('aria-busy');ypApplyLocate(outcome);});
+  if(res.accepted){btn.disabled=true;btn.setAttribute('aria-busy','true');status.textContent=ypLocateMessage('locating');}
+ });
+ window.addEventListener('pagehide',()=>{if(ypLocateCtrl)ypLocateCtrl.close();},{once:true});
+}
 
 function ypMountSearch(){
  const box=document.getElementById('rsearch'),town=document.getElementById('rsq');
@@ -189,7 +267,7 @@ function ypMountSearch(){
  const areaBox=document.createElement('div');areaBox.id='yp-area-suggestions';areaBox.setAttribute('role','listbox');areaBox.setAttribute('aria-label','Area suggestions');
  const streetBox=document.createElement('div');streetBox.id='yp-street-suggestions';streetBox.setAttribute('role','listbox');streetBox.setAttribute('aria-label','Street suggestions');
  const status=document.createElement('p');status.id='yp-search-status';status.setAttribute('role','status');
- const note=document.createElement('p');note.id='yp-search-note';note.textContent='After 3 characters and a short pause, the town, suburb or postcode and the street text are sent to Geoapify. Choosing a suggestion is deliberate. This is not anonymous: Geoapify receives the partial text and the connection. No device location is requested. Searches are not saved. MapTiler supplies the basemap. A postcode result is only the provider’s partial list, not every suburb.';
+ const note=document.createElement('p');note.id='yp-search-note';note.textContent='After 3 characters and a short pause, the town, suburb or postcode and the street text are sent to Geoapify. Choosing a suggestion is deliberate. This is not anonymous: Geoapify receives the partial text and the connection. Search does not ask for device location. My Location does, only when you tap it, and the map provider receives the view it loads. Searches are not saved. MapTiler supplies the basemap. A postcode result is only the provider’s partial list, not every suburb.';
  const go=document.createElement('button');go.type='button';go.id='yp-search-submit';go.textContent='Search streets';
  const attr=document.createElement('small');attr.id='yp-geo-attr';
  const a=document.createElement('a');a.href='https://www.geoapify.com/';a.target='_blank';a.rel='noopener';a.textContent='Powered by Geoapify';
@@ -204,6 +282,7 @@ function ypMountSearch(){
 async function ypEnterRealMap(){
  if(ypEntered)return;ypEntered=true;
  ypMountChrome();
+ ypMountLocate();
  ypFoot('Preview camera starts at a public Bundaberg demo point (Regional Art Gallery) until you search or select. That point is not your game home and not a property record.');
  ypPatchCamera();
  const ui=ypMountSearch();
@@ -236,6 +315,9 @@ async function ypEnterRealMap(){
   const before=layers.find(l=>l.type==='symbol')?.id;
   ypMap.addLayer({id:'yp-highlight-fill',type:'fill',source:'yp-highlight',paint:{'fill-color':'#f8a51b','fill-opacity':0.6}},before);
   ypMap.addLayer({id:'yp-highlight-line',type:'line',source:'yp-highlight',paint:{'line-color':'#b65b00','line-width':3}},before);
+  ypMap.addSource('yp-accuracy',{type:'geojson',data:ypEmpty()});
+  ypMap.addLayer({id:'yp-accuracy-fill',type:'fill',source:'yp-accuracy',paint:{'fill-color':'#0a3a8c','fill-opacity':.15}});
+  ypMap.addLayer({id:'yp-accuracy-line',type:'line',source:'yp-accuracy',paint:{'line-color':'#0a3a8c','line-width':2}});
   if(!document.getElementById('yp-logo')){const logo=document.createElement('a');logo.id='yp-logo';logo.href='https://www.maptiler.com/';logo.target='_blank';logo.rel='noopener';const img=document.createElement('img');img.src='https://api.maptiler.com/resources/logo.svg';img.alt='MapTiler logo';logo.appendChild(img);box.appendChild(logo);}
   ypReady=true;
   ypFoot(ypBuildingLayers.length?'Basemap loaded. Tap inside one building. House-number and place-of-interest labels are hidden where the style names them. Street names stay.':'Basemap loaded, but no building polygon layer was found. Nothing was invented.');
@@ -272,7 +354,7 @@ function ypWireSearch(ui,geoapifyKey){
  }
  function draw(boxEl,items,choose,input){boxEl.replaceChildren();items.forEach((item,i)=>{const b=document.createElement('button');b.type='button';b.id=boxEl.id+'-'+i;b.setAttribute('role','option');b.textContent=item.label;b.onclick=()=>choose(item);boxEl.appendChild(b);});input.setAttribute('aria-expanded',items.length?'true':'false');}
  function chooseArea(item){cancelArea();cancel();area=item;town.value=item.name||item.suburb||item.city||item.postcode||'';msg('Area chosen: '+item.label+'. Now type a street name.');scheduleStreet();}
- function chooseStreet(item){cancel();street.value=item.street;if(!ypReady||!ypMap){msg('Map is not ready; choose the street again after it loads.');return;}ypMap.jumpTo({center:item.center,zoom:17});msg('Moved to '+item.label+'. Choose a building yourself.');}
+ function chooseStreet(item){cancel();ypCancelLocate();street.value=item.street;if(!ypReady||!ypMap){msg('Map is not ready; choose the street again after it loads.');return;}ypMap.jumpTo({center:item.center,zoom:17});msg('Moved to '+item.label+'. Choose a building yourself.');}
  async function loadStreet(){
   cancel();const token=guard.next();
   let params;try{params=autocompleteQuery('street',street.value,area,country.value);}catch(e){msg(e.message);return;}

@@ -153,6 +153,68 @@ function once(port, pathName, headers = {}) {
   });
 }
 
+check('my location reads only after a tap and does not override a chosen search', () => {
+  const src = code.split('// END TESTABLE IDENTITY')[1].split('// END TESTABLE LOCATE')[0];
+  assert.equal(src.includes('watchPosition'), false);
+  assert.equal(src.includes('permissions'), false);
+  assert.equal(src.includes('localStorage'), false);
+  assert.equal(src.includes('geoapify'), false);
+  const api = vm.runInNewContext(src + '\n;({ypLocateSession,ypLocateView,ypLocateMessage,ypAccuracyRing})', {});
+  let calls = 0;
+  const pending = [];
+  const geo = {getCurrentPosition(ok, err, opts){calls++; pending.push({ok, err, opts});}};
+  const session = api.ypLocateSession(geo, true);
+  assert.equal(calls, 0);
+  const seen = [];
+  const first = session.tap(result => seen.push(result));
+  assert.equal(first.accepted, true);
+  assert.equal(calls, 1);
+  assert.equal(pending[0].opts.maximumAge, 0);
+  assert.equal(pending[0].opts.enableHighAccuracy, true);
+  assert.equal(session.tap().accepted, false);
+  assert.equal(calls, 1);
+  session.cancel();
+  pending[0].ok({coords:{longitude:152.35, latitude:-24.86, accuracy:20}});
+  assert.equal(seen.length, 0);
+  session.tap(result => seen.push(result));
+  assert.equal(calls, 2);
+  pending[1].err({code:1});
+  assert.equal(seen[0].status, 'denied');
+  session.tap(result => seen.push(result));
+  pending[2].err({code:2});
+  assert.equal(seen[1].status, 'unavailable');
+  session.tap(result => seen.push(result));
+  pending[3].err({code:3});
+  assert.equal(seen[2].status, 'timeout');
+  session.tap(result => seen.push(result));
+  pending[4].ok({coords:{longitude:152.35, latitude:-24.86, accuracy:12}});
+  assert.equal(seen[3].status, 'found');
+  assert.equal(seen[3].view.maxZoom, 17);
+  assert.equal(seen[3].view.showCircle, true);
+  const wide = api.ypLocateView(152.35, -24.86, 4000);
+  assert.equal(wide.maxZoom, 17);
+  assert.ok(wide.bounds[1][0] - wide.bounds[0][0] > seen[3].view.bounds[1][0] - seen[3].view.bounds[0][0]);
+  const ring = api.ypAccuracyRing(152.35, -24.86, 100);
+  assert.equal(ring.length, 33);
+  assert.equal(ring[0][0], ring[ring.length - 1][0]);
+  const found = api.ypLocateMessage('found', seen[3].view);
+  assert.equal(found.includes('152.35'), false);
+  assert.equal(found.includes('-24.86'), false);
+  assert.ok(found.includes('not an address'));
+  assert.ok(found.includes('map provider'));
+  const insecure = [];
+  const blocked = api.ypLocateSession({getCurrentPosition(){calls++;}}, false);
+  blocked.tap(result => insecure.push(result));
+  assert.equal(insecure[0].status, 'insecure');
+  const missing = [];
+  api.ypLocateSession(null, true).tap(result => missing.push(result));
+  assert.equal(missing[0].status, 'unsupported');
+  assert.ok(code.includes('min-height:44px'));
+  assert.ok(code.includes('focus-visible'));
+  assert.ok(code.includes('aria-live'));
+  assert.equal(code.includes('watchPosition'), false);
+});
+
 check('alternate port rules stay localhost-only', () => {
   const out = execFileSync('python3', ['-c', `
 import importlib.util
