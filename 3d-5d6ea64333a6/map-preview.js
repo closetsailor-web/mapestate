@@ -1,0 +1,316 @@
+// Your Plot map preview. Verbatim tested helpers from auction-v3-1, then a game-owned selection adapter.
+// Not a live release. No auction, valuation, address lookup, or c1 lot binding.
+const pilotSuggest=(()=>{
+const norm=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+const label=p=>[p.name||p.street||p.suburb||p.city||p.postcode,p.suburb,p.city,p.postcode,p.state,p.country].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ');
+function areas(data,country,postcode){return (data.results||[]).filter(p=>['city','suburb','district','postcode'].includes(p.result_type)&&p.place_id&&!p.housenumber&&(!postcode||(p.postcode===postcode&&p.country_code==='au'))&&(!country||norm(p.country)===norm(country))).map(p=>({...p,label:label(p)}));}
+function roads(data,area){return (data.results||[]).filter(p=>p.result_type==='street'&&p.street&&!p.housenumber&&Number.isFinite(p.lon)&&Number.isFinite(p.lat)&&norm(p.country)===norm(area.country)&&(!['suburb','district'].includes(area.result_type)||[p.suburb,p.district,p.city].some(v=>norm(v)===norm(area.name||area.suburb||area.city)))&&(area.result_type!=='postcode'||p.postcode===area.postcode)).map(p=>({...p,label:label({...p,name:p.street}),center:[p.lon,p.lat]}));}
+function gate(){let version=0,controller;return {next(){version++;controller?.abort();controller=new AbortController();return {version,signal:controller.signal};},current(n){return n===version;}};}
+return {areas,roads,gate};
+})();
+// END TESTABLE SUGGEST
+
+const pilotStreetSearch=(()=>{
+const ERROR='Street search unavailable. Check connection, search-key access or quota, then try again.';
+const norm=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
+function streetCore(s){return s.toLowerCase().replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(w=>w&&!['st','street','rd','road','ave','avenue','dr','drive','ct','court','ln','lane','cres','crescent','blvd','boulevard','way','tce','terrace','pde','parade'].includes(w)).join(' ');}
+function query(street,town,country){street=street.trim();town=town.trim();country=country.trim();if(!street||!town)throw Error('Enter a street name and suburb/town.');if([street,town,country].some(s=>s.length>100)||/^\d+[A-Za-z]?(?:[ /-]|$)/.test(street))throw Error('Use a street name without a house number (maximum 100 characters per field).');return {street,city:town,country};}
+function results(data,street,town,country){
+return (Array.isArray(data?.results)?data.results:[]).filter(p=>{
+if(p.result_type!=='street'||p.housenumber||!p.street||streetCore(p.street)!==streetCore(street))return false;
+// City remains valid when the street is in a named suburb inside it.
+const localities=[p.city,p.town,p.village,p.suburb,p.district];
+if(!localities.some(s=>s&&norm(s)===norm(town)))return false;
+if(country&&norm(p.country)!==norm(country))return false;
+return Number.isFinite(p.lon)&&Number.isFinite(p.lat)&&Math.abs(p.lon)<=180&&Math.abs(p.lat)<=90;
+}).map(p=>({label:[p.street,p.suburb,p.city||p.town||p.village,p.state,p.country].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).map(v=>String(v).slice(0,100)).join(', '),center:[p.lon,p.lat]})).slice(0,5);
+}
+async function search(fetcher,key,street,town,country){const input=query(street,town,country);if(!key)throw Error(ERROR);try{
+const url=new URL('https://api.geoapify.com/v1/geocode/search');
+const params={street:input.street,city:input.city,type:'street',bias:'countrycode:none',format:'json',limit:'5',apiKey:key};if(input.country)params.country=input.country;
+url.search=new URLSearchParams(params);
+const r=await fetcher(url.href,{cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error();return results(await r.json(),input.street,input.city,input.country);
+}catch{throw Error(ERROR);}}
+function render(container,items,doc,choose){container.replaceChildren();for(const item of items){const b=doc.createElement('button');b.type='button';b.textContent=item.label;b.onclick=()=>choose(item);container.appendChild(b);}}
+return {query,results,search,render,ERROR};
+})();
+// END TESTABLE STREET SEARCH
+
+const pilotSelection = (() => {
+// Exact polygon containment; boundary excluded so adjacent footprints are never joined.
+function ringContains(p,ring){
+ let inside=false;
+ for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+  const a=ring[j],b=ring[i],cross=(p[0]-a[0])*(b[1]-a[1])-(p[1]-a[1])*(b[0]-a[0]);
+  if(Math.abs(cross)<1e-14 && p[0]>=Math.min(a[0],b[0]) && p[0]<=Math.max(a[0],b[0]) && p[1]>=Math.min(a[1],b[1]) && p[1]<=Math.max(a[1],b[1]))return false;
+  if((a[1]>p[1])!==(b[1]>p[1]) && p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+ }
+ return inside;
+}
+function polygonContains(p,rings){return rings.length>0 && ringContains(p,rings[0]) && !rings.slice(1).some(r=>ringContains(p,r) || onBoundary(p,r));}
+function onBoundary(p,r){for(let i=1;i<r.length;i++){const a=r[i-1],b=r[i];if(Math.abs((p[0]-a[0])*(b[1]-a[1])-(p[1]-a[1])*(b[0]-a[0]))<1e-14 && p[0]>=Math.min(a[0],b[0]) && p[0]<=Math.max(a[0],b[0]) && p[1]>=Math.min(a[1],b[1]) && p[1]<=Math.max(a[1],b[1]))return true;}return false;}
+function components(features,coordinate){
+ const found=[],seen=new Set();
+ for(const feature of features){
+ const g=feature.geometry;if(!g)continue;
+ const polygons=g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
+ for(const rings of polygons){if(!polygonContains(coordinate,rings))continue;
+ const signature=JSON.stringify(rings);if(seen.has(signature))continue;seen.add(signature);
+ found.push({...feature,geometry:{type:'Polygon',coordinates:rings}});
+ }
+ }
+ return found;
+}
+return {components,polygonContains};
+})();
+// END TESTABLE SELECTION
+
+function ypSelection(raw){
+ if(!raw||typeof raw.gameId!=='string'||!/^yp-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw.gameId))return null;
+ if(!Array.isArray(raw.coordinate)||raw.coordinate.length!==2||!raw.coordinate.every(Number.isFinite)||Math.abs(raw.coordinate[0])>180||Math.abs(raw.coordinate[1])>90)return null;
+ return {gameId:raw.gameId,coordinate:[raw.coordinate[0],raw.coordinate[1]]};
+}
+function ypPersistable(raw){const s=ypSelection(raw);return s?{version:1,gameId:s.gameId,coordinate:[s.coordinate[0],s.coordinate[1]]}:null;}
+function ypSameFootprint(savedHits,clickHits){return !!(savedHits&&clickHits&&savedHits.some(a=>clickHits.some(b=>a.geometry&&b.geometry&&JSON.stringify(a.geometry)===JSON.stringify(b.geometry))));}
+function ypNextGameId(previousId,same){return same&&previousId?previousId:'yp-'+crypto.randomUUID();}
+function autocompleteQuery(kind,text,area,country){
+ text=String(text||'').trim();country=String(country||'').trim();
+ if(kind==='street'){
+  if(!area||!area.place_id)throw Error('Choose a town, suburb or postcode-area suggestion first.');
+  if(text.length<3)throw Error('Type at least 3 street characters for suggestions.');
+  if(/^\d+[A-Za-z]?(?:[ /-]|$)/.test(text))throw Error('Use a street name without a house number.');
+  return {text,type:'street',filter:'place:'+area.place_id};
+ }
+ if(text.length<3)throw Error('Type at least 3 characters of a town, suburb or postcode.');
+ if(/^\d+$/.test(text)&&text.length!==4)throw Error('Enter exactly 4 digits for an Australian postcode.');
+ const postcode=/^\d{4}$/.test(text)?text:null;
+ if(postcode&&country.toLowerCase()!=='australia')throw Error('Postcode lookup here supports Australia only. Choose Australia or search by town/suburb name.');
+ const params={text,type:'locality'};
+ if(postcode)params.limit='100';
+ if(country.toLowerCase()==='australia')params.filter='countrycode:au';
+ return params;
+}
+function geocodeUrl(params,key){
+ if(!key)throw Error('Search key missing. No request was sent.');
+ const url=new URL('https://api.geoapify.com/v1/geocode/autocomplete');
+ url.search=new URLSearchParams({...params,bias:'countrycode:none',format:'json',limit:params.limit||'5',apiKey:key});
+ return url;
+}
+const YP_MAP_REQUEST={cache:'no-store',credentials:'omit'};
+// END TESTABLE IDENTITY
+
+/* Preview map adapter. Runs in the game page after the existing scripts. It does not change intro copy, finance, or c1 lot records. */
+const YP_LIMIT='This highlight is one basemap footprint only. It is not a Your Plot lot, it has no game owner, and it has no game price. The saved id is a new UUID plus the click coordinate, not a vendor id and not a stable property identity.';
+const YP_GAMELOT='This listing is an existing Coralwood game record. It is not a building on the basemap, so the camera was not moved and no real owner or price was created.';
+const YP_STORE='yp.mapsel.v1';
+const YP_DEMO=[152.348238,-24.865295];
+const YP_CSS=`body.ypbasemap #rsearch{display:block;z-index:12;max-height:46vh;overflow:auto;background:rgba(255,255,255,.96);border-radius:14px;padding:8px 10px 10px;box-shadow:0 8px 24px rgba(11,37,69,.16)}
+body.ypbasemap #rsq,body.ypbasemap #yp-country,body.ypbasemap #yp-street{display:block;width:100%;box-sizing:border-box;margin:6px 0 0}
+body.sheetopen #rsearch{opacity:0;pointer-events:none}
+#yp-search-note,#yp-geo-attr{font-size:11px;color:#3d4d63;line-height:1.35;margin:6px 0}
+#yp-search-status{font-weight:600;font-size:13px;margin:6px 0;color:#14213d}
+#yp-area-suggestions button,#yp-street-suggestions button{display:block;width:100%;text-align:left;background:#fff;border:1px solid #c5ced8;border-radius:8px;margin:4px 0;padding:8px;font:500 14px Inter,system-ui,sans-serif}
+#yp-area-suggestions button[aria-selected=true],#yp-street-suggestions button[aria-selected=true]{background:#d8eafb}
+#yp-foot{position:absolute;left:12px;right:68px;bottom:calc(78px + var(--sab));z-index:8;background:#fff;border-left:3px solid #b8410a;padding:8px 10px;border-radius:10px;font:500 12px/1.35 Inter,system-ui,sans-serif;color:#14213d;box-shadow:0 6px 16px rgba(11,37,69,.16)}
+body.sheetopen #yp-foot{display:none}
+#ypbasemap{position:absolute;inset:0;z-index:2;background:#e7eef5}
+#yp-map-status{position:absolute;left:12px;right:76px;top:52%;z-index:4;background:#fff;color:#14213d;border-radius:14px;padding:12px;font:600 13px/1.4 Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(11,37,69,.18)}
+#yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
+#yp-logo img{width:88px;background:#ffffffc9;display:block}
+body.ypbasemap #w3dc{visibility:hidden!important;pointer-events:none!important}
+body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw}`;
+
+(function ypBoot(){
+ if(window.__ypMapBoot)return;window.__ypMapBoot=1;
+ const prevBoot=window.W3D_BOOT;
+ window.W3D_BOOT=function(){try{prevBoot&&prevBoot();}catch(e){console.error(e);}if(window.G&&G.started)ypEnterRealMap();};
+ const prevStart=window.startView;
+ if(typeof prevStart==='function')window.startView=function(){const r=prevStart.apply(this,arguments);ypEnterRealMap();return r;};
+ if(window.W3D&&W3D.ready&&window.G&&G.started)ypEnterRealMap();
+})();
+
+function ypFoot(extra){const el=document.getElementById('yp-foot');if(!el)return;el.textContent=extra?extra+' '+YP_LIMIT:YP_LIMIT;}
+function ypReadSelection(){try{return ypSelection(JSON.parse(localStorage.getItem(YP_STORE)||'null'));}catch{return null;}}
+function ypWriteSelection(record){const body=ypPersistable(record);if(!body)return false;try{localStorage.setItem(YP_STORE,JSON.stringify(body));return true;}catch{return false;}}
+function ypGameLotNote(){try{toast(YP_GAMELOT);}catch(e){ypFoot(YP_GAMELOT);}}
+
+let ypMap,ypReady=false,ypRecord=null,ypBuildingLayers=[],ypHighlightSignature='',ypGeoKey='',ypMapFailed=false,ypEntered=false;
+function ypEmpty(){return {type:'FeatureCollection',features:[]};}
+function ypHighlight(data){if(!ypMap)return;const signature=JSON.stringify(data);if(signature===ypHighlightSignature)return;ypHighlightSignature=signature;const src=ypMap.getSource('yp-highlight');if(src)src.setData(data);}
+function ypAt(coordinate){if(!ypMap||!ypReady)return [];const pt=ypMap.project(coordinate),c=ypMap.getCanvas();if(pt.x<0||pt.y<0||pt.x>c.clientWidth||pt.y>c.clientHeight)return [];return pilotSelection.components(ypMap.queryRenderedFeatures(pt,{layers:ypBuildingLayers}),coordinate);}
+function ypRematch(){
+ if(!ypRecord||!ypReady)return;
+ const hits=ypAt(ypRecord.coordinate);
+ if(!hits.length){ypHighlight(ypEmpty());ypFoot('No rendered building at the saved coordinate in this view. Zoom in and the same id is kept. Coordinate re-matching is experimental.');return;}
+ const chosen=hits[0];
+ ypHighlight({type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:chosen.geometry}]});
+ ypFoot((hits.length>1?'Overlapping footprints: the topmost one is highlighted. That is ambiguous, not a confirmed parcel. ':'One clicked polygon component. ')+'Saved id '+ypRecord.gameId+'.');
+}
+function ypPatchCamera(){
+ if(!window.MapView)return;
+ MapView.focus=function(){ypGameLotNote();};
+ MapView.home=function(){if(ypRecord&&ypMap)ypMap.jumpTo({center:ypRecord.coordinate,zoom:18});else ypFoot('There is no Coralwood game lot to fly to on this basemap.');};
+ if(MapView.m){
+  MapView.m.zoomIn=function(){if(ypMap)ypMap.zoomIn();};
+  MapView.m.zoomOut=function(){if(ypMap)ypMap.zoomOut();};
+  MapView.m.fitBounds=function(){ypGameLotNote();};
+  MapView.m.flyToBounds=function(){ypGameLotNote();};
+  MapView.m.flyTo=function(){ypGameLotNote();};
+  MapView.m.setView=function(){ypGameLotNote();};
+ }
+}
+function ypLoadMapLibre(){
+ if(window.maplibregl)return Promise.resolve();
+ return new Promise((resolve,reject)=>{
+  if(!document.getElementById('yp-maplibre-css')){const css=document.createElement('link');css.id='yp-maplibre-css';css.rel='stylesheet';css.href='https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css';document.head.appendChild(css);}
+  const s=document.createElement('script');s.src='https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js';s.onload=()=>window.maplibregl?resolve():reject(new Error('library'));s.onerror=()=>reject(new Error('library'));document.head.appendChild(s);
+ });
+}
+function ypMountChrome(){
+ if(!document.getElementById('yp-preview-css')){const st=document.createElement('style');st.id='yp-preview-css';st.textContent=YP_CSS;document.head.appendChild(st);}
+ document.body.classList.add('ypbasemap');
+ const host=document.getElementById('map');
+ let box=document.getElementById('ypbasemap');
+ if(!box&&host){box=document.createElement('div');box.id='ypbasemap';host.appendChild(box);}
+ if(!document.getElementById('yp-foot')){const foot=document.createElement('div');foot.id='yp-foot';foot.setAttribute('role','status');host.appendChild(foot);} 
+}
+function ypStatusPanel(text){const box=document.getElementById('ypbasemap');if(!box)return;let el=document.getElementById('yp-map-status');if(!el){el=document.createElement('div');el.id='yp-map-status';box.appendChild(el);}el.textContent=text;}
+function ypClearStatusPanel(){const el=document.getElementById('yp-map-status');if(el)el.remove();}
+
+function ypMountSearch(){
+ const box=document.getElementById('rsearch'),town=document.getElementById('rsq');
+ if(!box||!town||box.dataset.ypsearch)return null;
+ box.dataset.ypsearch='1';
+ town.placeholder='Town, suburb or postcode';
+ town.setAttribute('role','combobox');town.setAttribute('aria-autocomplete','list');town.setAttribute('aria-controls','yp-area-suggestions');town.setAttribute('aria-expanded','false');
+ const extra=document.createElement('div');extra.id='yp-search-extra';
+ const country=document.createElement('input');country.id='yp-country';country.maxLength=100;country.value='Australia';country.autocomplete='off';country.setAttribute('aria-label','Country');
+ const street=document.createElement('input');street.id='yp-street';street.maxLength=100;street.placeholder='Street name, no house number';street.autocomplete='off';street.setAttribute('aria-label','Street name, no house number');street.setAttribute('role','combobox');street.setAttribute('aria-autocomplete','list');street.setAttribute('aria-controls','yp-street-suggestions');street.setAttribute('aria-expanded','false');
+ const areaBox=document.createElement('div');areaBox.id='yp-area-suggestions';areaBox.setAttribute('role','listbox');areaBox.setAttribute('aria-label','Area suggestions');
+ const streetBox=document.createElement('div');streetBox.id='yp-street-suggestions';streetBox.setAttribute('role','listbox');streetBox.setAttribute('aria-label','Street suggestions');
+ const status=document.createElement('p');status.id='yp-search-status';status.setAttribute('role','status');
+ const note=document.createElement('p');note.id='yp-search-note';note.textContent='After 3 characters and a short pause, the town, suburb or postcode and the street text are sent to Geoapify. Choosing a suggestion is deliberate. This is not anonymous: Geoapify receives the partial text and the connection. No device location is requested. Searches are not saved. MapTiler supplies the basemap. A postcode result is only the provider’s partial list, not every suburb.';
+ const go=document.createElement('button');go.type='button';go.id='yp-search-submit';go.textContent='Search streets';
+ const attr=document.createElement('small');attr.id='yp-geo-attr';
+ const a=document.createElement('a');a.href='https://www.geoapify.com/';a.target='_blank';a.rel='noopener';a.textContent='Powered by Geoapify';
+ const osm=document.createElement('a');osm.href='https://www.openstreetmap.org/copyright';osm.target='_blank';osm.rel='noopener';osm.textContent='© OpenStreetMap contributors';
+ attr.append(a,document.createTextNode(' · '),osm);
+ extra.append(areaBox,country,street,streetBox,go,status,note,attr);
+ const old=document.getElementById('rsres');
+ if(old)box.insertBefore(extra,old);else box.appendChild(extra);
+ return {town,country,street,areaBox,streetBox,status,go};
+}
+
+async function ypEnterRealMap(){
+ if(ypEntered)return;ypEntered=true;
+ ypMountChrome();
+ ypFoot('Preview camera starts at a public Bundaberg demo point (Regional Art Gallery) until you search or select. That point is not your game home and not a property record.');
+ ypPatchCamera();
+ const ui=ypMountSearch();
+ let key='',geoapifyKey='';
+ try{
+  const response=await fetch('/runtime-config',{cache:'no-store'});
+  if(!response.ok)throw Error('config');
+  const body=await response.json();
+  key=typeof body.key==='string'?body.key:'';
+  geoapifyKey=typeof body.geoapifyKey==='string'?body.geoapifyKey:'';
+ }catch{key='';geoapifyKey='';}
+ ypGeoKey=geoapifyKey;
+ if(ui)ypWireSearch(ui,geoapifyKey);
+ if(!key){ypStatusPanel('Map key missing. The localhost preview server must inject MAPTILER_TEST_API_KEY. No tiles were requested and no buildings were invented.');ypFoot('Map key missing. Basemap not loaded.');return;}
+ try{await ypLoadMapLibre();}catch{ypStatusPanel('Map library unavailable. Check internet access, then reload. No buildings were invented.');return;}
+ if(!window.maplibregl){ypStatusPanel('Map library unavailable. Check internet access, then reload. No buildings were invented.');return;}
+ ypRecord=ypReadSelection();
+ const box=document.getElementById('ypbasemap');
+ ypMap=new maplibregl.Map({container:box,style:'https://api.maptiler.com/maps/base-v4/style.json',center:ypRecord?.coordinate||YP_DEMO,zoom:18,maxZoom:20,minZoom:12,maxPitch:0,renderWorldCopies:false,attributionControl:false,transformRequest(url){const u=new URL(url,location.href);if(u.hostname==='api.maptiler.com'){u.searchParams.set('key',key);return {url:u.href};}return {url};}});
+ window.__ypMap=ypMap;
+ ypMap.addControl(new maplibregl.NavigationControl({showCompass:false}));
+ ypMap.addControl(new maplibregl.AttributionControl({compact:false,customAttribution:'<a href="https://www.maptiler.com/copyright/">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>'}));
+ ypMap.on('error',()=>{if(ypMapFailed)return;ypMapFailed=true;ypFoot('Map resource error (details suppressed). Check the key, allowed origins, quota or network, then reload. No buildings were invented.');});
+ ypMap.on('load',()=>{
+  ypClearStatusPanel();
+  const layers=ypMap.getStyle().layers||[];
+  for(const layer of layers){const label=`${layer.id} ${layer['source-layer']||''}`;if(/housenumber|house.?number|poi|point.?of.?interest/i.test(label)){try{ypMap.setLayoutProperty(layer.id,'visibility','none');}catch(e){}}}
+  ypBuildingLayers=layers.filter(l=>['fill','fill-extrusion'].includes(l.type)&&/building/i.test(l['source-layer']||l.id)&&l.layout?.visibility!=='none').map(l=>l.id);
+  ypMap.addSource('yp-highlight',{type:'geojson',data:ypEmpty()});
+  const before=layers.find(l=>l.type==='symbol')?.id;
+  ypMap.addLayer({id:'yp-highlight-fill',type:'fill',source:'yp-highlight',paint:{'fill-color':'#f8a51b','fill-opacity':0.6}},before);
+  ypMap.addLayer({id:'yp-highlight-line',type:'line',source:'yp-highlight',paint:{'line-color':'#b65b00','line-width':3}},before);
+  if(!document.getElementById('yp-logo')){const logo=document.createElement('a');logo.id='yp-logo';logo.href='https://www.maptiler.com/';logo.target='_blank';logo.rel='noopener';const img=document.createElement('img');img.src='https://api.maptiler.com/resources/logo.svg';img.alt='MapTiler logo';logo.appendChild(img);box.appendChild(logo);}
+  ypReady=true;
+  ypFoot(ypBuildingLayers.length?'Basemap loaded. Tap inside one building. House-number and place-of-interest labels are hidden where the style names them. Street names stay.':'Basemap loaded, but no building polygon layer was found. Nothing was invented.');
+  ypRematch();
+ });
+ ypMap.on('idle',()=>{if(ypReady)ypRematch();});
+ ypMap.on('click',e=>{
+  if(!ypReady||!ypBuildingLayers.length)return;
+  const clickAt=e.lngLat.toArray();
+  const clickHits=ypAt(clickAt);
+  if(!clickHits.length){ypFoot('No building at that point. Tap inside a visible building.');return;}
+  const savedHits=ypRecord?ypAt(ypRecord.coordinate):[];
+  const same=ypSameFootprint(savedHits,clickHits);
+  const gameId=ypNextGameId(same?ypRecord.gameId:null,same);
+  ypRecord={gameId,coordinate:clickAt};
+  if(!ypWriteSelection(ypRecord))ypFoot('Selection works, but this browser did not store it. Reload will not restore it.');
+  ypRematch();
+ });
+}
+
+function ypWireSearch(ui,geoapifyKey){
+ const {town,country,street,areaBox,streetBox,status,go}=ui;
+ const msg=t=>{status.textContent=t;};
+ let area=null,suggestionItems=[],areaItems=[],active=-1,areaActive=-1,streetTimer,areaTimer,lastRequest=0;
+ const guard=pilotSuggest.gate(),areaGuard=pilotSuggest.gate();
+ function closeStreet(){streetBox.replaceChildren();suggestionItems=[];active=-1;street.setAttribute('aria-expanded','false');street.removeAttribute('aria-activedescendant');}
+ function cancel(){clearTimeout(streetTimer);guard.next();closeStreet();}
+ function cancelArea(){clearTimeout(areaTimer);areaGuard.next();areaBox.replaceChildren();areaItems=[];areaActive=-1;town.setAttribute('aria-expanded','false');town.removeAttribute('aria-activedescendant');}
+ async function request(params,signal){
+  const slot=Math.max(Date.now(),lastRequest+220);lastRequest=slot;const wait=slot-Date.now();if(wait)await new Promise(r=>setTimeout(r,wait));if(signal.aborted)throw Error('aborted');
+  const url=geocodeUrl(params,geoapifyKey);
+  const timeout=setTimeout(()=>{if(!signal.aborted)msg('Suggestions taking too long. You can edit the fields or retry Search.');},15000);
+  try{const r=await fetch(url.href,{...YP_MAP_REQUEST,signal});if(!r.ok)throw Error('bad');return await r.json();}finally{clearTimeout(timeout);}
+ }
+ function draw(boxEl,items,choose,input){boxEl.replaceChildren();items.forEach((item,i)=>{const b=document.createElement('button');b.type='button';b.id=boxEl.id+'-'+i;b.setAttribute('role','option');b.textContent=item.label;b.onclick=()=>choose(item);boxEl.appendChild(b);});input.setAttribute('aria-expanded',items.length?'true':'false');}
+ function chooseArea(item){cancelArea();cancel();area=item;town.value=item.name||item.suburb||item.city||item.postcode||'';msg('Area chosen: '+item.label+'. Now type a street name.');scheduleStreet();}
+ function chooseStreet(item){cancel();street.value=item.street;if(!ypReady||!ypMap){msg('Map is not ready; choose the street again after it loads.');return;}ypMap.jumpTo({center:item.center,zoom:17});msg('Moved to '+item.label+'. Choose a building yourself.');}
+ async function loadStreet(){
+  cancel();const token=guard.next();
+  let params;try{params=autocompleteQuery('street',street.value,area,country.value);}catch(e){msg(e.message);return;}
+  if(!geoapifyKey){msg('Search key missing. No street request was sent.');return;}
+  msg('Finding streets in the chosen area…');
+  try{const data=await request(params,token.signal);if(!guard.current(token.version))return;
+   suggestionItems=pilotSuggest.roads(data,area);draw(streetBox,suggestionItems,chooseStreet,street);
+   msg(suggestionItems.length?'Choose a full street name below.':'No verified street suggestions in this area. Try more letters; no address or place-of-interest fallback is used.');
+  }catch{if(guard.current(token.version))msg('Street suggestions unavailable. Check connection or retry Search.');}
+ }
+ function scheduleStreet(){cancel();streetTimer=setTimeout(loadStreet,450);}
+ function scheduleArea(){
+  cancelArea();cancel();area=null;
+  let params;try{params=autocompleteQuery('area',town.value,null,country.value);}catch(e){msg(e.message);return;}
+  if(!geoapifyKey){msg('Search key missing. No area request was sent.');return;}
+  const token=areaGuard.next();
+  areaTimer=setTimeout(async()=>{msg('Finding towns, suburbs and postcode areas…');try{
+   const data=await request(params,token.signal);if(!areaGuard.current(token.version))return;
+   const postcode=/^\d{4}$/.test(town.value.trim())?town.value.trim():null;
+   areaItems=pilotSuggest.areas(data,country.value.trim(),postcode);
+   if(postcode)areaItems.sort((a,b)=>a.label.localeCompare(b.label));
+   draw(areaBox,areaItems,chooseArea,town);
+   msg(postcode?(areaItems.length?areaItems.length+' exact-postcode provider areas, alphabetically. This is not a complete suburb directory. If yours is missing, type its town or suburb name. Choose one deliberately.':'No exact-postcode provider areas. Coverage is incomplete; type a town or suburb name instead.'):(areaItems.length?'Choose an area; none is selected automatically.':'No matching area suggestions. Check spelling or country.'));
+  }catch{if(areaGuard.current(token.version))msg('Area suggestions unavailable. Check connection and edit the area to retry.');}},450);
+ }
+ function keys(event,which){
+  const items=which==='area'?areaItems:suggestionItems,boxEl=which==='area'?areaBox:streetBox,input=which==='area'?town:street;let n=which==='area'?areaActive:active;
+  if(event.key==='Escape'){event.preventDefault();which==='area'?cancelArea():cancel();return;}
+  if(['ArrowDown','ArrowUp'].includes(event.key)&&items.length){event.preventDefault();n=n<0?(event.key==='ArrowDown'?0:items.length-1):(n+(event.key==='ArrowDown'?1:-1)+items.length)%items.length;Array.from(boxEl.children).forEach((b,i)=>b.setAttribute('aria-selected',String(i===n)));input.setAttribute('aria-activedescendant',boxEl.children[n].id);if(which==='area')areaActive=n;else active=n;}
+  if(event.key==='Enter'&&items.length){event.preventDefault();if(n<0){msg('Use arrow keys or click to choose a suggestion.');return;}which==='area'?chooseArea(items[n]):chooseStreet(items[n]);}
+ }
+ town.addEventListener('input',e=>{e.stopImmediatePropagation();scheduleArea();},true);
+ town.addEventListener('keydown',e=>{e.stopImmediatePropagation();keys(e,'area');},true);
+ town.addEventListener('focus',e=>e.stopImmediatePropagation(),true);
+ town.addEventListener('blur',e=>e.stopImmediatePropagation(),true);
+ country.addEventListener('input',scheduleArea);street.addEventListener('input',scheduleStreet);
+ street.addEventListener('keydown',e=>keys(e,'street'));
+ go.addEventListener('click',()=>{clearTimeout(streetTimer);loadStreet();});
+ msg(geoapifyKey?'Choose a town, suburb or postcode area first, then type a street.':'Search key missing; no search request will be sent. Map selection still needs a map key.');
+}
+window.ypEnterRealMap=ypEnterRealMap;

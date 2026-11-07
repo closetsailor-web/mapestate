@@ -3489,4 +3489,6 @@ W3D.thumbTier = thumbTier;
 W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return thumbCache.has(key) ? Promise.resolve(thumbCache.get(key)) : new Promise((res) => { thumbQ.push({ i, w, res }); }); };
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
-</script></body></html>
+</script>
+<script src="map-preview.js"></script>
+</body></html>
