@@ -245,7 +245,7 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.equal(detail.id, sample.id);
   assert.ok(detail.availability.includes('Not a real vacancy'));
   assert.ok(detail.pin.includes('2 km'));
-  assert.ok(detail.pin.includes('Not this device') || detail.pin.includes('not this device'));
+  assert.equal(/device/i.test(detail.pin), false);
   assert.equal(detail.tag, undefined);
   assert.equal(detail.weeklyRent, sample.weeklyRent);
   const applied = api.ypApplyPreview(stock, sample.id);
@@ -253,7 +253,12 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.equal(stock.rentals.find(r => r.id === sample.id).status, 'available');
   assert.equal(JSON.stringify(applied).includes('G.cash'), false);
   assert.ok((code.match(/ypOpenRentalDetail/g) || []).length >= 2);
-  assert.ok(code.includes('Show available rentals'));
+  assert.ok(code.includes("b.textContent='Search Area'"));
+  assert.equal(code.includes('Show available rentals'), false);
+  assert.equal(code.includes('yp-provider-note'), false);
+  assert.equal(code.includes('yp-radius-note'), false);
+  const shipped = fs.readFileSync(path.join(root, '3d-5d6ea64333a6', 'index.html'), 'utf8');
+  for (const banned of ['getCurrentPosition', 'watchPosition', 'navigator.geolocation', 'clearWatch', 'locationfound', 'locationerror']) assert.equal(shipped.includes(banned), false, banned);
   assert.ok(code.includes("n.textContent='Listings'"));
   assert.ok(code.includes("textContent='For Sale'"));
   assert.ok(code.includes("textContent='For Rent'"));
