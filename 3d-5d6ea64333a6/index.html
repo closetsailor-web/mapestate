@@ -683,6 +683,7 @@ body.dark{--bg:#0d1420;--card:#152033;--card2:#1c2a40;--txt:#e8eef7;--mute:#9aab
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;height:100%;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--txt);overflow:hidden;background:var(--bg);font-feature-settings:"cv11","ss01";-webkit-font-smoothing:antialiased}
 .ic{display:inline-flex;width:1.15em;height:1.15em;vertical-align:-.2em;margin-right:.18em}.ic svg{width:100%;height:100%}
 #map{position:absolute;inset:0;z-index:1;background:#a9d8ef}
+#w3dc{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.dark #map .leaflet-pane.leaflet-map-pane{filter:invert(.92) hue-rotate(180deg) saturate(.8) brightness(.95)}body.dark #map{background:#0e2433}
 header{position:absolute;top:calc(var(--sat) + 8px);left:8px;right:8px;z-index:30;padding:7px 8px;display:flex;align-items:center;gap:6px;background:var(--glass);backdrop-filter:blur(16px) saturate(1.6);-webkit-backdrop-filter:blur(16px) saturate(1.6);border-radius:18px;box-shadow:var(--shadow);color:var(--txt)}
 .hbtn{width:40px;height:40px;border:0;border-radius:12px;background:transparent;color:var(--txt);display:grid;place-items:center;cursor:pointer;position:relative;flex:none}.hbtn:active{background:var(--card2)}.hbtn svg{width:24px;height:24px}
@@ -994,19 +995,10 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script>/*TEST: one-time fresh start (v16 real map)*/try{if(!localStorage.getItem('mt.reset2')){Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));localStorage.setItem('mt.reset2','1');localStorage.setItem('mt.reset1','1');}}catch(e){}
-/*TEST: wipe saves on every new test build. Run stamp_build.sh before each upload to set a new id.*/const TEST_BUILD_ID='3d-20261103-081221';
-/* v29: full wipe on a new build. Also wipes if the save itself was written by a different build (e.g. an old tab still open). */
-/*TEST: TEST_ALWAYS_FRESH=true -> EVERY page load (new tab, reload, reopened browser, home-screen launch) wipes all game data and starts at the Welcome screen. Set to false when Troy says things are flowing right. Test build only (lives next to TEST_BUILD_ID).
-  window.__MT_TEST_KEEP is a code-level hook for automated tests only (set by a Playwright init script before the page runs); it is not a URL parameter or anything a player can reach.*/
-const TEST_ALWAYS_FRESH=true&&!window.__MT_TEST_KEEP;let TEST_SID='';
-try{let stale=localStorage.getItem('mt.build')!==TEST_BUILD_ID;if(TEST_ALWAYS_FRESH)stale=true;if(!stale){try{const o=JSON.parse(localStorage.getItem('fe.global')||'null');if(o&&o.bid&&o.bid!==TEST_BUILD_ID)stale=true;}catch(_){stale=true;}}
- if(stale){Object.keys(localStorage).filter(k=>k.startsWith('fe.')||k.startsWith('mt.')).forEach(k=>localStorage.removeItem(k));try{sessionStorage.clear();}catch(_){}
-  localStorage.setItem('mt.build',TEST_BUILD_ID);['mt.reset1','mt.reset2','mt.reset3'].forEach(k=>localStorage.setItem(k,'1'));window.BUILD_WIPED=1;
-  if(TEST_ALWAYS_FRESH){TEST_SID=Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem('mt.sid',TEST_SID);} /* any older page/tab sees a different mt.sid and stops saving */
-  try{if(window.caches)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{});}catch(_){}
-  try{if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations)navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});}catch(_){}}
-}catch(e){}
+<script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
+const TEST_BUILD_ID='3d-20261103-081221';
+const TEST_ALWAYS_FRESH=false;let TEST_SID='';
+try{localStorage.setItem('mt.build',TEST_BUILD_ID);['mt.reset1','mt.reset2','mt.reset3'].forEach(k=>{if(!localStorage.getItem(k))localStorage.setItem(k,'1');});}catch(e){}
 'use strict';
 /* ======================= CONFIG ======================= */
 /* Every $ figure is a real, sourced Australian/QLD number (see REAL-FIGURES.md) or is marked EST (estimate) or GAME (game mechanic, no real equivalent). */
@@ -2625,7 +2617,7 @@ function checkReleases(){land3D();const key=CITIES.map(c=>c.id+':'+GEN[c.id]?.su
   if(G.relKey&&G.relKey!==key){const g=MapView.g;const newly=g.subs.filter(s=>s.unlock>0&&players()>=s.unlock&&!(G.seenRel[g.city.id+s.si]));newly.forEach(s=>G.seenRel[g.city.id+s.si]=1);if(newly.length)notify('release','🎉 Land release: '+newly.map(s=>s.name).join(', ')+' now open! Nearby values +'+CFG.releaseBoost*100+'% each');MapView.load(g);if(document.getElementById('picker').style.display==='block')picker();}
   G.relKey=key;}
 if(DEV){const d=document.createElement('div');d.id='dev';d.innerHTML=`<b>DEV</b> players: <span id="dp">${players()}</span><input type="range" min="0" max="150000" step="50" value="${players()}" oninput="localStorage.setItem('fe.dev.players',this.value);dp.textContent=(+this.value).toLocaleString();checkReleases();hud()"><button onclick="localStorage.removeItem('fe.dev.players');location.reload()">reset to ${CFG.simPlayers}</button>`;document.body.appendChild(d);}
-setTheme(localStorage.getItem('fe.theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));G=loadG();CITIES.forEach(c=>genCity(c));G.visited.forEach(ensureCity);ensureCity(G.cur);
+setTheme(localStorage.getItem('fe.theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));G=loadG();window.__ypGameStarted=!!G.started;CITIES.forEach(c=>genCity(c));G.visited.forEach(ensureCity);ensureCity(G.cur);
 if(G.started&&G.cur!=='c1'){G.cur='c1';ensureCity('c1');} /*TEST: always open Bundaberg*/
 CITIES.forEach(c=>GEN[c.id].subs.forEach(s=>{if(s.unlock>0&&players()>=s.unlock)G.seenRel[c.id+s.si]=1;}));
 if(GEN.c1&&GEN.c1.parcels){SIM='<div class="simnote">🗺️ Coralwood is a fictional 3D town. Its suburbs, streets and lots are made up. Lots are numbered by the game (Lot N). Owners, sales and prices are simulated from published Queensland city and regional medians. Coins and properties have no cash value and can\'t be withdrawn.</div>';NOTE='<div style="opacity:.85;font-size:12px;margin:6px 0">🗺️ Coralwood: a fictional 3D town. Lots are numbered by the game. Owners and prices are simulated from published Queensland medians.</div>';}

@@ -1,0 +1,33 @@
+{
+  "name": "your-plot-integrated-preview",
+  "status": "preview-only-not-live",
+  "liveCommitUnchanged": "be8ce0b75b4da415baf88fc81a4729ebf21caeb7",
+  "install": "python3 preview/localhost-server.py --port 8766",
+  "open": ["http://127.0.0.1:8766/", "http://localhost:8766/"],
+  "bind": "127.0.0.1",
+  "files": [
+    "3d-5d6ea64333a6/index.html",
+    "3d-5d6ea64333a6/map-preview.js",
+    "preview/localhost-server.py",
+    "preview/MANIFEST.json",
+    "preview/README.md"
+  ],
+  "entrypoint": "3d-5d6ea64333a6/index.html served as / and /index.html; map-preview.js served as /map-preview.js",
+  "excluded": [
+    "index.html is the published live page and is not part of this package",
+    "test/index.html still contains the old Leaflet geolocation methods and is not part of this package"
+  ],
+  "externalAssets": [
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+    "https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css",
+    "https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js",
+    "https://api.maptiler.com/maps/base-v4/style.json only when a map key is configured outside the package",
+    "https://api.geoapify.com/v1/geocode/autocomplete only when a search key is configured outside the package"
+  ],
+  "savesKeptOnReload": ["fe.global", "fe.city.c1", "fe.theme", "yp.previewStock.v1", "yp.listCentre.v1", "yp.mapsel.v1"],
+  "notMapped": [
+    "Coralwood c1 lot ids are not the same thing as a real building footprint",
+    "Sample pins in yp.previewStock.v1 are test stock only and are not ownership, leases, or auctions",
+    "There is no shared multiplayer state in this preview"
+  ]
+}

@@ -48,6 +48,7 @@ const {targetId} = await cdp.send('Target.createTarget', {url: 'about:blank'});
 const {sessionId} = await cdp.send('Target.attachToTarget', {targetId, flatten: true});
 await cdp.send('Page.enable', {}, sessionId);
 await cdp.send('Runtime.enable', {}, sessionId);
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: 'try{localStorage.clear()}catch(e){}'}, sessionId);
 async function evalJson(expression) {
   const result = await cdp.send('Runtime.evaluate', {expression, awaitPromise: true, returnByValue: true}, sessionId);
   if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails).slice(0, 800));

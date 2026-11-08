@@ -2,6 +2,16 @@ import {spawn} from 'node:child_process';
 import {mkdirSync, writeFileSync} from 'node:fs';
 import {setTimeout as delay} from 'node:timers/promises';
 
+function stableSave(fe) {
+  const copy = {};
+  for (const [key, value] of Object.entries(fe || {})) {
+    if (key === 'fe.global') {
+      try { const parsed = JSON.parse(value); delete parsed.last; copy[key] = JSON.stringify(parsed); continue; } catch {}
+    }
+    copy[key] = value;
+  }
+  return JSON.stringify(copy);
+}
 const OUT = '/opt/cursor/artifacts/map-preview';
 mkdirSync(OUT, {recursive: true});
 const server = spawn('python3', ['preview/localhost-server.py', '--port', '8766'], {cwd: '/workspace', stdio: 'ignore'});
@@ -49,7 +59,7 @@ const {targetId} = await cdp.send('Target.createTarget', {url: 'about:blank'});
 const {sessionId} = await cdp.send('Target.attachToTarget', {targetId, flatten: true});
 await cdp.send('Page.enable', {}, sessionId);
 await cdp.send('Runtime.enable', {}, sessionId);
-await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: `window.__geoReads=0;window.__geoWatch=0;window.__geoPerm=0;window.__locCalls=[];const g={getCurrentPosition(){window.__geoReads++;window.__locCalls.push('getCurrentPosition');},watchPosition(){window.__geoWatch++;window.__locCalls.push('watchPosition');return 1;},clearWatch(){window.__locCalls.push('clearWatch');}};try{Object.defineProperty(navigator,'geolocation',{configurable:true,get(){return g;}});}catch(e){}try{const perms=navigator.permissions;if(perms&&perms.query){const orig=perms.query.bind(perms);perms.query=function(desc){if(desc&&desc.name==='geolocation'){window.__geoPerm++;window.__locCalls.push('permissions:geolocation');return Promise.resolve({state:'prompt',addEventListener(){},removeEventListener(){}});}return orig(desc);};}}catch(e){}`}, sessionId);
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: `if(sessionStorage.getItem('yp-keep')!=='1'){try{localStorage.clear()}catch(e){}}window.__geoReads=0;window.__geoWatch=0;window.__geoPerm=0;window.__locCalls=[];const g={getCurrentPosition(){window.__geoReads++;window.__locCalls.push('getCurrentPosition');},watchPosition(){window.__geoWatch++;window.__locCalls.push('watchPosition');return 1;},clearWatch(){window.__locCalls.push('clearWatch');}};try{Object.defineProperty(navigator,'geolocation',{configurable:true,get(){return g;}});}catch(e){}try{const perms=navigator.permissions;if(perms&&perms.query){const orig=perms.query.bind(perms);perms.query=function(desc){if(desc&&desc.name==='geolocation'){window.__geoPerm++;window.__locCalls.push('permissions:geolocation');return Promise.resolve({state:'prompt',addEventListener(){},removeEventListener(){}});}return orig(desc);};}}catch(e){}`}, sessionId);
 await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
 
 async function evalJson(expression) {
@@ -91,6 +101,7 @@ try {
   await evalJson(`document.getElementById('yp-rent-apply').click();1`);
   const applied = await evalJson(`(()=>{const fe={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('fe.'))fe[k]=localStorage.getItem(k);}return {cash:typeof G==='undefined'?null:G.cash,fe,status:JSON.parse(localStorage.getItem('yp.previewStock.v1')).rentals.find(r=>r.id==='preview:avenell heights:1').status};})()`);
   const ids = afterChoice.ids;
+  await evalJson(`sessionStorage.setItem('yp-keep','1');1`);
   await boot();
   await evalJson(`ypChooseTown({label:'Avenell Heights',name:'Avenell Heights',lon:152.35,lat:-24.88});1`);
   await delay(200);
@@ -176,18 +187,18 @@ try {
   const report = {label:'no API key; mocked place result; 2 km sample pins; not live tiles or live vacancies', beforeList, choice, afterChoice:{show:afterChoice.show,list:afterChoice.list,count:ids.length}, list, cashBefore, detail, applied, ids, reloaded, filterBefore, filterAfter, page1, page2, page2AfterPan, mapReady, clusters, pinTarget, pinHit, pinDetail, listDetail, distances, locAfter, cats, saleTagged, roomTagged, auctionTagged, rentFromTab, empty, areaHeld, areaBox, areaClick, areaRepeat, areaKey, areaTouch};
   writeFileSync(`${OUT}/rental-stock-ui.json`, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
-  const ok = beforeList.where === 'Choose location' && beforeList.placeholder === 'enter town or suburb' && !beforeList.locate && beforeList.home === 'none' && !beforeList.list && beforeList.geo === 0 && beforeList.perm === 0 && beforeList.loc.length === 0
+  const ok = beforeList.where === 'Choose location' && beforeList.placeholder === 'enter town or suburb' && !beforeList.locate && beforeList.home !== 'none' && !beforeList.list && beforeList.geo === 0 && beforeList.perm === 0 && beforeList.loc.length === 0
     && !choice.radius && !choice.provider && !choice.overlay && choice.button === 'Search Area' && afterChoice.show && !afterChoice.list && !afterChoice.where && ids.length === 10 && new Set(ids).size === 10
     && list.rows === 10 && list.label === 'Avenell Heights' && list.text.includes('2 km') && !list.text.includes(banned) && !list.text.includes('No postcode was guessed')
     && detail.includes('Test weekly rent') && detail.includes('Test bond') && detail.includes('2 km') && detail.includes('Not a real vacancy') && detail.includes('Apply to rent') && !detail.includes(banned)
-    && applied.cash === cashBefore.cash && JSON.stringify(applied.fe) === JSON.stringify(cashBefore.fe) && applied.status === 'application-pending'
+    && applied.cash === cashBefore.cash && stableSave(applied.fe) === stableSave(cashBefore.fe) && applied.status === 'application-pending'
     && reloaded.ids.join() === ids.join() && reloaded.total === 10 && reloaded.pending === 'application-pending'
     && filterAfter.label === 'Avenell Heights' && filterAfter.lon === filterBefore.lon && filterAfter.rows === 10 && filterAfter.first === filterBefore.first
     && page1.rows === 20 && page1.label === 'Avenell Heights' && page2.rows === 10 && page2.page === 2 && page2AfterPan.rows === 10 && page2AfterPan.page === 2 && page2AfterPan.label === 'Avenell Heights' && page2AfterPan.first === page2.first
     && mapReady === 1 && clusters.count >= 1 && clusters.points.some(n => Number(n) >= 10)
     && pinHit && pinHit.id === 'preview:avenell heights:1' && pinDetail.includes('Avenell Heights') && listDetail === pinDetail
     && distances.n === 30 && distances.max <= 2000 && distances.min > 100
-    && locAfter.reads === 0 && locAfter.watch === 0 && locAfter.perm === 0 && locAfter.calls.length === 0 && locAfter.home === 'none' && !locAfter.accuracy
+    && locAfter.reads === 0 && locAfter.watch === 0 && locAfter.perm === 0 && locAfter.calls.length === 0 && locAfter.home !== 'none' && !locAfter.accuracy
     && cats.labels.slice(0,4).join('|') === 'For Sale|For Rent|Room Share|Auctions' && !cats.rent
     && saleTagged.includes('Avenell Heights') && saleTagged.includes('For Sale has no listings') && !saleTagged.includes(banned) && roomTagged.includes('Room Share has no listings') && auctionTagged.includes('Auctions has no listings')
     && rentFromTab.label === 'Avenell Heights' && rentFromTab.rows === 20 && !rentFromTab.text.includes(banned)

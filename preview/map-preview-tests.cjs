@@ -259,6 +259,9 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.equal(code.includes('yp-radius-note'), false);
   const shipped = fs.readFileSync(path.join(root, '3d-5d6ea64333a6', 'index.html'), 'utf8');
   for (const banned of ['getCurrentPosition', 'watchPosition', 'navigator.geolocation', 'clearWatch', 'locationfound', 'locationerror']) assert.equal(shipped.includes(banned), false, banned);
+  assert.equal(shipped.includes('const TEST_ALWAYS_FRESH=false'), true);
+  assert.equal(shipped.includes('TEST_ALWAYS_FRESH=true'), false);
+  assert.equal(shipped.includes("k.startsWith('fe.')||k.startsWith('mt.')"), false);
   assert.ok(code.includes("n.textContent='Listings'"));
   assert.ok(code.includes("textContent='For Sale'"));
   assert.ok(code.includes("textContent='For Rent'"));

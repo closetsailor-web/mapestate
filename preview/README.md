@@ -1,6 +1,16 @@
-# Map replacement preview
+# Integrated game preview
 
-This is a localhost review of the private game page. It is not live and it is not on `main`.
+This is one localhost game: the existing page plus the approved map. It is not live and it is not on `main`. `preview/MANIFEST.json` lists the files, the entry, and what is left out.
+
+On a Mac, from this folder:
+
+```bash
+python3 preview/localhost-server.py --port 8766
+```
+
+Then open http://127.0.0.1:8766/. Reloading keeps `fe.global` and the other saves named in the manifest. Nothing in this package asks for the device location. Sample pins stay test stock. They are not Coralwood lots and they are not owned properties.
+
+The standalone pilot already listens on port 8765. Leave that process running. This preview defaults to 8765 and will refuse to start if that port is taken; it does not stop the existing listener. Use the command above when 8765 is occupied.
 
 The standalone pilot already listens on port 8765. Leave that process running. This preview defaults to 8765 and will refuse to start if that port is taken; it does not stop the existing listener. Use this when 8765 is occupied:
 

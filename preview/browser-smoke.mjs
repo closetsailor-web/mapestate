@@ -49,6 +49,7 @@ const {targetId} = await cdp.send('Target.createTarget', {url: 'about:blank'});
 const {sessionId} = await cdp.send('Target.attachToTarget', {targetId, flatten: true});
 await cdp.send('Page.enable', {}, sessionId);
 await cdp.send('Runtime.enable', {}, sessionId);
+await cdp.send('Page.addScriptToEvaluateOnNewDocument', {source: 'try{localStorage.clear()}catch(e){}'}, sessionId);
 await cdp.send('Network.enable', {}, sessionId);
 const urls = [];
 ws.addEventListener('message', ev => {

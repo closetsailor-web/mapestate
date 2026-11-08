@@ -171,7 +171,8 @@ const YP_LIMIT='This highlight is one basemap footprint only. It is not a Your P
 const YP_GAMELOT='This listing is an existing Coralwood game record. It is not a building on the basemap, so the camera was not moved and no real owner or price was created.';
 const YP_STORE='yp.mapsel.v1';
 const YP_DEMO=[152.348238,-24.865295];
-const YP_CSS=`html.yp-preview #rsearch,html.yp-preview #yp-foot,html.yp-preview #yp-map-status,html.yp-preview #yp-locate,html.yp-preview #yp-locate-note,html.yp-preview #yp-locate-status,html.yp-preview #yp-properties,html.yp-preview #yp-search-extra,html.yp-preview #home{display:none!important}
+const YP_CSS=`html.yp-preview #rsearch,html.yp-preview #yp-foot,html.yp-preview #yp-map-status,html.yp-preview #yp-locate,html.yp-preview #yp-locate-note,html.yp-preview #yp-locate-status,html.yp-preview #yp-properties,html.yp-preview #yp-search-extra,html.yp-preview #view3d{display:none!important}
+html.yp-preview .fab{z-index:8}
 #ypbasemap{position:absolute;inset:0;z-index:2;background:#e7eef5}
 #yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
 #yp-logo img{width:88px;background:#ffffffc9;display:block}
@@ -184,7 +185,7 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-where .hwh h2,#yp-rent-list .hwh h2,#yp-rent-detail .hwh h2{color:#fff;margin:0}
 #yp-where p,#yp-where-status,#yp-prop p,#yp-rent-list p,#yp-rent-detail p{margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
 #yp-rent-list,#yp-rent-detail{align-items:flex-start;padding-top:118px}
-#yp-search-area{position:absolute;left:50%;bottom:calc(96px + var(--sab));transform:translateX(-50%);z-index:6;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 15px Inter,system-ui,sans-serif;min-height:44px;padding:0 16px;cursor:pointer}
+#yp-search-area{position:absolute;left:50%;bottom:calc(132px + var(--sab));transform:translateX(-50%);z-index:46;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 15px Inter,system-ui,sans-serif;min-height:44px;padding:0 16px;cursor:pointer}
 #yp-rent-list .yp-rent-row{display:block;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
 #yp-where-town{display:block;width:100%;box-sizing:border-box;border-radius:14px;border:1px solid rgba(20,33,61,.12);background:#fff;padding:11px 14px;font:500 16px Inter,system-ui,sans-serif;color:#14213d}
 #yp-where-town:focus,#yp-where-town:focus-visible{outline:none;border-color:#0a3a8c;box-shadow:0 0 0 4px rgba(10,58,140,.15)}
@@ -200,20 +201,38 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-where-privacy{text-align:left}
 #yp-prop .choices{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}`;
 
-function ypHideOldTarget(){
+function ypZoom(dir){
+ if(!ypMap||typeof ypMap.getZoom!=='function'){ypShowAreaNote('The map is not ready, so zoom did not change.');return;}
+ try{ypMap.easeTo({zoom:ypMap.getZoom()+(dir>0?1:-1),duration:0});}catch(e){ypShowAreaNote('Zoom did not change.');}
+}
+function ypRecentre(){
+ const p=window.__ypListCentre||window.__ypPlace;
+ if(!ypMap){ypShowAreaNote('The map is not ready, so the view was not moved.');return;}
+ if(!p||!Number.isFinite(+p.lon)||!Number.isFinite(+p.lat)){ypShowAreaNote('Choose a town or suburb, or use Search Area, before recentring.');return;}
+ try{ypMap.jumpTo({center:[+p.lon,+p.lat],zoom:13});}catch(e){ypShowAreaNote('The map could not move to the search area.');}
+}
+function ypSavedGame(){return !!window.__ypGameStarted;}
+function ypBindMapControls(){
+ const list=document.getElementById('list3d');
+ if(list){list.onclick=()=>ypOpenListingsChoice();list.title='Listings';list.setAttribute('aria-label','Listings');const span=list.querySelector('span');if(span)span.textContent='List';}
+ const top=document.getElementById('view3d');
+ if(top){top.onclick=null;top.hidden=true;top.setAttribute('aria-hidden','true');}
+ const zin=document.getElementById('zoomin'),zout=document.getElementById('zoomout');
+ if(zin)zin.onclick=()=>ypZoom(1);
+ if(zout)zout.onclick=()=>ypZoom(-1);
  const home=document.getElementById('home');
- if(home){home.hidden=true;home.onclick=null;home.setAttribute('aria-hidden','true');}
+ if(home){home.hidden=false;home.title='Recentre';home.setAttribute('aria-label','Recentre on the search area');home.onclick=ypRecentre;}
 }
 (function ypBoot(){
  if(window.__ypMapBoot)return;window.__ypMapBoot=1;
- ypHideOldTarget();
+ ypBindMapControls();
  document.documentElement.classList.add('yp-preview');
  window.__ypBlockAutoLists=true;
  const prevBoot=window.W3D_BOOT;
- window.W3D_BOOT=function(){try{prevBoot&&prevBoot();}catch(e){console.error(e);}if(window.G&&G.started)ypEnterRealMap();};
+ window.W3D_BOOT=function(){try{prevBoot&&prevBoot();}catch(e){console.error(e);}if(ypSavedGame())ypEnterRealMap();};
  const prevStart=window.startView;
  if(typeof prevStart==='function')window.startView=function(){const r=prevStart.apply(this,arguments);ypEnterRealMap();return r;};
- if(window.W3D&&W3D.ready&&window.G&&G.started)ypEnterRealMap();
+ if(ypSavedGame())ypEnterRealMap();
  ypInstallHandoff();
 })();
 
@@ -266,6 +285,9 @@ function ypMountChrome(){
 function ypStatusPanel(text){const live=document.getElementById('yp-where-status');if(live&&text)live.textContent=text;}
 function ypClearStatusPanel(){const el=document.getElementById('yp-map-status');if(el)el.remove();}
 const YP_STOCK_KEY='yp.previewStock.v1';
+const YP_CENTRE_KEY='yp.listCentre.v1';
+function ypSaveCentre(){try{localStorage.setItem(YP_CENTRE_KEY,JSON.stringify({place:window.__ypPlace||null,centre:window.__ypListCentre||null}));}catch(e){}}
+function ypLoadCentre(){try{const o=JSON.parse(localStorage.getItem(YP_CENTRE_KEY)||'null');if(!o)return;if(o.place&&Number.isFinite(+o.place.lon)&&Number.isFinite(+o.place.lat))window.__ypPlace=o.place;if(o.centre&&Number.isFinite(+o.centre.lon)&&Number.isFinite(+o.centre.lat))window.__ypListCentre=o.centre;}catch(e){}}
 function ypReadStock(){try{const o=JSON.parse(localStorage.getItem(YP_STOCK_KEY)||'null');if(!o||o.version!==1||!Array.isArray(o.rentals))return ypFreshStock();return o;}catch(e){return ypFreshStock();}}
 function ypWriteStock(store){try{localStorage.setItem(YP_STOCK_KEY,JSON.stringify(store));}catch(e){}}
 function ypApplyLabelPolicy(map){const layers=map&&map.getStyle&&map.getStyle()&&map.getStyle().layers||[];for(const layer of layers){if(ypShouldHideLabel(layer)){try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}}}}
@@ -283,6 +305,7 @@ function ypSearchArea(){
  const label=keep?(town.label||'Chosen place'):('Searched area '+lon.toFixed(4)+', '+lat.toFixed(4));
  const centreLon=keep?+town.lon:lon,centreLat=keep?+town.lat:lat;
  window.__ypListCentre={label,lon:centreLon,lat:centreLat};
+ ypSaveCentre();
  try{ypWriteStock(ypEnsureSuburbStock(ypReadStock(),{label,lon:centreLon,lat:centreLat}));}catch(e){}
  ypSyncRadius();
  ypSyncRentalMarkers();
@@ -316,10 +339,12 @@ function ypMountSearch(){
  return {town,country,street,areaBox,streetBox,status,go};
 }
 
-async function ypEnterRealMap(){
+ async function ypEnterRealMap(){
  if(ypEntered)return;ypEntered=true;
+ ypLoadCentre();
  ypMountChrome();
  ypPatchCamera();
+ ypBindMapControls();
  let key='',geoapifyKey='';
  try{
   const response=await fetch('/runtime-config',{cache:'no-store'});
@@ -338,7 +363,7 @@ async function ypEnterRealMap(){
  ypRecord=ypReadSelection();
  const box=document.getElementById('ypbasemap');
  const blank={version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#d7e0ea'}}]};
- ypMap=new maplibregl.Map({container:box,style:tiles?'https://api.maptiler.com/maps/base-v4/style.json':blank,center:(window.__ypPlace&&window.__ypPlace.center)||ypRecord?.coordinate||YP_DEMO,zoom:window.__ypPlace?13:12,maxZoom:20,minZoom:3,maxPitch:0,renderWorldCopies:false,attributionControl:false,transformRequest(url){const u=new URL(url,location.href);if(tiles&&u.hostname==='api.maptiler.com'){u.searchParams.set('key',key);return {url:u.href};}return {url};}});
+ ypMap=new maplibregl.Map({container:box,style:tiles?'https://api.maptiler.com/maps/base-v4/style.json':blank,center:(window.__ypListCentre&&Number.isFinite(+window.__ypListCentre.lon)?[+window.__ypListCentre.lon,+window.__ypListCentre.lat]:null)||(window.__ypPlace&&window.__ypPlace.center)||ypRecord?.coordinate||YP_DEMO,zoom:(window.__ypListCentre||window.__ypPlace)?13:12,maxZoom:20,minZoom:3,maxPitch:0,renderWorldCopies:false,attributionControl:false,transformRequest(url){const u=new URL(url,location.href);if(tiles&&u.hostname==='api.maptiler.com'){u.searchParams.set('key',key);return {url:u.href};}return {url};}});
  window.__ypMap=ypMap;
  ypMap.addControl(new maplibregl.NavigationControl({showCompass:false}));
  ypMap.addControl(new maplibregl.AttributionControl({compact:false,customAttribution:tiles?'<a href="https://www.maptiler.com/copyright/">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>':'Sample pins only. Basemap tiles were not loaded.'}));
@@ -367,7 +392,11 @@ async function ypEnterRealMap(){
   ypReady=true;
   ypRematch();
   const moved=ypCentreChosen();
-  if(window.__ypPlace&&window.__ypPlace.label)ypShowChosen(window.__ypPlace.label,moved);
+  const shown=window.__ypListCentre||window.__ypPlace;
+  if(shown&&shown.label){
+   if(window.__ypListCentre&&window.__ypPlace&&window.__ypListCentre.label!==window.__ypPlace.label)ypShowAreaNote('Search area set to '+window.__ypListCentre.label+'.'+(ypHasTiles?'':' Map tiles are not loaded, so the picture stays empty.'));
+   else ypShowChosen(shown.label,moved);
+  }
   ypSyncRadius();
   ypSyncRentalMarkers();
  });
@@ -521,9 +550,9 @@ function ypWireWhere(){
  });
 }
 function ypCentreChosen(){
- const p=window.__ypPlace;
- if(!p||!ypMap||!Number.isFinite(p.lon)||!Number.isFinite(p.lat))return false;
- try{ypMap.jumpTo({center:[p.lon,p.lat],zoom:13});return true;}catch(e){return false;}
+ const p=window.__ypListCentre||window.__ypPlace;
+ if(!p||!ypMap||!Number.isFinite(+p.lon)||!Number.isFinite(+p.lat))return false;
+ try{ypMap.jumpTo({center:[+p.lon,+p.lat],zoom:13});return true;}catch(e){return false;}
 }
 function ypShowChosen(label,moved){
  const host=document.getElementById('map');if(!host)return;
@@ -537,6 +566,7 @@ function ypChooseTown(item){
  const label=item.label||item.name||'Chosen place';
  window.__ypPlace={label,lon,lat,center:[lon,lat]};
  window.__ypListCentre={label,lon,lat};
+ ypSaveCentre();
  try{ypWriteStock(ypEnsureSuburbStock(ypReadStock(),{label,lon,lat}));}catch(e){}
  ypCloseWhere();
  ypMountSearchArea();
