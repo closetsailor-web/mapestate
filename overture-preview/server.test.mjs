@@ -2,7 +2,12 @@ import {spawn} from 'node:child_process';
 import {existsSync} from 'node:fs';
 import http from 'node:http';
 import assert from 'node:assert/strict';
+import {dirname, resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {setTimeout as delay} from 'node:timers/promises';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const serverScript = resolve(here, 'server.py');
 
 const fakeKey = 'maptiler-browser-test-key';
 const ownership = '/tmp/overture-ownership-should-not-exist.json';
@@ -21,13 +26,13 @@ function request(targetPort, method, path, headers, body) {
   });
 }
 
-const server = spawn('python3', ['overture-preview/server.py', '--port', String(port)], {
-  cwd: '/workspace',
+const server = spawn('python3', [serverScript, '--port', String(port)], {
+  cwd: here,
   env: {...process.env, MAPTILER_TEST_API_KEY: fakeKey, OVERTURE_OWNERSHIP_FILE: ownership},
   stdio: 'ignore'
 });
-const blankServer = spawn('python3', ['overture-preview/server.py', '--port', '8769'], {
-  cwd: '/workspace',
+const blankServer = spawn('python3', [serverScript, '--port', '8769'], {
+  cwd: here,
   env: {...process.env, MAPTILER_TEST_API_KEY: ''},
   stdio: 'ignore'
 });

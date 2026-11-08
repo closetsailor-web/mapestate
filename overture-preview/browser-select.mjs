@@ -1,10 +1,14 @@
 import {spawn} from 'node:child_process';
 import {mkdirSync, writeFileSync} from 'node:fs';
+import {dirname, resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {setTimeout as delay} from 'node:timers/promises';
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 const OUT = '/opt/cursor/artifacts/overture-preview';
 mkdirSync(OUT, {recursive: true});
-const server = spawn('python3', ['overture-preview/server.py', '--port', '8767'], {cwd: '/workspace', env: {...process.env, MAPTILER_TEST_API_KEY: ''}, stdio: 'ignore'});
+const server = spawn('python3', [resolve(here, 'server.py'), '--port', '8767'], {cwd: here, env: {...process.env, MAPTILER_TEST_API_KEY: ''}, stdio: 'ignore'});
 const chrome = spawn('google-chrome', [
   '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage',
   '--remote-debugging-port=9247', '--user-data-dir=/tmp/chrome-yp-overture', 'about:blank'
@@ -86,9 +90,43 @@ try {
   const selected = await evalJson(`({game:document.getElementById('game-id').textContent, meta:document.getElementById('meta').textContent, status:document.getElementById('status').textContent})`);
   const image = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
   writeFileSync(`${OUT}/selected-building.png`, Buffer.from(image.data, 'base64'));
-  const report = {expected: point.gameId, selectedGame: selected.game === point.gameId, selectedGers: selected.meta.includes(point.gersId), hits: point.hits};
+  const styled = await evalJson(`(async()=>{
+    const map=window.__ypMap;
+    map.setStyle({version:8,name:'labeled-test-basemap-not-maptiler',sources:{fake:{type:'geojson',data:{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[152.30,-24.90],[152.40,-24.90],[152.40,-24.84],[152.30,-24.84],[152.30,-24.90]]]}}]}}},layers:[{id:'bg',type:'background',paint:{'background-color':'#d7e7c8'}},{id:'building',type:'fill',source:'fake',paint:{'fill-color':'#9aa', 'fill-opacity':0.85}}]});
+    const deadline=Date.now()+8000;
+    while(Date.now()<deadline && !map.getLayer('ypb-fill')) await new Promise(r=>setTimeout(r,100));
+    await new Promise(r=>map.once('idle', r));
+    const feature=map.getSource('ypb-buildings')._data.features.find(f=>f.properties.gameId==='${point.gameId}');
+    const ring=feature.geometry.coordinates[0];
+    const inside=(lon,lat,ring)=>{let on=false, inn=false; for(let i=0;i<ring.length-1;i++){const a=ring[i],b=ring[i+1];const cross=(lat-a[1])*(b[0]-a[0])-(lon-a[0])*(b[1]-a[1]); if(Math.abs(cross)<1e-12 && lon>=Math.min(a[0],b[0])&&lon<=Math.max(a[0],b[0])&&lat>=Math.min(a[1],b[1])&&lat<=Math.max(a[1],b[1]))on=true;} if(on)return false; for(let i=0,j=ring.length-1;i<ring.length;j=i++){const yi=ring[i][1],yj=ring[j][1],xi=ring[i][0],xj=ring[j][0]; if((yi>lat)!==(yj>lat)&&(lon<(xj-xi)*(lat-yi)/(yj-yi)+xi))inn=!inn;} return inn;};
+    let center=null;
+    for (let i=0;i<ring.length-1;i++){const mid=[(ring[i][0]+ring[i+1][0])/2,(ring[i][1]+ring[i+1][1])/2]; const inset=[(mid[0]*2+ring[0][0])/3,(mid[1]*2+ring[0][1])/3]; if(inside(inset[0],inset[1],ring)){center=inset;break;}}
+    map.jumpTo({center, zoom:18});
+    await new Promise(r=>map.once('idle', r));
+    const projected=map.project(center);
+    const hits=map.queryRenderedFeatures(projected,{layers:['ypb-fill']});
+    const vendor=map.getLayer('building');
+    const rect=map.getCanvas().getBoundingClientRect();
+    return {x:rect.left+projected.x,y:rect.top+projected.y,hits:hits.map(h=>h.properties.gameId),overlay:!!map.getLayer('ypb-fill'),vendorHidden:!vendor || vendor.visibility==='none' || (map.getLayoutProperty('building','visibility')==='none')};
+  })()`);
+  await cdp.send('Input.dispatchMouseEvent', {type: 'mousePressed', x: styled.x, y: styled.y, button: 'left', clickCount: 1}, sessionId);
+  await cdp.send('Input.dispatchMouseEvent', {type: 'mouseReleased', x: styled.x, y: styled.y, button: 'left', clickCount: 1}, sessionId);
+  await delay(400);
+  const styledSelected = await evalJson(`document.getElementById('game-id').textContent`);
+  const styledImage = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
+  writeFileSync(`${OUT}/selected-building-test-basemap.png`, Buffer.from(styledImage.data, 'base64'));
+  const failed = await evalJson(`(async()=>{
+    const map=window.__ypMap;
+    map.setStyle('http://127.0.0.1:8767/missing-style.json');
+    const deadline=Date.now()+8000;
+    while(Date.now()<deadline && !map.getLayer('ypb-fill')) await new Promise(r=>setTimeout(r,100));
+    return {overlay:!!map.getLayer('ypb-fill'), status:document.getElementById('status').textContent};
+  })()`);
+  const report = {expected: point.gameId, selectedGame: selected.game === point.gameId, selectedGers: selected.meta.includes(point.gersId), hits: point.hits, styled, styledSelected, failed};
   console.log(JSON.stringify(report, null, 2));
-  const ok = selected.game === point.gameId && selected.meta.includes(point.gersId) && point.hits.includes(point.gameId);
+  const ok = selected.game === point.gameId && selected.meta.includes(point.gersId) && point.hits.includes(point.gameId)
+    && styled.overlay && styled.vendorHidden && styled.hits.includes(point.gameId) && styledSelected === point.gameId
+    && failed.overlay;
   if (!ok) process.exitCode = 1;
 } catch (error) {
   console.error(error);
