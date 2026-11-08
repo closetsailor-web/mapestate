@@ -261,6 +261,8 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   for (const banned of ['getCurrentPosition', 'watchPosition', 'navigator.geolocation', 'clearWatch', 'locationfound', 'locationerror']) assert.equal(shipped.includes(banned), false, banned);
   assert.equal(shipped.includes('const TEST_ALWAYS_FRESH=false'), true);
   assert.equal(shipped.includes('TEST_ALWAYS_FRESH=true'), false);
+  assert.equal(shipped.includes("q.get('fresh')!=='1'"), true);
+  assert.equal(shipped.includes("var PREFIX='ypfresh.'"), true);
   assert.equal(shipped.includes("k.startsWith('fe.')||k.startsWith('mt.')"), false);
   assert.ok(code.includes("n.textContent='Listings'"));
   assert.ok(code.includes("textContent='For Sale'"));

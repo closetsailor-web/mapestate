@@ -4,6 +4,7 @@
   "liveCommitUnchanged": "be8ce0b75b4da415baf88fc81a4729ebf21caeb7",
   "install": "python3 preview/localhost-server.py --port 8766",
   "open": ["http://127.0.0.1:8766/", "http://localhost:8766/"],
+  "freshOnboarding": ["http://127.0.0.1:8766/?fresh=1", "http://localhost:8766/?fresh=1"],
   "bind": "127.0.0.1",
   "files": [
     "3d-5d6ea64333a6/index.html",

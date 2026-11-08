@@ -8,7 +8,7 @@ On a Mac, from this folder:
 python3 preview/localhost-server.py --port 8766
 ```
 
-Then open http://127.0.0.1:8766/. Reloading keeps `fe.global` and the other saves named in the manifest. Nothing in this package asks for the device location. Sample pins stay test stock. They are not Coralwood lots and they are not owned properties.
+Then open http://127.0.0.1:8766/. Reloading that address keeps `fe.global` and the other saves named in the manifest. To begin onboarding again every time, open http://127.0.0.1:8766/?fresh=1 or http://localhost:8766/?fresh=1. That test start keeps its own data, clears only that test data on the next visit, and does not read or change the saved game. Nothing in this package asks for the device location. Sample pins stay test stock. They are not Coralwood lots and they are not owned properties.
 
 The standalone pilot already listens on port 8765. Leave that process running. This preview defaults to 8765 and will refuse to start if that port is taken; it does not stop the existing listener. Use the command above when 8765 is occupied.
 
