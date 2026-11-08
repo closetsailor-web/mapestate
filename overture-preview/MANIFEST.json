@@ -1,0 +1,35 @@
+{
+  "name": "overture-building-overlay-preview",
+  "status": "local-preview-not-live",
+  "entrypoint": "python3 overture-preview/server.py --port 8767",
+  "open": "http://127.0.0.1:8767/",
+  "bind": "127.0.0.1",
+  "snapshot": {
+    "release": "2026-10-21.0",
+    "requestedBbox": [152.343, -24.871, 152.353, -24.862],
+    "sourceFeatures": 1093,
+    "adopted": 1058,
+    "quarantined": 35,
+    "registrySha256": "13e1eaa98bf3943aa21955bebcea233408617e7170ab230df6e036d2560b778e",
+    "note": "One supplied extract. Not complete coverage of Bundaberg."
+  },
+  "files": [
+    "overture-preview/index.html",
+    "overture-preview/app.js",
+    "overture-preview/server.py",
+    "overture-preview/registry.mjs",
+    "overture-preview/data/registry-v1.json",
+    "overture-preview/data/overlay-v1.geojson",
+    "overture-preview/source/bundaberg-buildings.geojson",
+    "overture-preview/CREDITS.md",
+    "overture-preview/LICENSES/NOTICE.md"
+  ],
+  "doesNotTouch": [
+    "3d-5d6ea64333a6/index.html",
+    "3d-5d6ea64333a6/map-preview.js",
+    "fe.* saves",
+    "yp.previewStock.v1",
+    "yp.propertyHistory.v1",
+    "yp.mapsel.v1"
+  ]
+}
