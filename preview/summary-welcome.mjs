@@ -76,20 +76,21 @@ try {
   await evalJson(`(()=>{const w=document.getElementById('flowframe').contentWindow,d=w.document;w.go('login');d.getElementById('li-id').value='troyboy';d.getElementById('li-pw').value='password1';d.getElementById('f-login').requestSubmit();return 1;})()`);
   const reachedIncome = await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const d=document.getElementById('flowframe').contentWindow.document;if(d.getElementById('s-income')?.classList.contains('on'))r(1);else if(Date.now()-t>4000)r(0);else setTimeout(tick,100)};tick()})`);
   await evalJson(`(()=>{const w=document.getElementById('flowframe').contentWindow,d=w.document;w.go('summary');d.getElementById('sum-go').click();return 1;})()`);
-  const welcome = await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const d=document.getElementById('flowframe').contentWindow.document;const h=d.getElementById('done-h');if(h&&h.textContent.includes('Welcome back'))r({heading:h.textContent,text:d.getElementById('done-msg').innerText.replace(/\\s+/g,' ').trim(),reachedIncome:${reachedIncome}});else if(Date.now()-t>4000)r({heading:h?h.textContent:'',text:d.getElementById('done-msg')?.innerText||'',reachedIncome:${reachedIncome}});else setTimeout(tick,100)};tick()})`);
+  const welcome = await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const d=document.getElementById('flowframe').contentWindow.document;const h=d.getElementById('done-h');const msg=d.getElementById('done-msg');if(h&&h.textContent.includes('Welcome back')&&msg&&msg.querySelectorAll('p').length===2){const ps=[...msg.querySelectorAll('p')];const card=msg.closest('.sheet');const box=card.getBoundingClientRect();const btn=d.getElementById('enter').getBoundingClientRect();r({heading:h.textContent,texts:ps.map(el=>el.textContent),paragraphs:ps.length,nameBold:ps[0].querySelector('b')?.textContent==='troyboy',button:d.getElementById('enter')?.textContent||'',overflow:card.scrollHeight-card.clientHeight,buttonBottom:Math.round(btn.bottom),view:window.innerHeight,reachedIncome:${reachedIncome}});}else if(Date.now()-t>4000)r(null);else setTimeout(tick,100)};tick()})`);
   await shot('no-key-welcome-back-mobile.png');
   await size(1280, 800);
   await delay(150);
   await shot('no-key-welcome-back-desktop.png');
-  const report = {label: 'no API key; summary and welcome-back copy only', summary, welcome};
+  const welcomeDesktop = await evalJson(`(()=>{const d=document.getElementById('flowframe').contentWindow.document;const card=d.getElementById('done-msg').closest('.sheet');const box=card.getBoundingClientRect();const btn=d.getElementById('enter').getBoundingClientRect();return {overflow:card.scrollHeight-card.clientHeight,buttonBottom:Math.round(btn.bottom),view:window.innerHeight,texts:[...d.querySelectorAll('#done-msg p')].map(el=>el.textContent)};})()`);
+  const report = {label: 'no API key; summary and welcome-back copy only', summary, welcome, welcomeDesktop};
   writeFileSync(`${OUT}/summary-welcome.json`, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
   const ok = summary && summary.heading === "Here's your starting picture" && summary.hero.includes('Almost') && !summary.hasPlace
     && summary.rows.join('|') === 'Take-home pay|Starting savings|Expenses|Left over (after tax)'
     && summary.edits.join('|') === 'Edit Take-home pay|Edit Expenses'
     && summary.text.includes('$30,000') && summary.text.includes('Take-home pay minus expenses')
-    && welcome && welcome.heading === 'Welcome back!' && welcome.text === 'Good to see you, troyboy. Your properties are right where you left them.'
-    && !welcome.text.includes('Glimmerbrook') && !welcome.text.includes('starting');
+    && welcome && welcome.heading === 'Welcome back!' && welcome.paragraphs === 2 && welcome.texts[0] === 'Good to see you troyboy, just remember the saying...' && welcome.texts[1] === 'Do not save what is left after spending, but spend what is left after saving.' && welcome.nameBold === true && welcome.button === 'Start playing' && welcome.overflow <= 1 && welcome.buttonBottom <= welcome.view
+    && welcomeDesktop && welcomeDesktop.texts[0] === welcome.texts[0] && welcomeDesktop.texts[1] === welcome.texts[1] && welcomeDesktop.overflow <= 1 && welcomeDesktop.buttonBottom <= welcomeDesktop.view;
   if (!ok) process.exitCode = 1;
 } catch (error) {
   console.error(error);

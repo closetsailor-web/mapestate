@@ -40,7 +40,8 @@ check('save-up body is two centred paragraphs and income bands are unchanged', (
   assert.ok(flow.includes("row('Starting savings'"));
   assert.ok(flow.includes("row('Expenses'"));
   assert.ok(flow.includes('Left over (after tax)'));
-  assert.ok(flow.includes("Good to see you, <b>'+escH(who)+'</b>. Your properties are right where you left them."));
+  assert.ok(flow.includes("<p>Good to see you <b>'+escH(who)+'</b>, just remember the saying...</p><p>Do not save what is left after spending, but spend what is left after saving.</p>"));
+  assert.equal(flow.includes('Your properties are right where you left them.'), false);
   assert.equal(flow.includes("You\\'re starting in"), false);
   assert.ok(flow.includes("We\\'re starting you in"));
 });
