@@ -205,7 +205,7 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.ok(code.includes("moveNote.textContent='You can also search on the map'"));
   assert.equal(code.includes('About search'), false);
   assert.equal(code.includes('Choose one suggestion. None is selected automatically.'), false);
-  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypEnsureSuburbStock,ypFreshStock,ypRadiusList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM,ypDestination})', {});
+  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypEnsureSuburbStock,ypFreshStock,ypRadiusList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM,ypDestination,ypBuildingSites,ypPointInRing})', {});
   assert.equal(api.ypShouldHideLabel({id:'road_label', type:'symbol', 'source-layer':'transportation_name'}), true);
   assert.equal(api.ypShouldHideLabel({id:'road', type:'line', 'source-layer':'transportation'}), false);
   assert.equal(api.ypShouldHideLabel({id:'building', type:'fill', 'source-layer':'building'}), false);
@@ -218,6 +218,19 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   const offshore = api.ypDestination(bargara.lon, bargara.lat, 90, 1600);
   const coastal = api.ypEnsureSuburbStock(api.ypFreshStock(), bargara, [{lon:land.lon, lat:land.lat}, {lon:offshore.lon, lat:offshore.lat}]);
   assert.equal(coastal.rentals.length, 2);
+  const house = (lon, lat, size = 0.00012) => [[lon, lat], [lon + size, lat], [lon + size, lat + size], [lon, lat + size], [lon, lat]];
+  const west = api.ypDestination(bargara.lon, bargara.lat, 270, 400);
+  const west2 = api.ypDestination(bargara.lon, bargara.lat, 280, 520);
+  const gap = {type:'MultiPolygon', coordinates:[[house(west.lon, west.lat)], [house(west2.lon, west2.lat)]]};
+  const badAverageLon = (west.lon + west2.lon) / 2, badAverageLat = (west.lat + west2.lat) / 2;
+  const sites = api.ypBuildingSites([
+    {sourceLayer:'building', geometry: gap},
+    {sourceLayer:'landuse', geometry:{type:'Polygon', coordinates:[house(bargara.lon, bargara.lat, 0.004)]}},
+    {sourceLayer:'building', geometry:{type:'Polygon', coordinates:[house(bargara.lon, bargara.lat, 0.02)]}}
+  ], bargara);
+  assert.equal(sites.length, 2);
+  assert.equal(sites.every(p => api.ypPointInRing(p.lon, p.lat, house(west.lon, west.lat)) || api.ypPointInRing(p.lon, p.lat, house(west2.lon, west2.lat))), true);
+  assert.equal(sites.some(p => api.ypDistanceM(badAverageLon, badAverageLat, p.lon, p.lat) < 15), false);
   assert.equal(coastal.rentals.every(r => r.placement === 'mapped-building'), true);
   const none = api.ypEnsureSuburbStock(api.ypFreshStock(), place);
   assert.equal(none.rentals.length, 0);
