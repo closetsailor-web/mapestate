@@ -205,7 +205,7 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.ok(code.includes("moveNote.textContent='You can also search on the map'"));
   assert.equal(code.includes('About search'), false);
   assert.equal(code.includes('Choose one suggestion. None is selected automatically.'), false);
-  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypEnsureSuburbStock,ypFreshStock,ypRadiusList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM,ypDestination,ypBuildingSites,ypPointInRing,ypSpreadSites,ypAreaStockReady,ypCommitAreaStock,ypListingModel})', {});
+  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypEnsureSuburbStock,ypFreshStock,ypRadiusList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM,ypDestination,ypBuildingSites,ypPointInRing,ypSpreadSites,ypAreaStockReady,ypCommitAreaStock,ypListingModel,ypRentPicture,ypMoneyText})', {});
   assert.equal(api.ypShouldHideLabel({id:'road_label', type:'symbol', 'source-layer':'transportation_name'}), true);
   assert.equal(api.ypShouldHideLabel({id:'road', type:'line', 'source-layer':'transportation'}), false);
   assert.equal(api.ypShouldHideLabel({id:'building', type:'fill', 'source-layer':'building'}), false);
@@ -266,6 +266,7 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   const buildingsFor = (origin, count) => Array.from({length: count}, (_, i) => api.ypDestination(origin.lon, origin.lat, i * 36, 300 + i * 40));
   const first = api.ypEnsureSuburbStock(api.ypFreshStock(), place, buildingsFor(place, 12));
   assert.equal(first.rentals.length, 10);
+  assert.equal(first.rentals[0].bond, first.rentals[0].weeklyRent * 6);
   assert.equal(first.rentals.every(r => r.radiusM === 2000 && !r.postcode && r.placement === 'mapped-building'), true);
   assert.equal(first.rentals.every(r => api.ypDistanceM(place.lon, place.lat, r.lon, r.lat) <= 2000), true);
   first.rentals[0].status = 'application-pending';
@@ -325,6 +326,18 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.equal(share.action, null);
   assert.equal(share.money[0].label, 'Weekly room share');
   assert.equal(api.ypListingModel({kind:'sale', fixture:true}).money.length, 0);
+  const picture = api.ypRentPicture(500, {incomeWk: 1157.9, expenseWk: 0, bank: 30000});
+  assert.equal(picture.bond, 3000);
+  assert.equal(picture.income, 1158);
+  assert.equal(picture.expenses, 0);
+  assert.equal(picture.left, 658);
+  assert.equal(picture.afterBond, 27000);
+  const short = api.ypRentPicture(500, {incomeWk: 400, expenseWk: 200, bank: 1000});
+  assert.equal(short.left, -300);
+  assert.equal(short.afterBond, -2000);
+  assert.equal(api.ypMoneyText(short.left), '-$300');
+  assert.equal(api.ypRentPicture(500, {}).left, null);
+  assert.equal(api.ypListingModel({kind:'sale', price: 10, fixture:true}).flow.length, 0);
   const applied = api.ypApplyPreview(stock, sample.id);
   assert.equal(applied.rentals.find(r => r.id === sample.id).status, 'application-pending');
   assert.equal(stock.rentals.find(r => r.id === sample.id).status, 'available');

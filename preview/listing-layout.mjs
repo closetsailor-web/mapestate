@@ -77,7 +77,8 @@ const measure = `(()=>{
     overflow:card.scrollWidth>card.clientWidth+2,
     scroll:card.scrollHeight>card.clientHeight,
     action:card.querySelector('#yp-rent-apply')?.textContent||'',
-    disabled:!!card.querySelector('#yp-rent-apply')?.disabled
+    disabled:!!card.querySelector('#yp-rent-apply')?.disabled,
+    rows:[...card.querySelectorAll('.yp-flow div')].map(row=>({label:row.querySelector('dt').childNodes[0].textContent.trim(),amount:row.querySelector('dd').textContent,neg:row.querySelector('dd').classList.contains('yp-neg')}))
   };
 })()`;
 
@@ -92,14 +93,21 @@ try {
     const centre={label:${JSON.stringify(place)},lon:152.5,lat:-24.8171,stockKey:${JSON.stringify(place)}};
     window.__ypListCentre=centre;
     const store=ypEnsureSuburbStock(ypFreshStock(),centre,[{lon:152.501,lat:-24.816}]);
-    store.rentals[0].weeklyRent=500;store.rentals[0].bond=2000;
+    store.rentals[0].weeklyRent=500;store.rentals[0].bond=500*6;
     ypWriteStock(store);
     ypRenderRentalList();
     document.querySelector('#yp-rent-list .yp-rent-row').click();
     return 1;
   })()`);
+  const expected = await evalJson(`(()=>{const income=Math.round(salaryNetWk());const inc=INC();const expenses=Math.round(((+inc.exp||0)+(+inc.debt||0))*12/52);const rent=500;return {income,expenses,left:income-expenses-rent,bank:Math.round(G.cash),bond:3000,after:Math.round(G.cash)-3000,cash:G.cash};})()`);
+  await evalJson(`(()=>{document.getElementById('toast')?.classList.remove('show');const node=document.getElementById('coach');if(node)node.style.display='none';return 1})()`);
   const phone = await evalJson(measure);
   await shot('listing-rent-phone.png');
+  await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
+  await evalJson(`document.getElementById('toast')?.classList.remove('show');1`);
+  const desk = await evalJson(measure);
+  await shot('listing-rent-desktop.png');
+  await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
   const fromList = phone && phone.text;
   await evalJson(`document.querySelector('#yp-rent-detail .hwx').click();ypOpenRentalDetail(ypReadStock().rentals[0].id);1`);
   const fromMarker = await evalJson(measure);
@@ -107,10 +115,7 @@ try {
   await evalJson(`document.getElementById('yp-rent-apply').click();1`);
   const applied = await evalJson(measure);
   const cashAfter = await evalJson(`G.cash`);
-  await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
   await evalJson(`document.getElementById('yp-rent-detail')?.remove();ypOpenRentalDetail(ypReadStock().rentals[0].id);1`);
-  const desk = await evalJson(measure);
-  await shot('listing-rent-desktop.png');
   const fixtures = await evalJson(`(()=>{
     document.getElementById('yp-rent-detail')?.remove();
     const board=document.createElement('div');board.id='yp-fixture-board';
@@ -131,11 +136,13 @@ try {
     const read=id=>{ypOpenListingsChoice();document.getElementById(id).click();return document.getElementById('yp-prop-note').innerText;};
     return {sale:read('yp-cat-sale'),room:read('yp-cat-room'),auction:read('yp-cat-auction')};
   })()`);
-  console.log(JSON.stringify({phone, fromMarker, applied, desk, fixtures, empty, errors: cdp.errors.slice(0, 4)}, null, 2));
-  const clean = (view) => view && view.title.startsWith('Sample rental') && view.kicker === 'Game sample property' && view.text.includes('$500') && view.text.indexOf('$500') < view.text.indexOf(place) && view.text.includes('$2,000') && view.text.includes('Bond') && view.icons === 1 && view.text.includes('fictional rental') && view.text.includes('does not charge your bank') && view.text.includes('Not a real vacancy') && !view.text.includes('2 km') && !/bedroom|bathroom|house|home|insurance|measured/i.test(view.text) && view.images === 0 && !view.hero && view.align === 'left' && view.size >= 28 && !view.overflow;
+  console.log(JSON.stringify({expected, phone, fromMarker, applied, desk, fixtures, empty, errors: cdp.errors.slice(0, 4)}, null, 2));
+  const money = (n) => (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-AU');
+  const row = (view, label) => view.rows.find(item => item.label === label);
+  const clean = (view) => view && view.title.startsWith('Sample rental') && view.kicker === 'Game sample property' && view.text.includes('$500') && view.text.indexOf('$500') < view.text.indexOf(place) && view.text.includes(money(expected.bond)) && view.icons === 1 && row(view, 'Weekly income').amount === money(expected.income) && row(view, 'Weekly expenses').amount === money(expected.expenses) && row(view, 'Left after this rent').amount === money(expected.left) && row(view, 'In the bank').amount === money(expected.bank) && row(view, 'Bank if the bond were paid').amount === money(expected.after) && view.text.includes('Not a real vacancy') && view.text.includes('does not charge your bank') && !view.text.includes('2 km') && !/bedroom|bathroom|\bhouse\b|insurance|measured/i.test(view.text) && view.images === 0 && !view.hero && view.align === 'left' && view.size >= 28 && !view.overflow;
   const ok = clean(phone) && clean(fromMarker) && fromList === fromMarker.text
-    && applied.disabled && applied.text.includes('Application recorded') && cashAfter === cashBefore
-    && desk && desk.images === 0 && !desk.hero && !desk.overflow && desk.size >= 28 && desk.text.includes('Application recorded') && desk.text.indexOf('$500') < desk.text.indexOf(place)
+    && applied.disabled && applied.text.includes('Application recorded') && cashAfter === expected.cash && cashBefore === expected.cash
+    && clean(desk)
     && fixtures.length === 4
     && fixtures[1].title === 'Sample for sale 1'
     && fixtures.every(card => card.images === 0 && card.actions === 0 && card.fixture && card.text.includes('Not a live record'))
