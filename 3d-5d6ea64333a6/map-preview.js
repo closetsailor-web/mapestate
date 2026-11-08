@@ -3,7 +3,24 @@
 const pilotSuggest=(()=>{
 const norm=s=>String(s||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'');
 const label=p=>[p.name||p.street||p.suburb||p.city||p.postcode,p.suburb,p.city,p.postcode,p.state,p.country].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ');
-function areas(data,country,postcode){return (data.results||[]).filter(p=>['city','suburb','district','postcode'].includes(p.result_type)&&p.place_id&&!p.housenumber&&(!postcode||(p.postcode===postcode&&p.country_code==='au'))&&(!country||norm(p.country)===norm(country))).map(p=>({...p,label:label(p)}));}
+function metres(a,b){
+ if(![a.lon,a.lat,b.lon,b.lat].every(Number.isFinite))return Infinity;
+ const R=6371000,p1=a.lat*Math.PI/180,p2=b.lat*Math.PI/180,dLat=(b.lat-a.lat)*Math.PI/180,dLon=(b.lon-a.lon)*Math.PI/180;
+ const h=Math.sin(dLat/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dLon/2)**2;
+ return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+function samePlace(a,b){
+ if(a.place_id&&a.place_id===b.place_id)return true;
+ const name=p=>norm(p.name||p.suburb||p.district||p.city);
+ if(name(a)!==name(b)||norm(a.country)!==norm(b.country)||norm(a.state)!==norm(b.state))return false;
+ const cityA=norm(a.city),cityB=norm(b.city),locality=name(a);
+ if(cityA&&cityB&&cityA!==cityB&&cityA!==locality&&cityB!==locality)return false;
+ if(norm(a.county)&&norm(b.county)&&norm(a.county)!==norm(b.county))return false;
+ return metres(a,b)<=8000;
+}
+function preferArea(a,b){const rank={suburb:4,district:3,city:2,postcode:1};return (rank[a.result_type]||0)>=(rank[b.result_type]||0)?a:b;}
+function uniqueAreas(list){const out=[];for(const item of list){const i=out.findIndex(o=>samePlace(o,item));if(i<0)out.push(item);else out[i]=preferArea(out[i],item);}return out;}
+function areas(data,country,postcode){return uniqueAreas((data.results||[]).filter(p=>['city','suburb','district','postcode'].includes(p.result_type)&&p.place_id&&!p.housenumber&&(!postcode||(p.postcode===postcode&&p.country_code==='au'))&&(!country||norm(p.country)===norm(country))).map(p=>({...p,label:label(p)})));}
 function roads(data,area){return (data.results||[]).filter(p=>p.result_type==='street'&&p.street&&!p.housenumber&&Number.isFinite(p.lon)&&Number.isFinite(p.lat)&&norm(p.country)===norm(area.country)&&(!['suburb','district'].includes(area.result_type)||[p.suburb,p.district,p.city].some(v=>norm(v)===norm(area.name||area.suburb||area.city)))&&(area.result_type!=='postcode'||p.postcode===area.postcode)).map(p=>({...p,label:label({...p,name:p.street}),center:[p.lon,p.lat]}));}
 function gate(){let version=0,controller;return {next(){version++;controller?.abort();controller=new AbortController();return {version,signal:controller.signal};},current(n){return n===version;}};}
 return {areas,roads,gate};
@@ -168,10 +185,12 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-where p,#yp-where-status,#yp-prop p,#yp-rent-list p,#yp-rent-detail p{margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
 #yp-rent-list,#yp-rent-detail{align-items:flex-start;padding-top:118px}
 #yp-show-rentals{position:absolute;left:50%;bottom:calc(96px + var(--sab));transform:translateX(-50%);z-index:6;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 15px Inter,system-ui,sans-serif;min-height:44px;padding:0 16px;cursor:pointer}
-#yp-radius-note{position:absolute;left:8px;bottom:28px;z-index:4;margin:0;max-width:240px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.9);color:#5a6780;font:500 11px Inter,system-ui,sans-serif;pointer-events:none}
+#yp-radius-note{position:absolute;left:8px;bottom:calc(148px + var(--sab));z-index:4;margin:0;max-width:240px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.9);color:#5a6780;font:500 11px Inter,system-ui,sans-serif;pointer-events:none}
 #yp-rent-list .yp-rent-row{display:block;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
 #yp-where-town{display:block;width:100%;box-sizing:border-box;border-radius:14px;border:1px solid rgba(20,33,61,.12);background:#fff;padding:11px 14px;font:500 16px Inter,system-ui,sans-serif;color:#14213d}
 #yp-where-town:focus,#yp-where-town:focus-visible{outline:none;border-color:#0a3a8c;box-shadow:0 0 0 4px rgba(10,58,140,.15)}
+#yp-where #yp-where-move{margin-top:16px}
+#yp-provider-note{position:absolute;left:8px;bottom:calc(100px + var(--sab));z-index:4;margin:0;max-width:min(280px,70vw);padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.9);color:#5a6780;font:500 11px Inter,system-ui,sans-serif;pointer-events:none}
 #yp-where .hwb,#yp-prop .hwb,#yp-rent-list .hwb,#yp-rent-detail .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
 #yp-where .hwx,#yp-prop .hwx,#yp-rent-list .hwx,#yp-rent-detail .hwx{background:none;border:0;color:#5a6780;min-height:44px;min-width:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer;padding:10px 14px}
 #yp-where .hwb:focus,#yp-where .hwb:focus-visible,#yp-where .hwx:focus,#yp-where .hwx:focus-visible,#yp-prop button:focus,#yp-prop button:focus-visible,#yp-rent-list button:focus,#yp-rent-detail button:focus{outline:3px solid #0a3a8c;outline-offset:3px}
@@ -247,6 +266,7 @@ function ypMountChrome(){
  const host=document.getElementById('map');
  let box=document.getElementById('ypbasemap');
  if(!box&&host){box=document.createElement('div');box.id='ypbasemap';host.appendChild(box);}
+ if(host&&!document.getElementById('yp-provider-note')){const note=document.createElement('p');note.id='yp-provider-note';note.textContent='Town or suburb text is sent to Geoapify. Map tiles come from the map provider. This page does not ask for this device’s location.';host.appendChild(note);}
 }
 function ypStatusPanel(text){const live=document.getElementById('yp-where-status');if(live&&text)live.textContent=text;}
 function ypClearStatusPanel(){const el=document.getElementById('yp-map-status');if(el)el.remove();}
@@ -441,16 +461,13 @@ function ypShowWherePopup(){
  const title=document.createElement('h2');title.id='yp-where-title';title.textContent='Choose location';
  head.appendChild(title);
  const input=document.createElement('input');input.id='yp-where-town';input.maxLength=100;input.autocomplete='off';input.placeholder='enter town or suburb';input.setAttribute('aria-label','enter town or suburb');input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');input.setAttribute('aria-controls','yp-where-suggestions');input.setAttribute('aria-expanded','false');
- const moveNote=document.createElement('p');moveNote.id='yp-where-move';moveNote.textContent='You can also move and search on the map.';
+ const moveNote=document.createElement('p');moveNote.id='yp-where-move';moveNote.textContent='You can also search on the map';
  const suggestions=document.createElement('div');suggestions.id='yp-where-suggestions';suggestions.setAttribute('role','listbox');suggestions.setAttribute('aria-label','Town and suburb suggestions');
  const status=document.createElement('p');status.id='yp-where-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  const close=document.createElement('button');close.type='button';close.id='yp-where-close';close.className='hwx';close.textContent='Close';
- const info=document.createElement('button');info.type='button';info.id='yp-where-info';info.className='hwx';info.setAttribute('aria-expanded','false');info.setAttribute('aria-controls','yp-where-privacy');info.textContent='About search';
- const privacy=document.createElement('p');privacy.id='yp-where-privacy';privacy.hidden=true;privacy.textContent='After a short pause, the town or suburb text is sent to Geoapify. Moving the map requests tiles for that view from the map provider. This preview does not ask the browser for this device’s location.';
- info.addEventListener('click',()=>{privacy.hidden=!privacy.hidden;info.setAttribute('aria-expanded',privacy.hidden?'false':'true');});
  close.addEventListener('click',ypCloseWhere);
  wrap.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();ypCloseWhere();}});
- card.append(head,input,moveNote,suggestions,status,info,privacy,close);
+ card.append(head,input,moveNote,suggestions,status,close);
  wrap.appendChild(card);
  document.body.appendChild(wrap);
  ypWireWhere();
@@ -474,7 +491,7 @@ function ypWireWhere(){
    box.replaceChildren();
    items.forEach((item,i)=>{const b=document.createElement('button');b.type='button';b.id='yp-where-opt-'+i;b.setAttribute('role','option');b.textContent=item.label;b.addEventListener('click',()=>ypChooseTown(item));box.appendChild(b);});
    input.setAttribute('aria-expanded',items.length?'true':'false');
-   status.textContent=items.length?'Choose one suggestion. None is selected automatically.':'No matching suggestion. Nothing was invented.';
+   status.textContent=items.length?'':'No matching suggestion. Nothing was invented.';
   }catch{if(gate.current(token.version))status.textContent='Town suggestions are unavailable. The old map was not opened.';}},450);
  });
 }

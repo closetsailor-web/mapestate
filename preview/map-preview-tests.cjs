@@ -151,6 +151,26 @@ check('stale suggestion guard aborts the previous request', () => {
   assert.equal(first.signal.aborted, true);
   assert.equal(gate.current(second.version), true);
 });
+check('same-place suggestions merge and distinct towns stay separate', () => {
+  const row = (over) => ({result_type: 'suburb', place_id: 'p', housenumber: undefined, country: 'Australia', country_code: 'au', ...over});
+  const data = {results: [
+    row({place_id: 'heights-suburb', name: 'Avenell Heights', state: 'Queensland', lon: 152.35, lat: -24.88, result_type: 'suburb'}),
+    row({place_id: 'heights-district', name: 'Avenell Heights', state: 'Queensland', lon: 152.352, lat: -24.881, result_type: 'district'}),
+    row({place_id: 'avenel', name: 'Avenel', state: 'Victoria', postcode: '3664', lon: 145.23, lat: -36.90, result_type: 'suburb'}),
+    row({place_id: 'richmond-vic', name: 'Richmond', state: 'Victoria', city: 'Melbourne', lon: 144.998, lat: -37.818}),
+    row({place_id: 'richmond-nsw', name: 'Richmond', state: 'New South Wales', city: 'Sydney', lon: 150.751, lat: -33.599}),
+    row({place_id: 'hamilton-a', name: 'Hamilton', state: 'Queensland', city: 'Brisbane', lon: 153.06, lat: -27.44}),
+    row({place_id: 'hamilton-b', name: 'Hamilton', state: 'Queensland', city: 'Townsville', lon: 146.82, lat: -19.26})
+  ]};
+  const areas = ident.pilotSuggest.areas(data, 'Australia', null);
+  const labels = areas.map(item => item.label);
+  assert.equal(labels.filter(label => label.startsWith('Avenell Heights')).length, 1);
+  assert.equal(areas.find(item => item.label.startsWith('Avenell Heights')).place_id, 'heights-suburb');
+  assert.equal(areas.find(item => item.label.startsWith('Avenell Heights')).lon, 152.35);
+  assert.equal(labels.filter(label => label.startsWith('Avenel,')).length, 1);
+  assert.equal(labels.filter(label => label.startsWith('Richmond')).length, 2);
+  assert.equal(labels.filter(label => label.startsWith('Hamilton')).length, 2);
+});
 check('suggestion buttons use text, not HTML', () => {
   const roads = ident.pilotSuggest.roads({results: [{result_type: 'street', street: '<img src=x>', suburb: 'Avenell Heights', city: 'Bundaberg', country: 'Australia', lon: 1, lat: 2, place_id: 'p'}]}, {result_type: 'city', name: 'Bundaberg', country: 'Australia', place_id: 'area'});
   assert.equal(roads.length, 1);
@@ -181,7 +201,9 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.equal(code.includes('yp-accuracy'), false);
   assert.ok(code.includes("title.textContent='Choose location'"));
   assert.ok(code.includes("placeholder='enter town or suburb'"));
-  assert.ok(code.includes("moveNote.textContent='You can also move and search on the map.'"));
+  assert.ok(code.includes("moveNote.textContent='You can also search on the map'"));
+  assert.equal(code.includes('About search'), false);
+  assert.equal(code.includes('Choose one suggestion. None is selected automatically.'), false);
   const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypEnsureSuburbStock,ypFreshStock,ypRadiusList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM,ypDestination})', {});
   assert.equal(api.ypShouldHideLabel({id:'road_label', type:'symbol', 'source-layer':'transportation_name'}), true);
   assert.equal(api.ypShouldHideLabel({id:'road', type:'line', 'source-layer':'transportation'}), false);
