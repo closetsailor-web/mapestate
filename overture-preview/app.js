@@ -13,6 +13,12 @@ let idleTried = -1;
 let fitsLeft = 2;
 let prices = new Map();
 let selectedFeature = null;
+let manifest = null;
+let boundaryData = null;
+let loadedKey = '';
+let loadToken = 0;
+let framed = false;
+window.__ypView = null;
 
 const money = new Intl.NumberFormat('en-AU', {style: 'currency', currency: 'AUD', maximumFractionDigits: 0});
 
@@ -75,6 +81,10 @@ function installOverlay() {
   const selected = {type: 'FeatureCollection', features: selectedFeature ? [selectedFeature] : []};
   if (!map.getSource('ypb-selected')) map.addSource('ypb-selected', {type: 'geojson', data: selected});
   else map.getSource('ypb-selected').setData(selected);
+  if (boundaryData) {
+    if (!map.getSource('ypb-boundary')) map.addSource('ypb-boundary', {type: 'geojson', data: boundaryData});
+    else map.getSource('ypb-boundary').setData(boundaryData);
+  }
   const layers = [
     {id: 'ypb-quarantine-fill', type: 'fill', source: 'ypb-quarantine', paint: {'fill-color': '#8b95a8', 'fill-opacity': 0.45}},
     {id: 'ypb-fill', type: 'fill', source: 'ypb-buildings', paint: {'fill-color': ['match', ['get', 'tone'], 'home', '#e07a2f', 'trade', '#1f7a6b', 'other', '#c4a35a', 'none', '#d5dbe3', '#d5dbe3'], 'fill-opacity': 0.78}},
@@ -82,13 +92,14 @@ function installOverlay() {
     {id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.5}},
     {id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#0b2545', 'line-width': 3}}
   ];
+  if (map.getSource('ypb-boundary')) layers.push({id: 'ypb-boundary', type: 'line', source: 'ypb-boundary', paint: {'line-color': '#0b2545', 'line-width': 2}});
   for (const layer of layers) if (!map.getLayer(layer.id)) map.addLayer(layer);
   return !!map.getLayer('ypb-fill');
 }
 
 function frameSample() {
-  if (fitsLeft <= 0) return;
-  fitsLeft -= 1;
+  if (framed) return;
+  framed = true;
   map.fitBounds(sampleBounds, {padding: {left: 450, right: 36, top: 28, bottom: 72}, duration: 0, maxZoom: 16});
 }
 
@@ -152,10 +163,12 @@ function show(feature) {
   }
   selectedFeature = feature;
   const row = prices.get(props.gameId);
+  const estimate = Number.isInteger(props.estimate) ? props.estimate : row?.estimate;
+  const eligible = props.eligible === true || row?.eligible === true;
   statusEl.textContent = 'Selected building';
   gameEl.textContent = props.gameId;
-  if (row && row.eligible && Number.isInteger(row.estimate)) {
-    estimateEl.textContent = money.format(row.estimate);
+  if (eligible && Number.isInteger(estimate)) {
+    estimateEl.textContent = money.format(estimate);
     metaEl.textContent = 'Game estimate. Not a real property value, and not a listing.';
   } else {
     estimateEl.textContent = 'No game estimate';
@@ -165,26 +178,52 @@ function show(feature) {
   if (source) source.setData({type: 'FeatureCollection', features: [feature]});
 }
 
+async function loadVisible() {
+  if (!manifest || !map.isStyleLoaded()) return;
+  const token = ++loadToken;
+  const started = performance.now();
+  const bounds = map.getBounds();
+  const pad = 0.01;
+  const west = bounds.getWest() - pad, south = bounds.getSouth() - pad, east = bounds.getEast() + pad, north = bounds.getNorth() + pad;
+  const hits = manifest.chunks.filter(chunk => !(chunk.bbox[2] < west || chunk.bbox[0] > east || chunk.bbox[3] < south || chunk.bbox[1] > north));
+  if (hits.length > 24) {
+    parts = {adopted: {type: 'FeatureCollection', features: []}, held: {type: 'FeatureCollection', features: []}};
+    loadedKey = '';
+    restoreOverlay();
+    statusEl.textContent = 'This view is wider than the buildings loaded for a tap. Zoom in.';
+    window.__ypView = {features: 0, chunks: hits.length, ms: Math.round(performance.now() - started), wide: true};
+    return;
+  }
+  const key = hits.map(chunk => chunk.id).sort().join(',');
+  if (key === loadedKey && map.getSource('ypb-buildings')) {
+    window.__ypView = {features: parts.adopted.features.length, chunks: hits.length, ms: 0, cached: true};
+    return;
+  }
+  const collections = await Promise.all(hits.map(chunk => fetch(`/data/chunks/${chunk.id}.json`).then(response => response.json())));
+  if (token !== loadToken) return;
+  const features = collections.flatMap(collection => collection.features || []);
+  parts = {
+    adopted: {type: 'FeatureCollection', features: features.filter(feature => feature.properties && feature.properties.adopted)},
+    held: {type: 'FeatureCollection', features: features.filter(feature => !(feature.properties && feature.properties.adopted))}
+  };
+  loadedKey = key;
+  restoreOverlay();
+  const ms = Math.round(performance.now() - started);
+  window.__ypView = {features: parts.adopted.features.length, held: parts.held.features.length, chunks: hits.length, ms, cached: false};
+  if (!gameEl.textContent) statusEl.textContent = `${parts.adopted.features.length} buildings in this view. ${parts.held.features.length} overlaps kept out. Tap a building.`;
+}
+
 map.on('load', async () => {
   try {
-    const overlay = await (await fetch('/data/overlay-v1.geojson')).json();
-    try {
-      const pricing = await (await fetch('/data/pricing-v1.json')).json();
-      prices = new Map((pricing.rows || []).map(row => [row.gameId, row]));
-    } catch {
-      prices = new Map();
-    }
-    const features = Array.isArray(overlay.features) ? overlay.features : [];
-    const withTone = feature => {
-      const row = prices.get(feature.properties && feature.properties.gameId);
-      return {...feature, properties: {...feature.properties, tone: row ? row.tone : 'none'}};
-    };
-    parts = {
-      adopted: {type: 'FeatureCollection', features: features.filter(feature => feature.properties && feature.properties.adopted).map(withTone)},
-      held: {type: 'FeatureCollection', features: features.filter(feature => !(feature.properties && feature.properties.adopted))}
-    };
-    restoreOverlay();
-    statusEl.textContent = `${parts.adopted.features.length} adopted buildings. ${parts.held.features.length} overlaps kept out. Tap a building.`;
+    manifest = await (await fetch('/data/chunk-manifest.json')).json();
+    boundaryData = await (await fetch('/data/boundary.geojson')).json();
+    frameSample();
+    await new Promise(resolve => {
+      if (map.isMoving()) map.once('moveend', resolve);
+      else resolve();
+    });
+    loadedKey = '';
+    await loadVisible();
     const key = await keyIfAny();
     if (key && !basemapRequested) {
       basemapRequested = true;
@@ -195,6 +234,8 @@ map.on('load', async () => {
     note(`The building file did not load (${redact(error.message)}).`);
   }
 });
+
+map.on('moveend', () => { loadVisible().catch(error => note(`The building file did not load (${redact(error.message)}).`)); });
 
 map.on('click', event => {
   const layers = ['ypb-fill', 'ypb-quarantine-fill'].filter(id => map.getLayer(id));

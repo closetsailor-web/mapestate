@@ -60,13 +60,13 @@ async function evalJson(expression) {
 try {
   await cdp.send('Emulation.setDeviceMetricsOverride', {width: 900, height: 700, deviceScaleFactor: 1, mobile: false}, sessionId);
   await cdp.send('Page.navigate', {url: 'http://127.0.0.1:8767/'}, sessionId);
-  const ready = await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const text=document.getElementById('status')?.textContent||'';if(text.includes('adopted')&&window.__ypMap?.getSource('ypb-buildings'))r(1);else if(Date.now()-t>25000)r(0);else setTimeout(tick,150)};tick()})`);
+  const ready = await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const view=window.__ypView;if(view&&view.features>0&&window.__ypMap?.getSource('ypb-buildings'))r(view);else if(Date.now()-t>25000)r(0);else setTimeout(tick,150)};tick()})`);
   if (!ready) throw new Error('overlay did not load');
   const point = await evalJson(`(async()=>{
     const map=window.__ypMap;
     map.resize();
     const inside=(lon,lat,ring)=>{let on=false, inn=false; for(let i=0;i<ring.length-1;i++){const a=ring[i],b=ring[i+1];const cross=(lat-a[1])*(b[0]-a[0])-(lon-a[0])*(b[1]-a[1]); if(Math.abs(cross)<1e-12 && lon>=Math.min(a[0],b[0])&&lon<=Math.max(a[0],b[0])&&lat>=Math.min(a[1],b[1])&&lat<=Math.max(a[1],b[1]))on=true;} if(on)return false; for(let i=0,j=ring.length-1;i<ring.length;j=i++){const yi=ring[i][1],yj=ring[j][1],xi=ring[i][0],xj=ring[j][0]; if((yi>lat)!==(yj>lat)&&(lon<(xj-xi)*(lat-yi)/(yj-yi)+xi))inn=!inn;} return inn;};
-    const features=map.getSource('ypb-buildings')._data.features.filter(f=>f.geometry.type==='Polygon' && (f.properties.tone==='trade' || f.properties.tone==='home'));
+    const features=map.getSource('ypb-buildings')._data.features.filter(f=>f.geometry.type==='Polygon' && f.properties.gameId==='ypb-3be0a2ac226ef07bee0a8a8115b3cf2d');
     let chosen=null, center=null;
     for (const feature of features) {
       const ring=feature.geometry.coordinates[0];
@@ -118,6 +118,24 @@ try {
   const styledSelected = await evalJson(`document.getElementById('game-id').textContent`);
   const styledImage = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
   writeFileSync(`${OUT}/selected-building-test-basemap.png`, Buffer.from(styledImage.data, 'base64'));
+  await evalJson(`document.querySelector('#panel header p').textContent='Stand-in test view. Not the live MapTiler basemap.'`);
+  const places = await evalJson(`(async()=>{
+    const map=window.__ypMap;
+    const go=async(bounds)=>{const t=performance.now();window.__ypView=null;map.fitBounds(bounds,{padding:{left:480,right:36,top:28,bottom:40},duration:0,maxZoom:16});await new Promise(r=>map.once('idle',r));const deadline=Date.now()+8000;while(Date.now()<deadline && !window.__ypView)await new Promise(r=>setTimeout(r,50));return {bounds,view:window.__ypView,ms:Math.round(performance.now()-t)};};
+    const suburb=await go([[152.45,-24.85],[152.5,-24.8]]);
+    return {suburb};
+  })()`);
+  const suburbImage = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
+  writeFileSync(`${OUT}/suburb-bargara-stand-in.png`, Buffer.from(suburbImage.data, 'base64'));
+  const rural = await evalJson(`(async()=>{const map=window.__ypMap;const t=performance.now();window.__ypView=null;map.fitBounds([[151.65,-24.8],[151.7,-24.75]],{padding:{left:480,right:36,top:28,bottom:40},duration:0,maxZoom:16});await new Promise(r=>map.once('idle',r));const deadline=Date.now()+8000;while(Date.now()<deadline && !window.__ypView)await new Promise(r=>setTimeout(r,50));return {view:window.__ypView,ms:Math.round(performance.now()-t)};})()`);
+  const ruralImage = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
+  writeFileSync(`${OUT}/rural-west-stand-in.png`, Buffer.from(ruralImage.data, 'base64'));
+  await evalJson(`document.querySelector('#panel header p').textContent='Council boundary. Stand-in view, not the live MapTiler basemap. Zoom in to load buildings.'`);
+  const region = await evalJson(`(async()=>{const map=window.__ypMap;const t=performance.now();window.__ypView=null;map.fitBounds([[151.341793,-25.4313055],[152.6330215,-24.5137614]],{padding:40,duration:0});await new Promise(r=>map.once('idle',r));const deadline=Date.now()+8000;while(Date.now()<deadline && !(window.__ypView&&window.__ypView.wide))await new Promise(r=>setTimeout(r,50));return {view:window.__ypView,ms:Math.round(performance.now()-t)};})()`);
+  const coverage = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
+  writeFileSync(`${OUT}/coverage-bundaberg-region.png`, Buffer.from(coverage.data, 'base64'));
+  places.rural = rural;
+  places.region = region;
   const failed = await evalJson(`(async()=>{
     const map=window.__ypMap;
     map.setStyle('http://127.0.0.1:8767/missing-style.json');
@@ -125,12 +143,13 @@ try {
     while(Date.now()<deadline && !map.getLayer('ypb-fill')) await new Promise(r=>setTimeout(r,100));
     return {overlay:!!map.getLayer('ypb-fill'), status:document.getElementById('status').textContent};
   })()`);
-  const report = {expected: point.gameId, selectedGame: selected.game === point.gameId, selectedGers: selected.meta.includes(point.gersId), hits: point.hits, styled, styledSelected, failed};
+  const report = {ready, expected: point.gameId, selected, hits: point.hits, styled, styledSelected, places, failed};
   console.log(JSON.stringify(report, null, 2));
-  const priced = /^\$[\d,]+$/.test(selected.estimate);
+  const priced = selected.estimate === '$1,152,835';
   const ok = selected.game === point.gameId && selected.status === 'Selected building' && priced && selected.meta.includes('Game estimate') && point.hits.includes(point.gameId)
     && styled.overlay && styled.vendorHidden && styled.hits.includes(point.gameId) && styledSelected === point.gameId
     && styled.keptGame === point.gameId && styled.keptEstimate === selected.estimate && styled.keptSelected === point.gameId
+    && places.suburb.view.features > 0 && places.rural.view.features > 0 && places.region.view.wide === true
     && failed.overlay;
   if (!ok) process.exitCode = 1;
 } catch (error) {

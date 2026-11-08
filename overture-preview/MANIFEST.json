@@ -7,12 +7,16 @@
   "runtimeConfig": "GET /runtime-config returns {\"key\"} from MAPTILER_TEST_API_KEY or private/api-key.txt. Empty when neither is set. Claims are not served.",
   "snapshot": {
     "release": "2026-10-21.0",
-    "requestedBbox": [152.343, -24.871, 152.353, -24.862],
-    "sourceFeatures": 1093,
-    "adopted": 1058,
-    "quarantined": 35,
-    "registrySha256": "13e1eaa98bf3943aa21955bebcea233408617e7170ab230df6e036d2560b778e",
-    "note": "One supplied extract. Not complete coverage of Bundaberg."
+    "coverage": "Bundaberg Regional Council boundary, Coral Sea portion excluded by the council file",
+    "areaKm2": 6438.456,
+    "bounds": [151.341793, -25.4313055, 152.6330215, -24.5137614],
+    "downloadedFeatures": 79879,
+    "adopted": 79046,
+    "quarantined": 833,
+    "preservedRecordSha256": "9cb21571bb037e946f5413ac023bfcc63c1f4a805cce3bbf0db4395a0e4fd4fd",
+    "preservedQuarantineSha256": "5afb9331d61bc03b8a26f8fe40a254c9f7d6b58bdfe85b1609f1155bfd2c27c8",
+    "preservedPriceSha256": "5214dede3baf6e7945adeef97eca179d19dfbe8714a9a9360fc4722526e5d498",
+    "note": "The original 1,058 ids and 35 quarantines are inside this file. The area is the council polygon, not a guarantee of every building."
   },
   "files": [
     "overture-preview/index.html",
@@ -22,6 +26,11 @@
     "overture-preview/data/registry-v1.json",
     "overture-preview/data/overlay-v1.geojson",
     "overture-preview/data/pricing-v1.json",
+    "overture-preview/data/boundary.geojson",
+    "overture-preview/data/chunk-manifest.json",
+    "overture-preview/data/chunks/",
+    "overture-preview/COVERAGE.md",
+    "overture-preview/TIMINGS.json",
     "overture-preview/source/bundaberg-buildings.geojson",
     "overture-preview/CREDITS.md",
     "overture-preview/LICENSES/NOTICE.md"

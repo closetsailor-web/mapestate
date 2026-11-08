@@ -87,6 +87,11 @@ try {
     assert.notEqual(denied.status, 200, path);
     assert.equal(denied.body.includes(fakeKey), false);
   }
+  const chunk = await request(port, 'GET', '/data/chunks/3033_-496.json', same);
+  assert.equal(chunk.status, 200);
+  assert.equal(chunk.body.includes(fakeKey), false);
+  const chunkEscape = await request(port, 'GET', '/data/chunks/../registry-v1.json', same);
+  assert.notEqual(chunkEscape.status, 200);
   const pricing = await request(port, 'GET', '/data/pricing-v1.json', same);
   assert.equal(pricing.status, 200);
   assert.equal(pricing.body.includes(fakeKey), false);

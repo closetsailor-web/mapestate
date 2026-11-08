@@ -2,7 +2,9 @@
 
 This preview draws one frozen extract of building footprints. It is not legal advice, and shipping this file does not settle how the game records and the open geodata must stay separate in a later product.
 
-The extract used here is the supplied Overture buildings sample named central Bundaberg, release label 2026-10-21.0. The file contains 1,093 features. Its measured extent is about 152.3421, -24.8732 to 152.3535, -24.8623. That is one bbox sample. It is not complete coverage of Bundaberg.
+The map now uses Overture buildings release 2026-10-21.0 inside the Bundaberg Regional Council boundary published on data.gov.au. That boundary excludes the Coral Sea portion the council omitted. The measured area of the reprojected polygon is 6,438.456 km². It is not a promise that every structure in the region is present. The original 1,093-feature central sample remains in `source/bundaberg-buildings.geojson`. Its measured extent is about 152.3421, -24.8732 to 152.3535, -24.8623.
+
+The council boundary is Creative Commons Attribution 4.0. Dataset `e32f307d-f866-46cf-a9bf-def12ae2be21`, Bundaberg Regional Council. The file used was the GeoJSON Web Feature Service response, reprojected from EPSG:28356 to EPSG:4326. https://data.gov.au/data/dataset/bundaberg-regional-council-area
 
 Every parsed source row in that extract names license `ODbL-1.0`. The datasets named in those rows are:
 

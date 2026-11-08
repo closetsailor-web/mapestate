@@ -9,9 +9,12 @@ not a multiplayer lock.
 import argparse
 import json
 import os
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
+
+CHUNK_PATH = re.compile(r'^/data/chunks/-?\d+_-?\d+\.json$')
 
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parent
@@ -23,7 +26,10 @@ FILES = {
     '/data/overlay-v1.geojson': ROOT / 'data' / 'overlay-v1.geojson',
     '/data/registry-v1.json': ROOT / 'data' / 'registry-v1.json',
     '/data/pricing-v1.json': ROOT / 'data' / 'pricing-v1.json',
+    '/data/chunk-manifest.json': ROOT / 'data' / 'chunk-manifest.json',
+    '/data/boundary.geojson': ROOT / 'data' / 'boundary.geojson',
     '/CREDITS.md': ROOT / 'CREDITS.md',
+    '/COVERAGE.md': ROOT / 'COVERAGE.md',
 }
 TYPES = {
     '.html': 'text/html; charset=utf-8',
@@ -105,6 +111,11 @@ def make_handler(port):
                 body = json.dumps({'key': map_key()}).encode('utf-8')
                 return self.send_body(200, body, 'application/json')
             target = FILES.get(path)
+            if target is None and CHUNK_PATH.match(path):
+                candidate = (ROOT / path.lstrip('/')).resolve()
+                chunks = (ROOT / 'data' / 'chunks').resolve()
+                if candidate.parent == chunks:
+                    target = candidate
             if target is None or not target.is_file():
                 return self.send_body(404, b'Not found')
             if not self.origin_ok(False):

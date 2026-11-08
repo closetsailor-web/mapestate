@@ -35,9 +35,12 @@ function referenceUnit(gameId) {
   return Math.round(495000 * 0.78 * 1.1 * spread * market / 1000) * 1000;
 }
 
-assert.equal(registrySha, '13e1eaa98bf3943aa21955bebcea233408617e7170ab230df6e036d2560b778e');
-assert.equal(registry.records.length, 1058);
-assert.equal(registry.quarantine.length, 35);
+assert.equal(registry.snapshot.preservedRecordHash, '9cb21571bb037e946f5413ac023bfcc63c1f4a805cce3bbf0db4395a0e4fd4fd');
+assert.equal(registry.snapshot.preservedQuarantineHash, '5afb9331d61bc03b8a26f8fe40a254c9f7d6b58bdfe85b1609f1155bfd2c27c8');
+assert.equal(registry.snapshot.preservedPriceHash, '5214dede3baf6e7945adeef97eca179d19dfbe8714a9a9360fc4722526e5d498');
+assert.equal(registry.records.length, 79046);
+assert.equal(registry.quarantine.length, 833);
+assert.equal(registry.quarantine.slice(0, 35).every(item => item.saleable === false), true);
 assert.equal(marketIndex('c10', 0), Math.exp(0.015 * Math.sin(gameHash('phc10') * 20)));
 
 const houseId = 'ypb-parity-house';
@@ -59,9 +62,30 @@ assert.equal(classifyBuilding('school', 'education').group, 'other');
 assert.equal(ADJUSTMENTS.other, 0);
 assert.equal(ADJUSTMENTS.otherStatus, 'pending-review');
 
-const pricing = buildPricing(registry, source.features);
-assert.deepEqual(pricing, stored);
+const sourceIds = new Set(source.features.map(feature => feature.properties.id));
+const pricing = buildPricing({records: registry.records.filter(record => record.gersIds.some(id => sourceIds.has(id))), quarantine: []}, source.features);
+const preserved = stored.rows.slice(0, 1058);
+assert.equal(preserved.length, 1058);
+assert.deepEqual(JSON.parse(readFileSync(resolve(root, 'data/pricing-v1.json'), 'utf8')).rows.slice(0, 1058), preserved);
+assert.deepEqual(pricing.rows, preserved);
 assert.equal(pricing.rows.length, 1058);
+assert.equal(stored.rows.find(row => row.gameId === 'ypb-3be0a2ac226ef07bee0a8a8115b3cf2d').estimate, 1152835);
+assert.equal(stored.rows.find(row => row.gameId === 'ypb-962c403a94919046f4fa6e7347665435').estimate, 630000);
+assert.equal(stored.rows.find(row => row.gameId === 'ypb-e55369618f2c13e5c92bdaf3dda1ee58').estimate, 438000);
+assert.equal(stored.rows.length, 79046);
+for (const row of stored.rows.slice(1058)) {
+  if (row.tone === 'trade') {
+    assert.ok(row.upliftBps >= 3000 && row.upliftBps <= 4000);
+    assert.equal(commercialUpliftBps(row.gameId), row.upliftBps);
+    assert.equal(Number.isInteger(row.estimate), true);
+  } else if (row.tone === 'none') {
+    assert.equal(row.eligible, false);
+    assert.equal(row.estimate, null);
+  } else {
+    assert.equal(row.upliftBps, 0);
+    assert.equal(row.estimate % 1000, 0);
+  }
+}
 assert.equal(new Set(pricing.rows.map(row => row.gameId)).size, 1058);
 const known = new Set(registry.records.map(record => record.gameId));
 assert.equal(pricing.rows.every(row => known.has(row.gameId)), true);

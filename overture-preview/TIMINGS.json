@@ -1,0 +1,65 @@
+{
+  "startedAt": "2026-11-08T09:40:55.270Z",
+  "timezone": "UTC",
+  "machine": {
+    "uname": "Linux cursor 6.12.113+ #1 SMP PREEMPT_DYNAMIC Thu Nov  5 16:04:51 UTC 2026 x86_64",
+    "cpus": 4,
+    "memory": "15GiB total, about 4.8GiB available when the clock started",
+    "node": "v22.23.4",
+    "python": "3.12.3",
+    "duckdb": "2.0.0"
+  },
+  "finishedAt": "2026-11-08T09:55:29Z",
+  "totalSeconds": 873.7,
+  "note": "Times are wall-clock measurements on this cloud machine. They are not a promise that another machine, or a larger area, will take a proportional amount of time. The total is from the clock start through the successful zip. Mac installation is not included. Time spent writing the code sits in the gaps between stages and is part of the total, not part of the download or processing rates.",
+  "stages": {
+    "sourceSelection": {
+      "from": "2026-11-08T09:40:55.270Z",
+      "to": "2026-11-08T09:41:44Z",
+      "what": "Choosing the council boundary and the Overture release. Included in the total. Not a data-processing rate."
+    },
+    "boundaryRetrieval": {
+      "startedAt": "2026-11-08T09:41:44Z",
+      "fetchSeconds": 0.858,
+      "bytes": 177289,
+      "reprojectSeconds": 0.057,
+      "what": "Download of the council GeoJSON and the transform from EPSG:28356 to EPSG:4326, plus the area measurement."
+    },
+    "download": {
+      "bboxCountStartedAt": "2026-11-08T09:42:16Z",
+      "bboxCountSeconds": 8.62,
+      "bboxFeatures": 89502,
+      "polygonDownloadStartedAt": "2026-11-08T09:43:03Z",
+      "polygonDownloadSeconds": 9.38,
+      "features": 79879,
+      "bytes": 28361766,
+      "what": "Public S3 read of Overture release 2026-10-21.0. The count is every building bbox that meets the council bounds. The download is the intersecting polygons, whole, without names."
+    },
+    "processing": {
+      "startedAt": "2026-11-08T09:46:48Z",
+      "seconds": 2.243,
+      "what": "Reading 79,879 features, spatial reconciliation against the existing registry, quarantine, pricing for new ids only, and writing 244 view chunks. An earlier 2.1s run was discarded because it would have stored the original 35 quarantines twice. This is the run that was kept."
+    },
+    "testing": {
+      "from": "2026-11-08T09:49:48Z",
+      "to": "2026-11-08T09:54:09Z",
+      "what": "Registry, pricing, server, browser, and the existing game listing and rental checks. The interval includes a failed assertion and browser reruns, not one uninterrupted pass.",
+      "finalMeasured": {
+        "pricingTestSeconds": 0.711,
+        "serverAndBrowserSeconds": 9.8,
+        "finalBrowserSeconds": 10.2,
+        "gameListingAndRentalSeconds": 28.2,
+        "townLoad": {"features": 33062, "chunks": 4, "fetchAndAttachMs": 276},
+        "suburbLoad": {"features": 28448, "chunks": 8, "fetchAndAttachMs": 220, "cameraMs": 1455},
+        "ruralLoad": {"features": 173, "chunks": 12, "fetchAndAttachMs": 75, "cameraMs": 311},
+        "regionOverview": {"chunksRefused": 244, "ms": 1}
+      }
+    },
+    "packaging": {
+      "startedAt": "2026-11-08T09:55:26Z",
+      "seconds": 1.577,
+      "zipBytes": 19069196,
+      "what": "Zip of the preview directory on local disk, then copy to the artifact store. A direct write into the artifact store failed and was not kept."
+    }
+  }
+}

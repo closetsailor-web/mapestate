@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {dirname, resolve} from 'node:path';
-import {claimRecord, gameIdForGeometry, importSnapshot} from './registry.mjs';
+import {claimRecord, gameIdForGeometry, importSnapshot, reconcileIncoming} from './registry.mjs';
 
 const root = dirname(new URL(import.meta.url).pathname);
 const raw = JSON.parse(readFileSync(resolve(root, 'source/bundaberg-buildings.geojson'), 'utf8'));
@@ -13,22 +13,29 @@ const square = (x, y, size = 0.001) => ({
 });
 const feature = (id, geometry) => ({type: 'Feature', properties: {id, sources: []}, geometry});
 
-const again = importSnapshot(raw.features, frozen, meta);
-assert.equal(again.records.length, frozen.records.length);
-assert.deepEqual(again.records.map(r => r.gameId), frozen.records.map(r => r.gameId));
-assert.equal(again.quarantine.length, frozen.quarantine.length);
-assert.equal(frozen.records.every(r => r.gameId === gameIdForGeometry(r.geometry)), true);
+const base = importSnapshot(raw.features, null, meta);
+assert.equal(base.records.length, 1058);
+assert.equal(base.quarantine.length, 35);
+const again = importSnapshot(raw.features, base, meta);
+assert.equal(again.records.length, base.records.length);
+assert.deepEqual(again.records.map(r => r.gameId), base.records.map(r => r.gameId));
+assert.equal(again.quarantine.length, base.quarantine.length);
+assert.equal(base.records.every(r => r.gameId === gameIdForGeometry(r.geometry)), true);
+assert.equal(frozen.records.filter(r => base.records.some(item => item.gameId === r.gameId)).length, 1058);
 assert.equal(new Set(frozen.records.map(r => r.gameId)).size, frozen.records.length);
+const regionalAgain = importSnapshot(raw.features, frozen, meta);
+assert.equal(regionalAgain.records.length, frozen.records.length);
+assert.deepEqual(regionalAgain.records.map(r => r.gameId), frozen.records.map(r => r.gameId));
 
 const mutated = raw.features.map(feature => ({
   ...feature,
   properties: {...feature.properties, id: `changed-${feature.properties.id}`}
 }));
-const renamed = importSnapshot(mutated, frozen, meta);
-assert.deepEqual(renamed.records.map(r => r.gameId), frozen.records.map(r => r.gameId));
+const renamed = importSnapshot(mutated, base, meta);
+assert.deepEqual(renamed.records.map(r => r.gameId), base.records.map(r => r.gameId));
 assert.equal(renamed.records.every(r => r.gersIds.some(id => id.startsWith('changed-'))), true);
 
-const owned = {...frozen, ownership: {version: 1, claims: {'ypb-keep': {owner: 'player-a', tenant: ''}}}};
+const owned = {...base, ownership: {version: 1, claims: {'ypb-keep': {owner: 'player-a', tenant: ''}}}};
 const kept = importSnapshot(raw.features, owned, meta);
 assert.deepEqual(kept.ownership, owned.ownership);
 
@@ -67,6 +74,19 @@ assert.equal(tenant.ok, true);
 const tenant2 = claimRecord(tenant.ownership, {gameId: 'ypb-1', playerId: 'player-d', role: 'tenant'});
 assert.equal(tenant2.ok, false);
 assert.equal(claimA.ownership.claims['ypb-1'].owner, 'player-a');
+
+const prior = importSnapshot([feature('keep', square(10, 10))], null, meta);
+const priorJson = JSON.stringify(prior.records[0]);
+const reconciled = reconcileIncoming(prior, [
+  feature('vendor-changed', square(10, 10)),
+  feature('fresh', square(12, 12)),
+  feature('clash-a', square(14, 14, 0.002)),
+  feature('clash-b', square(14.001, 14.0002, 0.002))
+]);
+assert.equal(JSON.stringify(reconciled.records.find(record => record.gersIds.includes('keep'))), priorJson);
+assert.equal(reconciled.records.some(record => record.gersIds.includes('fresh')), true);
+assert.equal(reconciled.records.some(record => record.gersIds.includes('clash-a') || record.gersIds.includes('clash-b')), false);
+assert.equal(reconciled.quarantine.filter(item => item.reason === 'overlap').length, 2);
 
 console.log(JSON.stringify({
   adopted: frozen.records.length,

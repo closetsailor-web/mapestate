@@ -128,10 +128,10 @@ function properCross(a, b, c, d) {
   return o1 * o2 < 0 && o3 * o4 < 0;
 }
 
-export function geometriesOverlap(a, b) {
+export function geometriesOverlap(a, b, hashesDiffer) {
   const ra = outerRings(a), rb = outerRings(b);
   if (!ra.length || !rb.length) return false;
-  if (geometryHash(a) && geometryHash(a) === geometryHash(b)) return false;
+  if (!hashesDiffer && geometryHash(a) && geometryHash(a) === geometryHash(b)) return false;
   if (!bboxHit(bboxOf(ra), bboxOf(rb))) return false;
   if (samplesInside(ra, rb) || samplesInside(rb, ra)) return true;
   for (const ringA of ra) for (const ringB of rb) {
@@ -262,6 +262,135 @@ export function overlayFromRegistry(registry) {
     });
   }
   return {type: 'FeatureCollection', features};
+}
+
+function cellKeys(bbox, size) {
+  const keys = [];
+  const x0 = Math.floor(bbox[0] / size), x1 = Math.floor(bbox[2] / size);
+  const y0 = Math.floor(bbox[1] / size), y1 = Math.floor(bbox[3] / size);
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) keys.push(`${x}:${y}`);
+  return keys;
+}
+
+export function reconcileIncoming(previous, features, options = {}) {
+  const prior = previous && previous.version === 1 ? previous : emptyRegistry();
+  const keptRecords = [...(prior.records || [])];
+  const quarantine = [...(prior.quarantine || [])];
+  const quarantineHashes = new Set();
+  for (const item of quarantine) if (item.geometry) quarantineHashes.add(geometryHash(item.geometry));
+  const byHash = new Map(keptRecords.map(record => [record.geometryHash, record]));
+  const byGers = new Map();
+  for (const record of keptRecords) for (const id of record.gersIds) byGers.set(id, record);
+  const size = options.cellSize || 0.002;
+  const grid = new Map();
+  const put = item => {
+    for (const key of cellKeys(item.bbox, size)) {
+      let bucket = grid.get(key);
+      if (!bucket) grid.set(key, bucket = []);
+      bucket.push(item);
+    }
+  };
+  const indexed = [];
+  const addFixed = (geometry, hash, kind) => {
+    const rings = outerRings(geometry);
+    if (!rings.length) return;
+    const item = {hash, geometry, bbox: bboxOf(rings), kind, fixed: true};
+    indexed.push(item);
+    put(item);
+  };
+  for (const record of keptRecords) addFixed(record.geometry, record.geometryHash, 'adopted');
+  for (const item of quarantine) if (item.geometry) addFixed(item.geometry, `q:${item.gersId}:${item.reason}`, 'quarantine');
+  const candidates = [];
+  let matchedExisting = 0;
+  for (const feature of features || []) {
+    const geometry = canonicalGeometry(feature.geometry);
+    const hash = geometryHash(feature.geometry);
+    const gersId = String(feature?.properties?.id || feature?.id || '');
+    if (!geometry || !hash || !gersId) continue;
+    const exact = byHash.get(hash);
+    if (exact) {
+      matchedExisting += 1;
+      continue;
+    }
+    if (quarantineHashes.has(hash)) {
+      matchedExisting += 1;
+      continue;
+    }
+    const sameVendor = byGers.get(gersId);
+    if (sameVendor && sameVendor.geometryHash !== hash) {
+      quarantine.push({reason: 'vendor-geometry-changed', gersId, relatedGameIds: [sameVendor.gameId], saleable: false, geometry});
+      continue;
+    }
+    const rings = outerRings(geometry);
+    if (!rings.length) continue;
+    const item = {
+      hash,
+      gersId,
+      geometry,
+      bbox: bboxOf(rings),
+      sources: sourceSummary(feature.properties),
+      properties: {class: feature.properties?.class ?? null, subtype: feature.properties?.subtype ?? null},
+      fixed: false
+    };
+    candidates.push(item);
+    put(item);
+  }
+  const hashCount = new Map();
+  for (const item of candidates) hashCount.set(item.hash, (hashCount.get(item.hash) || 0) + 1);
+  const rejected = new Map();
+  const reject = (item, reason, relatedGameIds) => {
+    if (!rejected.has(item.hash)) rejected.set(item.hash, {reason, relatedGameIds: relatedGameIds || []});
+  };
+  for (const item of candidates) {
+    const seen = new Set();
+    for (const key of cellKeys(item.bbox, size)) {
+      for (const other of grid.get(key) || []) {
+        if (other === item || other.hash === item.hash || seen.has(other.hash)) continue;
+        if (!item.fixed && other.fixed === false && other.hash < item.hash) continue;
+        seen.add(other.hash);
+        if (!bboxHit(item.bbox, other.bbox)) continue;
+        if (!geometriesOverlap(item.geometry, other.geometry, true)) continue;
+        if (other.kind === 'adopted') reject(item, 'overlaps-adopted', []);
+        else if (other.fixed) reject(item, 'overlaps-quarantine', []);
+        else {
+          reject(item, 'overlap', []);
+          reject(other, 'overlap', []);
+        }
+      }
+    }
+  }
+  const fresh = [];
+  for (const item of candidates) {
+    if ((hashCount.get(item.hash) || 0) > 1) {
+      quarantine.push({reason: 'duplicate-geometry', gersId: item.gersId, relatedGameIds: [], saleable: false, geometry: item.geometry});
+      continue;
+    }
+    if (rejected.has(item.hash)) {
+      const held = rejected.get(item.hash);
+      quarantine.push({reason: held.reason, gersId: item.gersId, relatedGameIds: held.relatedGameIds, saleable: false, geometry: item.geometry});
+      continue;
+    }
+    fresh.push({
+      gameId: gameIdForGeometry(item.geometry),
+      geometryHash: item.hash,
+      gersIds: [item.gersId],
+      geometry: item.geometry,
+      sources: item.sources,
+      status: 'adopted',
+      className: item.properties.class,
+      subtype: item.properties.subtype
+    });
+  }
+  const records = keptRecords.concat(fresh).sort((a, b) => a.gameId < b.gameId ? -1 : 1);
+  return {
+    version: 1,
+    frozen: true,
+    snapshot: {...(prior.snapshot || {}), reconciled: true, matchedExisting, adopted: records.length, quarantined: quarantine.length},
+    records,
+    quarantine,
+    ownership: prior.ownership || {version: 1, claims: {}},
+    stats: {matchedExisting, candidates: candidates.length, rejected: rejected.size, adopted: records.length, quarantined: quarantine.length}
+  };
 }
 
 export function claimRecord(ownership, input) {
