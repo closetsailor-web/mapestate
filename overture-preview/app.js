@@ -1,18 +1,20 @@
 const statusEl = document.getElementById('status');
 const gameEl = document.getElementById('game-id');
 const metaEl = document.getElementById('meta');
-const claimEl = document.getElementById('claim');
-const ownerBtn = document.getElementById('claim-owner');
-const tenantBtn = document.getElementById('claim-tenant');
-let selected = '';
 
 const blank = {version: 8, sources: {}, layers: [{id: 'bg', type: 'background', paint: {'background-color': '#d5e2ef'}}]};
+let mapKey = '';
 const map = window.__ypMap = new maplibregl.Map({
   container: 'map',
   style: blank,
   center: [152.348, -24.8665],
   zoom: 15.2,
-  attributionControl: {compact: false}
+  attributionControl: {compact: false},
+  transformRequest(url) {
+    const parsed = new URL(url, window.location.href);
+    if (mapKey && parsed.hostname === 'api.maptiler.com') parsed.searchParams.set('key', mapKey);
+    return {url: parsed.href};
+  }
 });
 
 async function keyIfAny() {
@@ -38,10 +40,6 @@ function hideVendorBuildings() {
 
 function show(feature) {
   const props = feature?.properties || {};
-  selected = props.adopted ? props.gameId : '';
-  ownerBtn.disabled = !selected;
-  tenantBtn.disabled = !selected;
-  claimEl.textContent = '';
   if (!feature) {
     statusEl.textContent = 'Tap a coloured building. Grey shapes are quarantined and have no saleable id.';
     gameEl.textContent = '';
@@ -60,26 +58,7 @@ function show(feature) {
   map.getSource('ypb-selected').setData({type: 'FeatureCollection', features: [feature]});
 }
 
-async function claim(role) {
-  if (!selected) return;
-  const response = await fetch('/api/claim', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({gameId: selected, playerId: 'local-preview-player', role})
-  });
-  const body = await response.json();
-  claimEl.textContent = body.ok
-    ? `Local file claim recorded for ${role}. Shared only inside this server process.`
-    : `Local file refused the ${role} claim (${body.reason}).`;
-}
-
-ownerBtn.addEventListener('click', () => claim('owner'));
-tenantBtn.addEventListener('click', () => claim('tenant'));
-
-map.on('load', async () => {
-  const overlay = await (await fetch('/data/overlay-v1.geojson')).json();
-  const adopted = {type: 'FeatureCollection', features: overlay.features.filter(f => f.properties.adopted)};
-  const held = {type: 'FeatureCollection', features: overlay.features.filter(f => !f.properties.adopted)};
+function addOverlay(adopted, held) {
   map.addSource('ypb-buildings', {type: 'geojson', data: adopted});
   map.addSource('ypb-quarantine', {type: 'geojson', data: held});
   map.addSource('ypb-selected', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
@@ -88,20 +67,20 @@ map.on('load', async () => {
   map.addLayer({id: 'ypb-line', type: 'line', source: 'ypb-buildings', paint: {'line-color': '#8a4b08', 'line-width': 1.2}});
   map.addLayer({id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.45}});
   map.addLayer({id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#0b2545', 'line-width': 3}});
+}
+
+map.on('load', async () => {
+  const overlay = await (await fetch('/data/overlay-v1.geojson')).json();
+  const adopted = {type: 'FeatureCollection', features: overlay.features.filter(f => f.properties.adopted)};
+  const held = {type: 'FeatureCollection', features: overlay.features.filter(f => !f.properties.adopted)};
+  addOverlay(adopted, held);
   statusEl.textContent = `${adopted.features.length} adopted buildings. ${held.features.length} overlaps kept out. Tap one.`;
-  const key = await keyIfAny();
-  if (key) {
-    map.setStyle(`https://api.maptiler.com/maps/base-v4/style.json?key=${encodeURIComponent(key)}`);
+  mapKey = await keyIfAny();
+  if (mapKey) {
+    map.setStyle('https://api.maptiler.com/maps/base-v4/style.json');
     map.once('style.load', () => {
       hideVendorBuildings();
-      map.addSource('ypb-buildings', {type: 'geojson', data: adopted});
-      map.addSource('ypb-quarantine', {type: 'geojson', data: held});
-      map.addSource('ypb-selected', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
-      map.addLayer({id: 'ypb-quarantine-fill', type: 'fill', source: 'ypb-quarantine', paint: {'fill-color': '#8b95a8', 'fill-opacity': 0.35}});
-      map.addLayer({id: 'ypb-fill', type: 'fill', source: 'ypb-buildings', paint: {'fill-color': '#f4b183', 'fill-opacity': 0.55}});
-      map.addLayer({id: 'ypb-line', type: 'line', source: 'ypb-buildings', paint: {'line-color': '#8a4b08', 'line-width': 1.2}});
-      map.addLayer({id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.45}});
-      map.addLayer({id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#0b2545', 'line-width': 3}});
+      addOverlay(adopted, held);
     });
   }
 });

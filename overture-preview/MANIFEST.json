@@ -4,6 +4,7 @@
   "entrypoint": "python3 overture-preview/server.py --port 8767",
   "open": "http://127.0.0.1:8767/",
   "bind": "127.0.0.1",
+  "runtimeConfig": "GET /runtime-config returns {\"key\"} from MAPTILER_TEST_API_KEY or private/api-key.txt. Empty when neither is set. Claims are not served.",
   "snapshot": {
     "release": "2026-10-21.0",
     "requestedBbox": [152.343, -24.871, 152.353, -24.862],

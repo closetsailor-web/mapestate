@@ -4,7 +4,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 
 const OUT = '/opt/cursor/artifacts/overture-preview';
 mkdirSync(OUT, {recursive: true});
-const server = spawn('python3', ['overture-preview/server.py', '--port', '8767'], {cwd: '/workspace', stdio: 'ignore'});
+const server = spawn('python3', ['overture-preview/server.py', '--port', '8767'], {cwd: '/workspace', env: {...process.env, MAPTILER_TEST_API_KEY: ''}, stdio: 'ignore'});
 const chrome = spawn('google-chrome', [
   '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage',
   '--remote-debugging-port=9247', '--user-data-dir=/tmp/chrome-yp-overture', 'about:blank'
@@ -86,11 +86,9 @@ try {
   const selected = await evalJson(`({game:document.getElementById('game-id').textContent, meta:document.getElementById('meta').textContent, status:document.getElementById('status').textContent})`);
   const image = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
   writeFileSync(`${OUT}/selected-building.png`, Buffer.from(image.data, 'base64'));
-  const first = await fetch('http://127.0.0.1:8767/api/claim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({gameId:point.gameId, playerId:'player-a', role:'owner'})});
-  const second = await fetch('http://127.0.0.1:8767/api/claim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({gameId:point.gameId, playerId:'player-b', role:'owner'})});
-  const report = {expected: point.gameId, selected, first: first.status, second: second.status, body: await second.json()};
+  const report = {expected: point.gameId, selectedGame: selected.game === point.gameId, selectedGers: selected.meta.includes(point.gersId), hits: point.hits};
   console.log(JSON.stringify(report, null, 2));
-  const ok = selected.game === point.gameId && selected.meta.includes(point.gersId) && first.status === 200 && second.status === 409;
+  const ok = selected.game === point.gameId && selected.meta.includes(point.gersId) && point.hits.includes(point.gameId);
   if (!ok) process.exitCode = 1;
 } catch (error) {
   console.error(error);
