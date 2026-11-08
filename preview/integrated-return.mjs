@@ -154,7 +154,7 @@ try {
     && searched.centre.startsWith('Searched area ') && searched.listOld === false && searched.cash === chosen.cash
     && afterZoom > beforeZoom
     && cats.labels.slice(0, 4).join('|') === 'For Sale|For Rent|Room Share|Auctions' && !cats.old && cats.canvas === 'none'
-    && detail.includes('Preview starter rental') && detail.includes('Not a real vacancy') && !detail.includes('you own')
+    && detail.includes('Sample rental') && detail.includes('Not a real vacancy') && !detail.includes('you own') && !detail.includes('Preview starter rental')
     && beforeReload.cash === chosen.cash && beforeReload.props === 0 && beforeReload.ids.length === 20
     && returned === 1 && afterReload.started && afterReload.flow === false && afterReload.cash === beforeReload.cash && afterReload.user === 'sailor' && afterReload.week === beforeReload.week && afterReload.props === 0 && afterReload.ids.join() === beforeReload.ids.join() && afterReload.canvas === 'none' && afterReload.top === 'none' && afterReload.geo === 0 && afterReload.watch === 0 && afterReload.perm === 0
     && deskZoomAfter < deskZoom && recentred.centre === searched.centre && recentred.lon === searched.lon;
