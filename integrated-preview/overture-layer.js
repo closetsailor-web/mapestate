@@ -4,7 +4,7 @@
 (function(){
   window.__ygHandlesMapClick = true;
   const style = document.createElement('style');
-  style.textContent = '#yp-building{position:fixed;inset:0;z-index:46;display:flex;align-items:center;justify-content:center;padding:20px 20px calc(108px + var(--sab));background:rgba(11,37,69,.62);font-family:Inter,system-ui,sans-serif;color:#14213d}#yp-building .card{background:#fff;border-radius:24px;width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden}#yp-building .hwh{margin:0;padding:18px 22px 14px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);text-align:left}#yp-building .yp-kicker{margin:0 0 6px;color:rgba(255,255,255,.9);font:600 13px Inter,system-ui,sans-serif}#yp-building h2{margin:0;color:#fff;font:700 22px/1.25 Inter,system-ui,sans-serif;word-break:break-all}#yp-building .yp-price{margin:16px 22px 6px}#yp-building .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;color:#0b2545}#yp-building .yp-per{margin-left:8px;font:700 16px Inter,system-ui,sans-serif;color:#5a6780}#yp-building .yp-place{margin:0 22px 8px;font:600 15px/1.35 Inter,system-ui,sans-serif}#yp-building .yp-status{margin:8px 22px 0;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}#yp-building .hwx{margin:8px 22px 16px}';
+  style.textContent = '#yp-building{position:fixed;inset:0;z-index:46;display:flex;align-items:center;justify-content:center;padding:20px 20px calc(108px + var(--sab));background:rgba(11,37,69,.62);font-family:Inter,system-ui,sans-serif;color:#14213d}#yp-building .card{background:#fff;border-radius:24px;width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden}#yp-building .hwh{margin:0;padding:18px 22px 14px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);text-align:left}#yp-building .yp-kicker{margin:0 0 6px;color:rgba(255,255,255,.9);font:600 13px Inter,system-ui,sans-serif}#yp-building h2{margin:0;color:#fff;font:700 22px/1.25 Inter,system-ui,sans-serif;word-break:break-all}#yp-building .yp-price{margin:16px 22px 6px}#yp-building .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;color:#0b2545}#yp-building .yp-per{margin-left:8px;font:700 16px Inter,system-ui,sans-serif;color:#5a6780}#yp-building .yp-place{margin:0 22px 8px;font:600 15px/1.35 Inter,system-ui,sans-serif}#yp-building .yp-status{margin:8px 22px 0;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}#yp-building .hwx{display:flex;align-items:center;justify-content:center;min-height:48px;width:calc(100% - 44px);margin:12px 22px 18px;border:0;border-radius:999px;background:#e6ebf2;color:#14213d;font:700 16px Inter,system-ui,sans-serif;cursor:pointer}';
   document.head.appendChild(style);
   const money = new Intl.NumberFormat('en-AU', {style: 'currency', currency: 'AUD', maximumFractionDigits: 0});
   let manifest = null;
@@ -13,6 +13,7 @@
   let loadedKey = '';
   let token = 0;
   let selected = null;
+  let ignoreMapClicksUntil = 0;
   const CAMERA_KEY = 'yp.camera.v1';
 
   function map(){ return window.ypMap || window.__ypMap || null; }
@@ -114,6 +115,14 @@
     parent.appendChild(el);
     return el;
   }
+  function closePopup(event){
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    document.getElementById('yp-building')?.remove();
+    ignoreMapClicksUntil = performance.now() + 700;
+  }
   function openPopup(feature){
     const props = feature && feature.properties || {};
     selected = feature && feature.properties && feature.properties.adopted ? feature : null;
@@ -157,15 +166,16 @@
     back.type = 'button';
     back.className = 'hwx';
     back.textContent = 'Back';
-    back.addEventListener('click', () => panel.remove());
+    back.addEventListener('click', closePopup);
     card.appendChild(back);
+    panel.addEventListener('click', event => { if (event.target === panel) closePopup(event); });
     panel.appendChild(card);
     document.body.appendChild(panel);
   }
   window.__ygOpen = openPopup;
   function onClick(event){
     const m = map();
-    if (!m) return;
+    if (!m || performance.now() < ignoreMapClicksUntil || document.getElementById('yp-building')) return;
     const rentLayers = ['yp-rental-point', 'yp-rental-cluster'].filter(id => m.getLayer(id));
     if (rentLayers.length) {
       try {

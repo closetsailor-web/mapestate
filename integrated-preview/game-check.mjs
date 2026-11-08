@@ -104,6 +104,34 @@ try {
     if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails).slice(0, 900));
     return result.result.value;
   }
+  async function pixelFor(gameId) {
+    let last = null;
+    for (let i = 0; i < 20; i++) {
+      const point = await evalJson(`(()=>{
+        const id=${JSON.stringify(gameId)};
+        const feature=window.__ygParts&&window.__ygParts.adopted.features.find(f=>f.properties.gameId===id);
+        if(!feature||!window.__ypMap.getLayer('ypb-fill'))return {missing:!feature,layer:!!window.__ypMap.getLayer('ypb-fill')};
+        const ring=feature.geometry.type==='Polygon'?feature.geometry.coordinates[0]:feature.geometry.coordinates[0][0];
+        let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+        for (const p of ring){const s=window.__ypMap.project(p); if(s.x<minX)minX=s.x; if(s.y<minY)minY=s.y; if(s.x>maxX)maxX=s.x; if(s.y>maxY)maxY=s.y;}
+        const rect=window.__ypMap.getCanvas().getBoundingClientRect();
+        for (let x=minX;x<=maxX;x+=3) for (let y=minY;y<=maxY;y+=3){
+          if(window.__ypMap.queryRenderedFeatures([x,y],{layers:['ypb-fill']}).some(h=>h.properties.gameId===id)) return {x:rect.left+x,y:rect.top+y};
+        }
+        return null;
+      })()`);
+      if (point && Number.isFinite(point.x)) return point;
+      last = point;
+      await delay(200);
+    }
+    throw new Error('no rendered pixel for ' + gameId + ' ' + JSON.stringify(last));
+  }
+  async function click(x, y) {
+    const px = Math.round(Number(x)), py = Math.round(Number(y));
+    await send('Input.dispatchMouseEvent', {type: 'mousePressed', x: px, y: py, button: 'left', clickCount: 1}, sessionId);
+    await send('Input.dispatchMouseEvent', {type: 'mouseReleased', x: px, y: py, button: 'left', clickCount: 1}, sessionId);
+    await delay(450);
+  }
   async function shot(name) {
     const image = await send('Page.captureScreenshot', {format: 'png'}, sessionId);
     writeFileSync(`${OUT}/${name}`, Buffer.from(image.data, 'base64'));
@@ -143,6 +171,11 @@ try {
   await send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
   await delay(300);
   await shot('property-popup-phone.png');
+  const phoneBack = await evalJson(`(()=>{const b=document.querySelector('#yp-building .hwx');const r=b.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,h:r.height,w:r.width};})()`);
+  await click(phoneBack.x, phoneBack.y);
+  await delay(800);
+  const phoneClosed = await evalJson(`!!document.getElementById('yp-building')`);
+  await evalJson(`(()=>{const feature=window.__ygParts.adopted.features.find(f=>f.properties.gameId==='ypb-3be0a2ac226ef07bee0a8a8115b3cf2d');window.__ygOpen(feature);return 1;})()`);
   await send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
   const styled = await evalJson(`(async()=>{
     const map=window.__ypMap;
@@ -152,6 +185,25 @@ try {
     while(Date.now()<deadline && !map.getLayer('ypb-fill')) await new Promise(r=>setTimeout(r,100));
     return {overlay:!!map.getLayer('ypb-fill'),estimate:document.getElementById('yp-building-estimate')?.textContent||'',before,selected:map.getSource('ypb-selected')._data.features[0]?.properties?.gameId||''};
   })()`);
+  const back = await evalJson(`(()=>{const b=document.querySelector('#yp-building .hwx');if(!b)return null;const r=b.getBoundingClientRect();const c=window.__ypMap.getCenter();return {x:r.x+r.width/2,y:r.y+r.height/2,h:r.height,w:r.width,lon:+c.lng.toFixed(5),lat:+c.lat.toFixed(5),zoom:+window.__ypMap.getZoom().toFixed(2)};})()`);
+  await click(back.x, back.y);
+  await delay(800);
+  const closed = await evalJson(`(()=>{const c=window.__ypMap.getCenter();return {open:!!document.getElementById('yp-building'),lon:+c.lng.toFixed(5),lat:+c.lat.toFixed(5),zoom:+window.__ypMap.getZoom().toFixed(2)};})()`);
+  await evalJson(`(()=>{window.__ypMap.jumpTo({center:[152.46495,-24.832689],zoom:17});return 1;})()`);
+  await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const c=window.__ypMap.getCenter();if(Math.abs(c.lng-152.46495)<0.002)r(1);else if(Date.now()-t>5000)r(0);else setTimeout(tick,50)};tick()})`);
+  const nonePoint = await pixelFor('ypb-efa38c358cdbf1399b256f56726df084');
+  await click(nonePoint.x, nonePoint.y);
+  const noneCard = await evalJson(`({title:document.getElementById('yp-building-title')?.textContent||'',estimate:document.getElementById('yp-building-estimate')?.textContent||''})`);
+  const dim = {x: 24, y: 160};
+  await click(dim.x, dim.y);
+  await delay(800);
+  const dimClosed = await evalJson(`!!document.getElementById('yp-building')`);
+  await evalJson(`(()=>{window.__ypMap.jumpTo({center:[152.347279,-24.865565],zoom:17});return 1;})()`);
+  await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{const c=window.__ypMap.getCenter();if(Math.abs(c.lng-152.347279)<0.002)r(1);else if(Date.now()-t>5000)r(0);else setTimeout(tick,50)};tick()})`);
+  const pricedPoint = await pixelFor('ypb-3be0a2ac226ef07bee0a8a8115b3cf2d');
+  await click(pricedPoint.x, pricedPoint.y);
+  const switched = await evalJson(`({title:document.getElementById('yp-building-title')?.textContent||'',estimate:document.getElementById('yp-building-estimate')?.textContent||''})`);
+  const dismiss = {back, closed, phoneBack, phoneClosed, noneCard, dimClosed, switched};
   const rental = await evalJson(`(()=>{
     document.getElementById('yp-building')?.remove();
     const place={label:'Test rental area',lon:152.5,lat:-24.82,stockKey:'Test rental area'};
@@ -180,7 +232,7 @@ try {
     window.__ygOpen(held);
     return {title:document.getElementById('yp-building-title')?.textContent||'',estimate:document.getElementById('yp-building-estimate')?.textContent||'',apply:!!document.querySelector('#yp-building #yp-rent-apply')};
   })()`);
-  const report = {boot, loaded, opened, styled, rental, quarantine};
+  const report = {boot, loaded, opened, styled, dismiss, rental, quarantine};
   writeFileSync(`${OUT}/game-check.json`, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
   const nav = boot.nav.join(' ');
@@ -188,6 +240,11 @@ try {
     && opened.estimate === '$1,152,835' && opened.title === 'ypb-3be0a2ac226ef07bee0a8a8115b3cf2d' && !opened.apply
     && opened.text.includes('not for rent') && opened.saved.includes('yp-legacy-uuid') && opened.real == null
     && styled.overlay && styled.estimate === '$1,152,835' && styled.selected === opened.title
+    && back.h >= 44 && phoneBack.h >= 44 && phoneClosed === false && closed.open === false
+    && closed.lon === back.lon && closed.lat === back.lat && closed.zoom === back.zoom
+    && noneCard.title === 'ypb-efa38c358cdbf1399b256f56726df084' && noneCard.estimate === ''
+    && dimClosed === false
+    && switched.title === 'ypb-3be0a2ac226ef07bee0a8a8115b3cf2d' && switched.estimate === '$1,152,835'
     && rental.id.startsWith('preview:') && rental.pending.cash === rental.cash0 && rental.pending.status === 'application-pending' && rental.pending.bond === 3000
     && rental.approved.status === 'approved' && rental.approved.cash === rental.cash0
     && rental.confirmed.status === 'active' && rental.confirmed.cash === rental.cash0 - 3000
