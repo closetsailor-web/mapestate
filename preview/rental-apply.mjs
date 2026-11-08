@@ -95,10 +95,10 @@ try {
     window.__ypListCentre=elsewhere;
     document.getElementById('yp-rent-detail')?.remove();
     document.getElementById('minebtn').click();
-    const menu=[...document.querySelectorAll('#yp-property-menu button')].map(b=>b.textContent);
+    const menu=[...document.querySelectorAll('#yp-property-menu button')].map(b=>({label:b.dataset.label||b.textContent,disabled:b.disabled}));
     const offersBtn=document.getElementById('yp-pending-offers');
-    if(!offersBtn)return {wrapped,menu,error:'no-offers',cash0};
-    offersBtn.click();
+    if(!offersBtn||!offersBtn.disabled)return {menu,error:'offers-should-stay-unwired',cash0};
+    ypOpenPendingOffers();
     const offers=[...document.querySelectorAll('#yp-pending .yp-rent-row')].map(b=>b.innerText.replace(/\\s+/g,' ').trim());
     const beforeFail=JSON.stringify(ypReadStock().rentals.map(r=>r.status));
     G.cash=100;
@@ -135,7 +135,8 @@ try {
     && report.beforeHour.status.every(s => s === 'application-pending') && report.beforeHour.cash === report.cash0
     && report.afterHour.status.every(s => s === 'approved') && report.afterHour.cash === report.cash0
     && report.afterHour.notices.length === 2 && report.afterHour.badge !== ''
-    && report.menu.indexOf('Pending Offers') >= 0 && report.menu.indexOf('Property History') === report.menu.indexOf('Pending Offers') + 1
+    && report.menu.map(item => item.label).join('|').startsWith('Property Owned|Living Arrangement|Pending Offers|Property History')
+    && report.menu.find(item => item.label === 'Pending Offers').disabled && !report.menu.find(item => item.label === 'Property History').disabled
     && report.offers.length === 2
     && report.failed.cash === 100 && report.failed.same && report.failed.text.includes('Nothing was charged')
     && report.confirmed.cash === report.cash0 - 3000 && report.confirmed.again === report.confirmed.cash

@@ -113,8 +113,9 @@ try {
   const fromMarker = await evalJson(measure);
   const before = await evalJson(`(()=>({cash:G.cash,status:ypReadStock().rentals[0].status,hist:ypReadHistory().events.length,notes:(G.notifs||[]).length}))()`);
   await evalJson(`document.getElementById('yp-rent-apply').click();1`);
-  const review = await evalJson(`(()=>{const p=document.getElementById('yp-apply-review');const r=ypReadStock().rentals[0];const rows=[...p.querySelectorAll('.yp-review-row')].map(row=>[row.children[0].textContent,row.children[1].textContent]);return {text:p?p.innerText:'',location:rows.find(row=>row[0]==='Location')?.[1]||'',confirm:p?.querySelector('#yp-review-confirm')?.textContent||'',cancel:!!p?.querySelector('#yp-review-cancel'),income:!!p?.querySelector('.yp-flow'),history:!!p?.querySelector('#yp-property-history'),status:r.status,placeLabel:r.placeLabel,hist:ypReadHistory().events.length,cash:G.cash,notes:(G.notifs||[]).length,charged:!!r.bondCharged};})()`);
+  const review = await evalJson(`(()=>{const p=document.getElementById('yp-apply-review');const r=ypReadStock().rentals[0];return {text:p?p.innerText:'',location:document.getElementById('yp-review-location')?.textContent||'',confirm:p?.querySelector('#yp-review-confirm')?.textContent||'',cancel:!!p?.querySelector('#yp-review-cancel'),income:!!p?.querySelector('.yp-flow'),history:!!p?.querySelector('#yp-property-history'),status:r.status,placeLabel:r.placeLabel,hist:ypReadHistory().events.length,cash:G.cash,notes:(G.notifs||[]).length,charged:!!r.bondCharged};})()`);
   await evalJson(`document.getElementById('yp-review-cancel').click();1`);
+  const cancelled = await evalJson(`(()=>({open:!!document.getElementById('yp-apply-review'),status:ypReadStock().rentals[0].status,hist:ypReadHistory().events.length,cash:G.cash,notes:(G.notifs||[]).length}))()`);
   const bargara = await evalJson(`(()=>{
     const saved=ypReadStock();
     window.__ypSavedStock=saved;
@@ -128,22 +129,26 @@ try {
     document.getElementById('yp-where')?.remove();
     const coach=document.getElementById('coach');if(coach)coach.style.display='none';
     const p=document.getElementById('yp-apply-review');
-    const rows=[...p.querySelectorAll('.yp-review-row')].map(row=>[row.children[0].textContent,row.children[1].textContent]);
     const rental=ypReadStock().rentals[0];
-    return {text:p.innerText,location:rows.find(row=>row[0]==='Location')?.[1]||'',placeLabel:rental.placeLabel,id:rental.id,header:document.getElementById('cityname')?.textContent||''};
+    return {text:p.innerText,location:document.getElementById('yp-review-location')?.textContent||'',placeLabel:rental.placeLabel,id:rental.id,header:document.getElementById('cityname')?.textContent||'',size:parseFloat(getComputedStyle(p.querySelector('.yp-amt')).fontSize)};
   })()`);
   await shot('apply-review-your-application-phone.png');
   await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
   await shot('apply-review-bargara-desktop.png');
   await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
-  await evalJson(`ypWriteStock(window.__ypSavedStock);window.__ypListCentre=window.__ypSavedCentre;document.getElementById('yp-apply-review')?.remove();ypOpenRentalDetail(window.__ypSavedStock.rentals[0].id);1`);
-  const cancelled = await evalJson(`(()=>({open:!!document.getElementById('yp-apply-review'),status:ypReadStock().rentals[0].status,hist:ypReadHistory().events.length,cash:G.cash,notes:(G.notifs||[]).length}))()`);
-  await evalJson(`document.getElementById('yp-rent-apply').click();document.getElementById('yp-review-confirm').click();1`);
-  await evalJson(`(()=>{const card=document.querySelector('#yp-rent-detail .yp-listing');const hist=document.getElementById('yp-property-history');if(!card||!hist)return 0;const top=hist.getBoundingClientRect().top-card.getBoundingClientRect().top+card.scrollTop;card.scrollTop=Math.max(0,top-12);return card.scrollTop;})()`);
-  await shot('rental-detail-with-history-phone.png');
-  await evalJson(`ypSubmitApply(ypReadStock().rentals[0].id);1`);
-  const applied = await evalJson(measure);
-  const after = await evalJson(`(()=>{const r=ypReadStock().rentals[0];return {cash:G.cash,status:r.status,charged:!!r.bondCharged,hist:ypReadHistory().events.map(e=>e.kind),notes:(G.notifs||[]).length,heading:document.querySelector('#yp-property-history .yp-status')?.textContent||'',empty:document.getElementById('yp-rent-detail')?.innerText.includes('No recorded events')||false};})()`);
+  const failedSend = await evalJson(`(()=>{const store=ypReadStock();store.rentals[0].status='application-pending';ypWriteStock(store);document.getElementById('yp-review-confirm').click();const open=!!document.getElementById('yp-apply-review');const err=document.getElementById('yp-review-error')?.textContent||'';const detail=!!document.getElementById('yp-rent-detail');store.rentals[0].status='available';ypWriteStock(store);return {open,err,detail,hist:ypReadHistory().events.length};})()`);
+  await evalJson(`document.getElementById('yp-review-confirm').click();1`);
+  const landed = await evalJson(`(()=>{const r=ypReadStock().rentals[0];const nav=[...document.querySelectorAll('nav button')].map(b=>b.getAttribute('aria-label')||b.textContent.trim());return {review:!!document.getElementById('yp-apply-review'),detail:!!document.getElementById('yp-rent-detail'),history:document.getElementById('yp-history')?.innerText||'',tab:document.getElementById('minebtn')?.classList.contains('on')||false,status:r.status,charged:!!r.bondCharged,cash:G.cash,kinds:ypReadHistory().events.map(e=>e.text),nav};})()`);
+  await shot('property-history-after-apply-phone.png');
+  await evalJson(`document.getElementById('minebtn').click();1`);
+  await shot('bottom-property-menu-phone.png');
+  await evalJson(`[...document.querySelectorAll('nav button')].find(b=>b.getAttribute('aria-label')==='Finances').click();1`);
+  await shot('bottom-finances-menu-phone.png');
+  await evalJson(`[...document.querySelectorAll('nav button')].find(b=>b.getAttribute('aria-label')==='Listings').click();1`);
+  await shot('bottom-listings-menu-phone.png');
+  await evalJson(`document.getElementById('yp-section-menu')?.remove();1`);
+  const afterClock = await evalJson(`(()=>{G.clockOn=1;advance(Math.ceil(CFG.weekMs/168)+5);ypSyncSample(ypReadClock());const r=ypReadStock().rentals[0];return {detail:!!document.getElementById('yp-rent-detail'),history:!!document.getElementById('yp-history'),status:r.status,charged:!!r.bondCharged,cash:G.cash,notes:(G.notifs||[]).filter(n=>n.ypRental).length,text:document.getElementById('yp-history')?.innerText||''};})()`);
+  await evalJson(`ypWriteStock(window.__ypSavedStock);window.__ypListCentre=window.__ypSavedCentre;document.getElementById('yp-history')?.remove();document.getElementById('yp-rent-detail')?.remove();1`);
   const fixtures = await evalJson(`(()=>{
     document.getElementById('yp-rent-detail')?.remove();
     const board=document.createElement('div');board.id='yp-fixture-board';
@@ -164,7 +169,7 @@ try {
     const read=id=>{ypOpenListingsChoice();document.getElementById(id).click();return document.getElementById('yp-prop-note').innerText;};
     return {sale:read('yp-cat-sale'),room:read('yp-cat-room'),auction:read('yp-cat-auction')};
   })()`);
-  console.log(JSON.stringify({expected, phone, fromMarker, review, bargara, cancelled, applied, after, desk, fixtures, empty, errors: cdp.errors.slice(0, 4)}, null, 2));
+  console.log(JSON.stringify({expected, phone, fromMarker, review, bargara, cancelled, failedSend, landed, afterClock, desk, fixtures, empty, errors: cdp.errors.slice(0, 4)}, null, 2));
   const money = (n) => (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-AU');
   const row = (view, label) => view.rows.find(item => item.label === label);
   const clean = (view) => view && view.title.startsWith('Sample rental') && view.kicker === 'Game sample property' && view.text.includes('$500') && view.text.indexOf('$500') < view.text.indexOf(place) && view.text.includes(money(expected.bond)) && view.icons === 1 && row(view, 'Weekly income').amount === money(expected.income) && row(view, 'Weekly expenses').amount === money(expected.expenses) && row(view, 'Left after this rent').amount === money(expected.left) && row(view, 'In the bank').amount === money(expected.bank) && row(view, 'Bank if the bond were paid').amount === money(expected.after) && view.text.includes('Not a real vacancy') && view.text.includes('does not charge you') && !view.text.includes('2 km') && !/bedroom|bathroom|\bhouse\b|insurance|measured/i.test(view.text) && view.images === 0 && !view.hero && view.align === 'left' && view.size >= 28 && !view.overflow;
@@ -173,14 +178,15 @@ try {
     && review.confirm === 'Confirm application' && review.cancel && !review.income && !review.history
     && review.location === 'Searched area' && !review.text.includes('152.5000') && review.placeLabel.includes('152.5000')
     && bargara.location === 'Bargara' && bargara.placeLabel === 'Bargara, Queensland, Australia' && bargara.id === 'preview:bargara queensland australia:1'
-    && bargara.text.startsWith('Your Application') && bargara.location === 'Bargara' && bargara.text.includes('Waiting Period') && bargara.text.includes('After confirming your application, you will be notified as soon as possible of the outcome. If approved, we will move you in for free. Best of luck!')
+    && bargara.text.startsWith('Your Application') && bargara.location === 'Bargara' && bargara.size >= 28 && bargara.text.includes('Waiting Period') && bargara.text.includes('After confirming your application, you will be notified as soon as possible of the outcome. If approved, we will move you in for free. Best of luck!')
     && !bargara.text.includes('Queensland') && !bargara.text.includes('Australia') && !bargara.text.includes('152.464') && !bargara.text.includes('1 game hour')
+    && failedSend.open && failedSend.err.includes('Nothing was charged') && failedSend.hist === 0
+    && !landed.review && !landed.detail && landed.tab && landed.status === 'application-pending' && !landed.charged && landed.cash === before.cash && landed.kinds.join(',') === 'Applied for Rental' && landed.history.includes('Applied for Rental') && landed.history.includes('Bargara') && landed.nav.join('|') === 'Property|Finances|Listings|Leaderboard|Settings'
     && review.text.startsWith('Your Application') && review.text.includes('$500') && review.text.includes('$3,000') && review.text.includes('Waiting Period') && review.text.includes('After confirming your application, you will be notified as soon as possible of the outcome. If approved, we will move you in for free. Best of luck!') && !review.text.includes('1 game hour') && !review.text.includes('does not charge you')
     && !review.text.includes('Weekly income') && !review.text.includes('Property History') && !review.text.includes('In the bank')
     && review.status === 'available' && review.hist === 0 && review.cash === before.cash && review.notes === before.notes && !review.charged
     && !cancelled.open && cancelled.status === 'available' && cancelled.hist === 0 && cancelled.cash === before.cash && cancelled.notes === before.notes
-    && applied.disabled && applied.text.includes('Nothing is charged') && applied.text.includes('1 game hour') && applied.text.includes('Property History') && applied.text.includes('Applied') && !after.empty
-    && after.status === 'application-pending' && !after.charged && after.cash === before.cash && after.hist.join(',') === 'applied' && after.notes === before.notes && after.heading === 'Property History'
+    && afterClock.detail === false && afterClock.history === true && afterClock.status === 'approved' && !afterClock.charged && afterClock.cash === before.cash && afterClock.notes === 1 && afterClock.text.includes('Applied for Rental') && !afterClock.text.includes('Confirm and pay bond')
     && clean(desk)
     && fixtures.length === 4
     && fixtures[1].title === 'Sample for sale 1'
