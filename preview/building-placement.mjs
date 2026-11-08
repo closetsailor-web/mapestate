@@ -82,7 +82,7 @@ try {
     map.addSource('yp-test-park',{type:'geojson',data:{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[park]}}});
     map.addLayer({id:'park',type:'fill',source:'yp-test-park',paint:{'fill-color':'#b7d7a8','fill-opacity':0.8}});
     return new Promise(resolve=>{
-      const finish=()=>{ypApplyPlacePins();
+      const finish=()=>{ypApplyPlacePins();ypApplyPlacePins();
         const pins=JSON.parse(localStorage.getItem('yp.previewStock.v1')).rentals;
         const inside=(lon,lat,ring)=>ypPointInRing(lon,lat,ring);
         const rings=houses.concat([house(splitA.lon-0.001,splitA.lat),house(splitB.lon-0.001,splitB.lat)]);
