@@ -60,6 +60,19 @@ try {
   if (foreign.status !== 403) throw new Error('foreign');
   const claim = await request('POST', '/api/claim', {...same, 'Content-Type': 'application/json'}, '{}');
   if (claim.status !== 404) throw new Error('claim');
+  const manifest = await request('GET', '/data/chunk-manifest.json', same);
+  if (manifest.status !== 200) throw new Error('manifest ' + manifest.status);
+  const manifestBody = JSON.parse(manifest.body);
+  if (!Array.isArray(manifestBody.chunks) || !manifestBody.chunks.length) throw new Error('manifest empty');
+  const boundary = await request('GET', '/data/boundary.geojson', same);
+  if (boundary.status !== 200 || !boundary.body.includes('Feature')) throw new Error('boundary ' + boundary.status);
+  const sampleChunk = manifestBody.chunks[0].id;
+  const chunk = await request('GET', `/data/chunks/${sampleChunk}.json`, same);
+  if (chunk.status !== 200 || !chunk.body.includes('Feature')) throw new Error('chunk ' + chunk.status);
+  const page = await request('GET', '/', same);
+  const script = await request('GET', '/map-preview.js', same);
+  const layer = await request('GET', '/overture-layer.js', same);
+  if (page.status !== 200 || script.status !== 200 || layer.status !== 200) throw new Error('pages');
   const escaped = await request('GET', '/data/chunks/../registry-v1.json', same);
   if (escaped.status === 200) throw new Error('traversal');
 

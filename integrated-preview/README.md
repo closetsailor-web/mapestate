@@ -2,7 +2,7 @@
 
 This is a separate copy of the installed rental-review game with the regional building overlay on the map. It does not replace port 8766, and it does not change the building overlay on port 8767.
 
-From the repository folder:
+From the unpacked folder, which already contains `integrated-preview/data`:
 
 ```bash
 python3 integrated-preview/server.py --port 8774

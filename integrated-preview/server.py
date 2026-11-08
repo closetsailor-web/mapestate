@@ -21,8 +21,6 @@ FILES = {
     '/index.html': ROOT / 'index.html',
     '/map-preview.js': ROOT / 'map-preview.js',
     '/overture-layer.js': ROOT / 'overture-layer.js',
-    '/data/chunk-manifest.json': REPO / 'overture-preview' / 'data' / 'chunk-manifest.json',
-    '/data/boundary.geojson': REPO / 'overture-preview' / 'data' / 'boundary.geojson',
 }
 TYPES = {
     '.html': 'text/html; charset=utf-8',
@@ -42,13 +40,18 @@ def read_secret(env_name, filename):
         return ''
 
 
-def chunk_file(path):
-    local = (ROOT / 'data' / 'chunks' / Path(path).name).resolve()
-    sibling = (REPO / 'overture-preview' / 'data' / 'chunks' / Path(path).name).resolve()
-    for candidate, parent in ((local, local.parent), (sibling, sibling.parent)):
-        if candidate.parent == parent and candidate.is_file():
-            return candidate
+def packaged_file(*parts):
+    local = (ROOT.joinpath(*parts)).resolve()
+    if local.is_file() and ROOT.resolve() in local.parents:
+        return local
+    sibling = (REPO.joinpath('overture-preview', *parts)).resolve()
+    if sibling.is_file() and (REPO / 'overture-preview').resolve() in sibling.parents:
+        return sibling
     return None
+
+
+def chunk_file(path):
+    return packaged_file('data', 'chunks', Path(path).name)
 
 
 def make_handler(port):
@@ -102,7 +105,9 @@ def make_handler(port):
                 }).encode()
                 return self.send_body(200, body, 'application/json')
             target = FILES.get(path)
-            if target is None and CHUNK_PATH.match(path):
+            if path in {'/data/chunk-manifest.json', '/data/boundary.geojson'}:
+                target = packaged_file('data', Path(path).name)
+            elif target is None and CHUNK_PATH.match(path):
                 target = chunk_file(path)
             if target is None or not target.is_file():
                 return self.send_body(404, b'Not found')
