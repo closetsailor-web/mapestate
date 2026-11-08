@@ -25,10 +25,11 @@
     "https://api.maptiler.com/maps/base-v4/style.json only when a map key is configured outside the package",
     "https://api.geoapify.com/v1/geocode/autocomplete only when a search key is configured outside the package"
   ],
-  "savesKeptOnReload": ["fe.global", "fe.city.c1", "fe.theme", "yp.previewStock.v1", "yp.listCentre.v1", "yp.mapsel.v1"],
+  "savesKeptOnReload": ["fe.global", "fe.city.c1", "fe.theme", "yp.previewStock.v1", "yp.listCentre.v1", "yp.mapsel.v1", "yp.propertyHistory.v1"],
   "notMapped": [
     "Coralwood c1 lot ids are not the same thing as a real building footprint",
     "Sample pins in yp.previewStock.v1 are test stock only and are not ownership, leases, or auctions",
+    "yp.propertyHistory.v1 is a local preview log for this save. It is not a production title record",
     "There is no shared multiplayer state in this preview"
   ]
 }

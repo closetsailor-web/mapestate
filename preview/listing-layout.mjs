@@ -141,7 +141,7 @@ try {
   const row = (view, label) => view.rows.find(item => item.label === label);
   const clean = (view) => view && view.title.startsWith('Sample rental') && view.kicker === 'Game sample property' && view.text.includes('$500') && view.text.indexOf('$500') < view.text.indexOf(place) && view.text.includes(money(expected.bond)) && view.icons === 1 && row(view, 'Weekly income').amount === money(expected.income) && row(view, 'Weekly expenses').amount === money(expected.expenses) && row(view, 'Left after this rent').amount === money(expected.left) && row(view, 'In the bank').amount === money(expected.bank) && row(view, 'Bank if the bond were paid').amount === money(expected.after) && view.text.includes('Not a real vacancy') && view.text.includes('does not charge you') && !view.text.includes('2 km') && !/bedroom|bathroom|\bhouse\b|insurance|measured/i.test(view.text) && view.images === 0 && !view.hero && view.align === 'left' && view.size >= 28 && !view.overflow;
   const ok = clean(phone) && clean(fromMarker) && fromList === fromMarker.text
-    && applied.disabled && applied.text.includes('Nothing is charged') && applied.text.includes('30 seconds') && cashAfter === expected.cash && cashBefore === expected.cash
+    && applied.disabled && applied.text.includes('Nothing is charged') && applied.text.includes('1 game hour') && cashAfter === expected.cash && cashBefore === expected.cash
     && clean(desk)
     && fixtures.length === 4
     && fixtures[1].title === 'Sample for sale 1'
