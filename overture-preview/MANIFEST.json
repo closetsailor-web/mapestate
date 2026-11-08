@@ -21,6 +21,7 @@
     "overture-preview/registry.mjs",
     "overture-preview/data/registry-v1.json",
     "overture-preview/data/overlay-v1.geojson",
+    "overture-preview/data/pricing-v1.json",
     "overture-preview/source/bundaberg-buildings.geojson",
     "overture-preview/CREDITS.md",
     "overture-preview/LICENSES/NOTICE.md"

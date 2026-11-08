@@ -22,6 +22,7 @@ FILES = {
     '/app.js': ROOT / 'app.js',
     '/data/overlay-v1.geojson': ROOT / 'data' / 'overlay-v1.geojson',
     '/data/registry-v1.json': ROOT / 'data' / 'registry-v1.json',
+    '/data/pricing-v1.json': ROOT / 'data' / 'pricing-v1.json',
     '/CREDITS.md': ROOT / 'CREDITS.md',
 }
 TYPES = {

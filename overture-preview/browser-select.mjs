@@ -66,7 +66,7 @@ try {
     const map=window.__ypMap;
     map.resize();
     const inside=(lon,lat,ring)=>{let on=false, inn=false; for(let i=0;i<ring.length-1;i++){const a=ring[i],b=ring[i+1];const cross=(lat-a[1])*(b[0]-a[0])-(lon-a[0])*(b[1]-a[1]); if(Math.abs(cross)<1e-12 && lon>=Math.min(a[0],b[0])&&lon<=Math.max(a[0],b[0])&&lat>=Math.min(a[1],b[1])&&lat<=Math.max(a[1],b[1]))on=true;} if(on)return false; for(let i=0,j=ring.length-1;i<ring.length;j=i++){const yi=ring[i][1],yj=ring[j][1],xi=ring[i][0],xj=ring[j][0]; if((yi>lat)!==(yj>lat)&&(lon<(xj-xi)*(lat-yi)/(yj-yi)+xi))inn=!inn;} return inn;};
-    const features=map.getSource('ypb-buildings')._data.features.filter(f=>f.geometry.type==='Polygon');
+    const features=map.getSource('ypb-buildings')._data.features.filter(f=>f.geometry.type==='Polygon' && (f.properties.tone==='trade' || f.properties.tone==='home'));
     let chosen=null, center=null;
     for (const feature of features) {
       const ring=feature.geometry.coordinates[0];
@@ -87,11 +87,13 @@ try {
   await cdp.send('Input.dispatchMouseEvent', {type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1}, sessionId);
   await cdp.send('Input.dispatchMouseEvent', {type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1}, sessionId);
   await delay(400);
-  const selected = await evalJson(`({game:document.getElementById('game-id').textContent, meta:document.getElementById('meta').textContent, status:document.getElementById('status').textContent})`);
+  await evalJson(`document.querySelector('#panel header p').textContent='Stand-in test view. Not the live MapTiler basemap.'`);
+  const selected = await evalJson(`({game:document.getElementById('game-id').textContent, estimate:document.getElementById('estimate').textContent, meta:document.getElementById('meta').textContent, status:document.getElementById('status').textContent})`);
   const image = await cdp.send('Page.captureScreenshot', {format: 'png'}, sessionId);
   writeFileSync(`${OUT}/selected-building.png`, Buffer.from(image.data, 'base64'));
   const styled = await evalJson(`(async()=>{
     const map=window.__ypMap;
+    const before={game:document.getElementById('game-id').textContent, estimate:document.getElementById('estimate').textContent};
     map.setStyle({version:8,name:'labeled-test-basemap-not-maptiler',sources:{fake:{type:'geojson',data:{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[[[152.30,-24.90],[152.40,-24.90],[152.40,-24.84],[152.30,-24.84],[152.30,-24.90]]]}}]}}},layers:[{id:'bg',type:'background',paint:{'background-color':'#d7e7c8'}},{id:'building',type:'fill',source:'fake',paint:{'fill-color':'#9aa', 'fill-opacity':0.85}}]});
     const deadline=Date.now()+8000;
     while(Date.now()<deadline && !map.getLayer('ypb-fill')) await new Promise(r=>setTimeout(r,100));
@@ -107,7 +109,8 @@ try {
     const hits=map.queryRenderedFeatures(projected,{layers:['ypb-fill']});
     const vendor=map.getLayer('building');
     const rect=map.getCanvas().getBoundingClientRect();
-    return {x:rect.left+projected.x,y:rect.top+projected.y,hits:hits.map(h=>h.properties.gameId),overlay:!!map.getLayer('ypb-fill'),vendorHidden:!vendor || vendor.visibility==='none' || (map.getLayoutProperty('building','visibility')==='none')};
+    const kept=map.getSource('ypb-selected')._data.features[0];
+    return {x:rect.left+projected.x,y:rect.top+projected.y,hits:hits.map(h=>h.properties.gameId),overlay:!!map.getLayer('ypb-fill'),vendorHidden:!vendor || vendor.visibility==='none' || (map.getLayoutProperty('building','visibility')==='none'), keptGame:document.getElementById('game-id').textContent, keptEstimate:document.getElementById('estimate').textContent, keptSelected:kept&&kept.properties.gameId, before};
   })()`);
   await cdp.send('Input.dispatchMouseEvent', {type: 'mousePressed', x: styled.x, y: styled.y, button: 'left', clickCount: 1}, sessionId);
   await cdp.send('Input.dispatchMouseEvent', {type: 'mouseReleased', x: styled.x, y: styled.y, button: 'left', clickCount: 1}, sessionId);
@@ -124,8 +127,10 @@ try {
   })()`);
   const report = {expected: point.gameId, selectedGame: selected.game === point.gameId, selectedGers: selected.meta.includes(point.gersId), hits: point.hits, styled, styledSelected, failed};
   console.log(JSON.stringify(report, null, 2));
-  const ok = selected.game === point.gameId && selected.meta.includes(point.gersId) && point.hits.includes(point.gameId)
+  const priced = /^\$[\d,]+$/.test(selected.estimate);
+  const ok = selected.game === point.gameId && selected.status === 'Selected building' && priced && selected.meta.includes('Game estimate') && point.hits.includes(point.gameId)
     && styled.overlay && styled.vendorHidden && styled.hits.includes(point.gameId) && styledSelected === point.gameId
+    && styled.keptGame === point.gameId && styled.keptEstimate === selected.estimate && styled.keptSelected === point.gameId
     && failed.overlay;
   if (!ok) process.exitCode = 1;
 } catch (error) {

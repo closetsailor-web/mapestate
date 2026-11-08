@@ -87,6 +87,10 @@ try {
     assert.notEqual(denied.status, 200, path);
     assert.equal(denied.body.includes(fakeKey), false);
   }
+  const pricing = await request(port, 'GET', '/data/pricing-v1.json', same);
+  assert.equal(pricing.status, 200);
+  assert.equal(pricing.body.includes(fakeKey), false);
+  assert.equal(pricing.body.includes('pending-review'), true);
   const page = await request(port, 'GET', '/', {Host: `127.0.0.1:${port}`});
   assert.equal(page.status, 200);
   assert.equal(page.body.includes('Overture building preview'), true);

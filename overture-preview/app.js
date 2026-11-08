@@ -1,5 +1,6 @@
 const statusEl = document.getElementById('status');
 const gameEl = document.getElementById('game-id');
+const estimateEl = document.getElementById('estimate');
 const metaEl = document.getElementById('meta');
 const blank = {version: 8, sources: {}, layers: [{id: 'bg', type: 'background', paint: {'background-color': '#d5e2ef'}}]};
 const sampleBounds = [[152.3421, -24.8732], [152.3535, -24.8623]];
@@ -10,6 +11,10 @@ let basemapFallback = false;
 let styleGeneration = 0;
 let idleTried = -1;
 let fitsLeft = 2;
+let prices = new Map();
+let selectedFeature = null;
+
+const money = new Intl.NumberFormat('en-AU', {style: 'currency', currency: 'AUD', maximumFractionDigits: 0});
 
 const map = window.__ypMap = new maplibregl.Map({
   container: 'map',
@@ -67,10 +72,12 @@ function installOverlay() {
   else map.getSource('ypb-buildings').setData(adopted);
   if (!map.getSource('ypb-quarantine')) map.addSource('ypb-quarantine', {type: 'geojson', data: held});
   else map.getSource('ypb-quarantine').setData(held);
-  if (!map.getSource('ypb-selected')) map.addSource('ypb-selected', {type: 'geojson', data: {type: 'FeatureCollection', features: []}});
+  const selected = {type: 'FeatureCollection', features: selectedFeature ? [selectedFeature] : []};
+  if (!map.getSource('ypb-selected')) map.addSource('ypb-selected', {type: 'geojson', data: selected});
+  else map.getSource('ypb-selected').setData(selected);
   const layers = [
     {id: 'ypb-quarantine-fill', type: 'fill', source: 'ypb-quarantine', paint: {'fill-color': '#8b95a8', 'fill-opacity': 0.45}},
-    {id: 'ypb-fill', type: 'fill', source: 'ypb-buildings', paint: {'fill-color': '#e07a2f', 'fill-opacity': 0.78}},
+    {id: 'ypb-fill', type: 'fill', source: 'ypb-buildings', paint: {'fill-color': ['match', ['get', 'tone'], 'home', '#e07a2f', 'trade', '#1f7a6b', 'other', '#c4a35a', 'none', '#d5dbe3', '#d5dbe3'], 'fill-opacity': 0.78}},
     {id: 'ypb-line', type: 'line', source: 'ypb-buildings', paint: {'line-color': '#7a3410', 'line-width': 1.4}},
     {id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.5}},
     {id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#0b2545', 'line-width': 3}}
@@ -115,6 +122,13 @@ map.on('error', event => {
   note(`The basemap did not finish (${message}).`);
 });
 
+function clearSelection() {
+  selectedFeature = null;
+  estimateEl.textContent = '';
+  const source = map.getSource('ypb-selected');
+  if (source) source.setData({type: 'FeatureCollection', features: []});
+}
+
 function show(feature) {
   const props = feature?.properties || {};
   if (!map.getLayer('ypb-fill')) {
@@ -122,20 +136,31 @@ function show(feature) {
     return;
   }
   if (!feature) {
-    statusEl.textContent = `${parts.adopted.features.length} buildings are drawn. Tap an orange shape.`;
+    statusEl.textContent = `${parts.adopted.features.length} buildings are drawn. ${parts.held.features.length} overlaps kept out. Tap a building.`;
     gameEl.textContent = '';
     metaEl.textContent = '';
+    clearSelection();
     return;
   }
   if (!props.adopted) {
     statusEl.textContent = 'Quarantined overlap. Not a saleable property.';
     gameEl.textContent = 'No game id';
+    estimateEl.textContent = '';
     metaEl.textContent = `Reason: ${props.reason || 'overlap'}. Vendor reference ${props.gersId || 'unavailable'}.`;
+    clearSelection();
     return;
   }
+  selectedFeature = feature;
+  const row = prices.get(props.gameId);
   statusEl.textContent = 'Selected building';
   gameEl.textContent = props.gameId;
-  metaEl.textContent = `Vendor GERS reference, not the game id: ${props.gersId}`;
+  if (row && row.eligible && Number.isInteger(row.estimate)) {
+    estimateEl.textContent = money.format(row.estimate);
+    metaEl.textContent = 'Game estimate. Not a real property value, and not a listing.';
+  } else {
+    estimateEl.textContent = 'No game estimate';
+    metaEl.textContent = 'Nothing is listed or for sale.';
+  }
   const source = map.getSource('ypb-selected');
   if (source) source.setData({type: 'FeatureCollection', features: [feature]});
 }
@@ -143,13 +168,23 @@ function show(feature) {
 map.on('load', async () => {
   try {
     const overlay = await (await fetch('/data/overlay-v1.geojson')).json();
+    try {
+      const pricing = await (await fetch('/data/pricing-v1.json')).json();
+      prices = new Map((pricing.rows || []).map(row => [row.gameId, row]));
+    } catch {
+      prices = new Map();
+    }
     const features = Array.isArray(overlay.features) ? overlay.features : [];
+    const withTone = feature => {
+      const row = prices.get(feature.properties && feature.properties.gameId);
+      return {...feature, properties: {...feature.properties, tone: row ? row.tone : 'none'}};
+    };
     parts = {
-      adopted: {type: 'FeatureCollection', features: features.filter(feature => feature.properties && feature.properties.adopted)},
+      adopted: {type: 'FeatureCollection', features: features.filter(feature => feature.properties && feature.properties.adopted).map(withTone)},
       held: {type: 'FeatureCollection', features: features.filter(feature => !(feature.properties && feature.properties.adopted))}
     };
     restoreOverlay();
-    statusEl.textContent = `${parts.adopted.features.length} adopted buildings. ${parts.held.features.length} overlaps kept out. Tap an orange shape.`;
+    statusEl.textContent = `${parts.adopted.features.length} adopted buildings. ${parts.held.features.length} overlaps kept out. Tap a building.`;
     const key = await keyIfAny();
     if (key && !basemapRequested) {
       basemapRequested = true;
@@ -175,5 +210,7 @@ map.on('click', event => {
     return;
   }
   const adopted = hits.find(hit => hit.layer && hit.layer.id === 'ypb-fill');
-  show(adopted || hits[0] || null);
+  const hit = adopted || hits[0] || null;
+  const full = hit?.properties?.gameId ? parts.adopted.features.find(feature => feature.properties.gameId === hit.properties.gameId) : null;
+  show(full || hit);
 });

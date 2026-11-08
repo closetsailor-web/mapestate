@@ -15,6 +15,7 @@
   #panel .body {padding: 14px 18px 16px;}
   #status {margin: 0 0 8px; font: 600 14px/1.4 Inter, system-ui, sans-serif;}
   #game-id {margin: 0 0 8px; font: 800 18px/1.3 ui-monospace, monospace; word-break: break-all;}
+  #estimate {margin: 0 0 8px; font: 800 28px/1.2 Inter, system-ui, sans-serif; color: #0b2545;}
   #meta, #limits {margin: 0 0 8px; font: 500 13px/1.4 Inter, system-ui, sans-serif; color: #3d4a63;}
   button {margin: 6px 6px 0 0; min-height: 40px; border: 0; border-radius: 999px; padding: 0 14px; background: #b8410a; color: #fff; font: 700 14px Inter, system-ui, sans-serif; cursor: pointer;}
   button.quiet {background: #e6ebf2; color: #6d788c;}
@@ -31,8 +32,9 @@
   <div class="body">
     <p id="status">Loading the frozen building registry.</p>
     <p id="game-id"></p>
+    <p id="estimate"></p>
     <p id="meta"></p>
-    <p id="limits">A tap selects a game id from this package. It does not charge money and it does not change a saved game. These ids match for every browser that loads this same registry file. This page does not record an owner or a tenant.</p>
+    <p id="limits">A tap selects a game id from this package. A game estimate is a game price, not a real property value. It does not list the building, charge money, or change a saved game. These ids match for every browser that loads this same registry file. This page does not record an owner or a tenant.</p>
   </div>
 </section>
 <p id="attrib">Buildings: Overture Maps, release 2026-10-21.0, © OpenStreetMap contributors (ODbL), Microsoft ML Buildings (ODbL). Basemap attribution stays on the map when tiles load. <a href="/CREDITS.md">Credits</a></p>
