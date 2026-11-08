@@ -113,13 +113,30 @@ try {
   const fromMarker = await evalJson(measure);
   const before = await evalJson(`(()=>({cash:G.cash,status:ypReadStock().rentals[0].status,hist:ypReadHistory().events.length,notes:(G.notifs||[]).length}))()`);
   await evalJson(`document.getElementById('yp-rent-apply').click();1`);
-  const review = await evalJson(`(()=>{const p=document.getElementById('yp-apply-review');const r=ypReadStock().rentals[0];return {text:p?p.innerText:'',confirm:p?.querySelector('#yp-review-confirm')?.textContent||'',cancel:!!p?.querySelector('#yp-review-cancel'),income:!!p?.querySelector('.yp-flow'),history:!!p?.querySelector('#yp-property-history'),status:r.status,hist:ypReadHistory().events.length,cash:G.cash,notes:(G.notifs||[]).length,charged:!!r.bondCharged};})()`);
-  await evalJson(`document.getElementById('yp-where')?.remove();document.getElementById('coach')&&(document.getElementById('coach').style.display='none');1`);
-  await shot('apply-review-phone.png');
-  await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
-  await shot('apply-review-desktop.png');
-  await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
+  const review = await evalJson(`(()=>{const p=document.getElementById('yp-apply-review');const r=ypReadStock().rentals[0];const rows=[...p.querySelectorAll('.yp-review-row')].map(row=>[row.children[0].textContent,row.children[1].textContent]);return {text:p?p.innerText:'',location:rows.find(row=>row[0]==='Location')?.[1]||'',confirm:p?.querySelector('#yp-review-confirm')?.textContent||'',cancel:!!p?.querySelector('#yp-review-cancel'),income:!!p?.querySelector('.yp-flow'),history:!!p?.querySelector('#yp-property-history'),status:r.status,placeLabel:r.placeLabel,hist:ypReadHistory().events.length,cash:G.cash,notes:(G.notifs||[]).length,charged:!!r.bondCharged};})()`);
   await evalJson(`document.getElementById('yp-review-cancel').click();1`);
+  const bargara = await evalJson(`(()=>{
+    const saved=ypReadStock();
+    window.__ypSavedStock=saved;
+    window.__ypSavedCentre=window.__ypListCentre;
+    const item={result_type:'suburb',name:'Bargara',suburb:'Bargara',state:'Queensland',country:'Australia',label:'Bargara, Queensland, Australia',lon:152.464,lat:-24.814};
+    const store=ypEnsureSuburbStock(ypFreshStock(),item,[{lon:152.465,lat:-24.813}]);
+    store.rentals[0].weeklyRent=500;store.rentals[0].bond=3000;
+    ypWriteStock(store);
+    window.__ypListCentre={label:item.label,lon:item.lon,lat:item.lat,stockKey:item.label,locality:'Bargara'};
+    ypOpenApplyReview(store.rentals[0].id);
+    document.getElementById('yp-where')?.remove();
+    const coach=document.getElementById('coach');if(coach)coach.style.display='none';
+    const p=document.getElementById('yp-apply-review');
+    const rows=[...p.querySelectorAll('.yp-review-row')].map(row=>[row.children[0].textContent,row.children[1].textContent]);
+    const rental=ypReadStock().rentals[0];
+    return {text:p.innerText,location:rows.find(row=>row[0]==='Location')?.[1]||'',placeLabel:rental.placeLabel,id:rental.id,header:document.getElementById('cityname')?.textContent||''};
+  })()`);
+  await shot('apply-review-your-application-phone.png');
+  await cdp.send('Emulation.setDeviceMetricsOverride', {width: 1280, height: 800, deviceScaleFactor: 1, mobile: false}, sessionId);
+  await shot('apply-review-bargara-desktop.png');
+  await cdp.send('Emulation.setDeviceMetricsOverride', {width: 390, height: 844, deviceScaleFactor: 1, mobile: true}, sessionId);
+  await evalJson(`ypWriteStock(window.__ypSavedStock);window.__ypListCentre=window.__ypSavedCentre;document.getElementById('yp-apply-review')?.remove();ypOpenRentalDetail(window.__ypSavedStock.rentals[0].id);1`);
   const cancelled = await evalJson(`(()=>({open:!!document.getElementById('yp-apply-review'),status:ypReadStock().rentals[0].status,hist:ypReadHistory().events.length,cash:G.cash,notes:(G.notifs||[]).length}))()`);
   await evalJson(`document.getElementById('yp-rent-apply').click();document.getElementById('yp-review-confirm').click();1`);
   await evalJson(`(()=>{const card=document.querySelector('#yp-rent-detail .yp-listing');const hist=document.getElementById('yp-property-history');if(!card||!hist)return 0;const top=hist.getBoundingClientRect().top-card.getBoundingClientRect().top+card.scrollTop;card.scrollTop=Math.max(0,top-12);return card.scrollTop;})()`);
@@ -147,14 +164,18 @@ try {
     const read=id=>{ypOpenListingsChoice();document.getElementById(id).click();return document.getElementById('yp-prop-note').innerText;};
     return {sale:read('yp-cat-sale'),room:read('yp-cat-room'),auction:read('yp-cat-auction')};
   })()`);
-  console.log(JSON.stringify({expected, phone, fromMarker, review, cancelled, applied, after, desk, fixtures, empty, errors: cdp.errors.slice(0, 4)}, null, 2));
+  console.log(JSON.stringify({expected, phone, fromMarker, review, bargara, cancelled, applied, after, desk, fixtures, empty, errors: cdp.errors.slice(0, 4)}, null, 2));
   const money = (n) => (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-AU');
   const row = (view, label) => view.rows.find(item => item.label === label);
   const clean = (view) => view && view.title.startsWith('Sample rental') && view.kicker === 'Game sample property' && view.text.includes('$500') && view.text.indexOf('$500') < view.text.indexOf(place) && view.text.includes(money(expected.bond)) && view.icons === 1 && row(view, 'Weekly income').amount === money(expected.income) && row(view, 'Weekly expenses').amount === money(expected.expenses) && row(view, 'Left after this rent').amount === money(expected.left) && row(view, 'In the bank').amount === money(expected.bank) && row(view, 'Bank if the bond were paid').amount === money(expected.after) && view.text.includes('Not a real vacancy') && view.text.includes('does not charge you') && !view.text.includes('2 km') && !/bedroom|bathroom|\bhouse\b|insurance|measured/i.test(view.text) && view.images === 0 && !view.hero && view.align === 'left' && view.size >= 28 && !view.overflow;
   const ok = clean(phone) && clean(fromMarker) && fromList === fromMarker.text
     && !phone.text.includes('No recorded events') && !phone.text.includes('Property History') && !desk.text.includes('No recorded events')
     && review.confirm === 'Confirm application' && review.cancel && !review.income && !review.history
-    && review.text.includes('$500') && review.text.includes('$3,000') && review.text.includes('1 game hour') && review.text.includes('does not charge you')
+    && review.location === 'Searched area' && !review.text.includes('152.5000') && review.placeLabel.includes('152.5000')
+    && bargara.location === 'Bargara' && bargara.placeLabel === 'Bargara, Queensland, Australia' && bargara.id === 'preview:bargara queensland australia:1'
+    && bargara.text.startsWith('Your Application') && bargara.location === 'Bargara' && bargara.text.includes('Waiting Period') && bargara.text.includes('After confirming your application, you will be notified as soon as possible of the outcome. If approved, we will move you in for free. Best of luck!')
+    && !bargara.text.includes('Queensland') && !bargara.text.includes('Australia') && !bargara.text.includes('152.464') && !bargara.text.includes('1 game hour')
+    && review.text.startsWith('Your Application') && review.text.includes('$500') && review.text.includes('$3,000') && review.text.includes('Waiting Period') && review.text.includes('After confirming your application, you will be notified as soon as possible of the outcome. If approved, we will move you in for free. Best of luck!') && !review.text.includes('1 game hour') && !review.text.includes('does not charge you')
     && !review.text.includes('Weekly income') && !review.text.includes('Property History') && !review.text.includes('In the bank')
     && review.status === 'available' && review.hist === 0 && review.cash === before.cash && review.notes === before.notes && !review.charged
     && !cancelled.open && cancelled.status === 'available' && cancelled.hist === 0 && cancelled.cash === before.cash && cancelled.notes === before.notes

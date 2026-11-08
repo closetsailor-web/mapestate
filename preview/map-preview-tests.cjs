@@ -205,7 +205,7 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   assert.ok(code.includes("moveNote.textContent='You can also search on the map'"));
   assert.equal(code.includes('About search'), false);
   assert.equal(code.includes('Choose one suggestion. None is selected automatically.'), false);
-  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypEnsureSuburbStock,ypFreshStock,ypRadiusList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM,ypDestination,ypBuildingSites,ypPointInRing,ypSpreadSites,ypAreaStockReady,ypCommitAreaStock,ypListingModel,ypRentPicture,ypMoneyText,ypApplySample,ypRefreshSample,ypCancelSample,ypConfirmSample,ypChargeSampleWeek,ypDeclineSample,ypMergeHistory,ypHistoryFor,ypHourMs,YP_TEST_CONFIRM_MS})', {});
+  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypEnsureSuburbStock,ypFreshStock,ypRadiusList,ypPage,ypInView,ypRentalDetail,ypApplyPreview,ypSuburbKey,ypDistanceM,ypDestination,ypBuildingSites,ypPointInRing,ypSpreadSites,ypAreaStockReady,ypCommitAreaStock,ypListingModel,ypRentPicture,ypMoneyText,ypApplySample,ypRefreshSample,ypCancelSample,ypConfirmSample,ypChargeSampleWeek,ypDeclineSample,ypMergeHistory,ypHistoryFor,ypHourMs,ypVerifiedLocality,ypReviewLocation,YP_TEST_CONFIRM_MS})', {});
   assert.equal(api.ypShouldHideLabel({id:'road_label', type:'symbol', 'source-layer':'transportation_name'}), true);
   assert.equal(api.ypShouldHideLabel({id:'road', type:'line', 'source-layer':'transportation'}), false);
   assert.equal(api.ypShouldHideLabel({id:'building', type:'fill', 'source-layer':'building'}), false);
@@ -393,6 +393,17 @@ check('no device location, hidden street labels, and shared preview rentals', ()
   const ownerApply = api.ypApplySample({version:1, rentals:[owned]}, 'p1', clock0);
   const ownerLater = api.ypRefreshSample(ownerApply.store, {week:3, acc:0, weekMs, wall:clock0.wall + 999999});
   assert.equal(ownerLater.store.rentals[0].status, 'application-pending');
+  const bargaraItem = {result_type:'suburb', name:'Bargara', suburb:'Bargara', state:'Queensland', country:'Australia', label:'Bargara, Queensland, Australia', lon:152.464, lat:-24.814};
+  assert.equal(api.ypVerifiedLocality(bargaraItem), 'Bargara');
+  assert.equal(api.ypVerifiedLocality({label:'Bargara, Queensland, Australia'}), '');
+  assert.equal(api.ypVerifiedLocality({label:'Searched area 152.5000, -24.8171'}), '');
+  assert.equal(api.ypVerifiedLocality({locality:'Searched area 152.4640, -24.8140'}), '');
+  const bargaraStock = api.ypEnsureSuburbStock(api.ypFreshStock(), bargaraItem, [{lon:152.465, lat:-24.813}]);
+  assert.equal(bargaraStock.rentals[0].placeLabel, 'Bargara, Queensland, Australia');
+  assert.equal(bargaraStock.rentals[0].locality, 'Bargara');
+  assert.equal(bargaraStock.rentals[0].id, 'preview:bargara queensland australia:1');
+  assert.equal(api.ypReviewLocation(bargaraStock.rentals[0]), 'Bargara');
+  assert.equal(api.ypReviewLocation({placeLabel:'Searched area 152.5000, -24.8171', suburbKey:'searched area 152 5000 24 8171'}), 'Searched area');
   const declined = api.ypDeclineSample(ownerApply.store, 'p1', {week:1, acc:0, weekMs, wall:clock0.wall});
   assert.equal(declined.ok, true);
   assert.equal(declined.events[0].kind, 'declined');
