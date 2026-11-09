@@ -176,7 +176,7 @@
   function onClick(event){
     const m = map();
     if (!m || performance.now() < ignoreMapClicksUntil || document.getElementById('yp-building')) return;
-    const rentLayers = ['yp-rental-point', 'yp-rental-shadow', 'yp-rental-cluster'].filter(id => m.getLayer(id));
+    const rentLayers = ['yp-rental-point', 'yp-rental-shadow', 'yp-rental-cluster', 'yp-listing-fill', 'yp-listing-line'].filter(id => m.getLayer(id));
     if (rentLayers.length) {
       try {
         if (m.queryRenderedFeatures(event.point, {layers: rentLayers}).length) return;
