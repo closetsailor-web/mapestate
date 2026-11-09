@@ -439,7 +439,10 @@ function ypReadStock(){try{const o=JSON.parse(localStorage.getItem(YP_STOCK_KEY)
 function ypWriteStock(store){try{localStorage.setItem(YP_STOCK_KEY,JSON.stringify(store));}catch(e){}}
 function ypApplyLabelPolicy(map){const layers=map&&map.getStyle&&map.getStyle()&&map.getStyle().layers||[];for(const layer of layers){if(ypShouldHideLabel(layer)){try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}}}}
 function ypListedRentals(place){if(!place)return [];const key=ypSuburbKey(place.stockKey||place.label);const rows=(ypReadStock().rentals||[]).filter(r=>r.suburbKey===key&&Number.isFinite(+r.lon)&&Number.isFinite(+r.lat));const bound=rows.filter(r=>r.footprintId);if(bound.length)return bound;return ypRadiusList(ypReadStock(),place).items;}
-function ypSyncListingHomes(items){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-listing-homes'))return;const features=[];for(const rental of items||[]){if(!rental.footprintId||!rental.geometry)continue;features.push({type:'Feature',properties:{id:rental.id,footprintId:rental.footprintId},geometry:rental.geometry});}ypMap.getSource('yp-listing-homes').setData({type:'FeatureCollection',features});if(!ypMap.getLayer('yp-listing-fill'))return;const anchor=ypMap.getLayer('ypb-selected-fill')?'ypb-selected-fill':null;try{if(anchor){ypMap.moveLayer('yp-listing-fill',anchor);ypMap.moveLayer('yp-listing-line',anchor);}else{ypMap.moveLayer('yp-listing-fill');ypMap.moveLayer('yp-listing-line');}}catch(e){}}
+function ypSyncListingHomes(items){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-listing-homes'))return;const features=[];for(const rental of items||[]){if(!rental.footprintId||!rental.geometry)continue;features.push({type:'Feature',properties:{id:rental.id,footprintId:rental.footprintId},geometry:rental.geometry});}ypMap.getSource('yp-listing-homes').setData({type:'FeatureCollection',features});const anchor=ypMap.getLayer('ypb-selected-fill')?'ypb-selected-fill':null;const stack=['yp-listing-fill','yp-listing-line','yp-rental-shadow','yp-rental-point'];try{stack.forEach(id=>{if(!ypMap.getLayer(id))return;if(anchor)ypMap.moveLayer(id,anchor);else ypMap.moveLayer(id);});}catch(e){}}
+let ypListingTapAt=0;
+function ypListingHit(event){const m=typeof ypMap!=='undefined'?ypMap:null;if(!m||!event)return '';const layers=['yp-listing-fill','yp-listing-line','yp-rental-point','yp-rental-shadow'].filter(id=>m.getLayer(id));if(event.point&&layers.length){try{const hits=m.queryRenderedFeatures(event.point,{layers})||[];const hit=hits.find(f=>f.properties&&f.properties.id);if(hit)return String(hit.properties.id);}catch(e){}}const lng=event.lngLat&&+event.lngLat.lng,lat=event.lngLat&&+event.lngLat.lat;if(!Number.isFinite(lng)||!Number.isFinite(lat))return '';const zoom=typeof m.getZoom==='function'?m.getZoom():0;if(zoom<14)return '';for(const rental of ypListedRentals(window.__ypListCentre)){if(ypOuterRings(rental.geometry).some(ring=>ypPointInRing(lng,lat,ring)))return rental.id;}return '';}
+function ypOpenListingTap(event){const id=ypListingHit(event);if(!id)return false;const now=performance.now();if(now-ypListingTapAt>450){ypListingTapAt=now;ypOpenRentalDetail(id);}return true;}
 function ypSyncRentalMarkers(){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-rentals'))return;const items=ypListedRentals(window.__ypListCentre);ypMap.getSource('yp-rentals').setData({type:'FeatureCollection',features:items.map(r=>({type:'Feature',properties:{id:r.id},geometry:{type:'Point',coordinates:[r.lon,r.lat]}}))});ypSyncListingHomes(items);}
 function ypOpenSelectedList(){ypCloseWhere();window.__ypListPage=1;ypRenderRentalList();}
 function ypSyncRadius(){const c=window.__ypListCentre;if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-search-radius'))return;if(!c){ypMap.getSource('yp-search-radius').setData(ypEmpty());return;}const ring=ypRadiusRing(c.lon,c.lat,2000);ypMap.getSource('yp-search-radius').setData({type:'FeatureCollection',features:[{type:'Feature',properties:{kind:'search-area'},geometry:{type:'Polygon',coordinates:[ring]}}]});}
@@ -636,8 +639,9 @@ function ypMountSearch(){
   if(glyphStyle.glyphs){const sample=(glyphStyle.layers||[]).find(l=>l.layout&&l.layout['text-font']);const textFont=sample?sample.layout['text-font']:['Open Sans Regular'];ypMap.addLayer({id:'yp-rental-count',type:'symbol',source:'yp-rentals',filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':12,'text-font':textFont},paint:{'text-color':'#fff'}});}
   const pinBlue=getComputedStyle(document.documentElement).getPropertyValue('--navy2').trim();
   const pinShade=getComputedStyle(document.documentElement).getPropertyValue('--navy').trim();
-  ypMap.addLayer({id:'yp-rental-shadow',type:'circle',source:'yp-rentals',maxzoom:15,filter:['!',['has','point_count']],paint:{'circle-color':pinShade,'circle-radius':12,'circle-blur':0.45,'circle-opacity':0.28,'circle-translate':[0,1]}});
-  ypMap.addLayer({id:'yp-rental-point',type:'circle',source:'yp-rentals',maxzoom:15,filter:['!',['has','point_count']],paint:{'circle-color':pinBlue,'circle-radius':9,'circle-stroke-width':2,'circle-stroke-color':'#fff'}});
+  const pinRadius=['interpolate',['linear'],['zoom'],15,9,17,5];
+  ypMap.addLayer({id:'yp-rental-shadow',type:'circle',source:'yp-rentals',filter:['!',['has','point_count']],paint:{'circle-color':pinShade,'circle-radius':['interpolate',['linear'],['zoom'],15,12,17,7],'circle-blur':0.45,'circle-opacity':0.28,'circle-translate':[0,1]}});
+  ypMap.addLayer({id:'yp-rental-point',type:'circle',source:'yp-rentals',filter:['!',['has','point_count']],paint:{'circle-color':pinBlue,'circle-radius':pinRadius,'circle-stroke-width':2,'circle-stroke-color':'#fff'}});
   ypMap.addSource('yp-listing-homes',{type:'geojson',data:ypEmpty()});
   ypMap.addLayer({id:'yp-listing-fill',type:'fill',source:'yp-listing-homes',minzoom:15,paint:{'fill-color':pinBlue,'fill-opacity':0.92}});
   ypMap.addLayer({id:'yp-listing-line',type:'line',source:'yp-listing-homes',minzoom:15,paint:{'line-color':'#fff','line-width':2}});
@@ -653,14 +657,13 @@ function ypMountSearch(){
   ypMap.on('idle',()=>{clearTimeout(ypPinWait);ypPinWait=setTimeout(()=>{if(window.__ypListCentre)ypApplyPlacePins();},400);});
  });
  ypMap.on('click','yp-rental-cluster',e=>{const f=e.features&&e.features[0];if(!f)return;const cid=f.properties.cluster_id;ypMap.getSource('yp-rentals').getClusterExpansionZoom(cid,(err,zoom)=>{if(!err)ypMap.easeTo({center:f.geometry.coordinates,zoom});});});
- const openRentalPin=e=>{const f=e.features&&e.features[0];if(f&&f.properties&&f.properties.id)ypOpenRentalDetail(f.properties.id);};
- ypMap.on('click','yp-rental-point',openRentalPin);
- ypMap.on('click','yp-rental-shadow',openRentalPin);
- ypMap.on('click','yp-listing-fill',openRentalPin);
- ypMap.on('click','yp-listing-line',openRentalPin);
+ let ypTouchStart=null;
+ ypMap.on('touchstart',e=>{const p=e.point;ypTouchStart=p?{x:p.x,y:p.y}:null;});
+ ypMap.on('touchend',e=>{if(!ypTouchStart||!e.point)return;const dx=e.point.x-ypTouchStart.x,dy=e.point.y-ypTouchStart.y;ypTouchStart=null;if(dx*dx+dy*dy>64)return;ypOpenListingTap(e);});
  ypMap.on('moveend',()=>{if(!ypReady)return;try{const c=ypMap.getCenter();window.__ypMapView={lon:+Number(c.lng).toFixed(6),lat:+Number(c.lat).toFixed(6),zoom:+ypMap.getZoom()};ypSaveCentre();}catch(e){}ypSyncRentalMarkers();});
  ypMap.on('idle',()=>{if(ypReady)ypRematch();});
  ypMap.on('click',e=>{
+  if(ypOpenListingTap(e))return;
   if(window.__ygHandlesMapClick)return;
   if(!ypReady||!ypBuildingLayers.length)return;
   const clickAt=e.lngLat.toArray();

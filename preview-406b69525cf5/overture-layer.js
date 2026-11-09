@@ -176,10 +176,10 @@
   function onClick(event){
     const m = map();
     if (!m || performance.now() < ignoreMapClicksUntil || document.getElementById('yp-building')) return;
-    const rentLayers = ['yp-rental-point', 'yp-rental-shadow', 'yp-rental-cluster', 'yp-listing-fill', 'yp-listing-line'].filter(id => m.getLayer(id));
-    if (rentLayers.length) {
+    if (typeof ypListingHit === 'function' && ypListingHit(event)) return;
+    if (m.getLayer('yp-rental-cluster')) {
       try {
-        if (m.queryRenderedFeatures(event.point, {layers: rentLayers}).length) return;
+        if (m.queryRenderedFeatures(event.point, {layers: ['yp-rental-cluster']}).length) return;
       } catch (e) {}
     }
     const layers = ['ypb-fill', 'ypb-quarantine-fill'].filter(id => m.getLayer(id));
