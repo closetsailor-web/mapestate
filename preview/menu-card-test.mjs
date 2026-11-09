@@ -138,7 +138,7 @@ const expected = {
   Finances: ['Income & Expenses', 'Borrowing Power'],
   Listings: ['For Sale', 'For Rent', 'Room Share', 'Family', 'Auctions'],
   Leaderboard: ['Global Rankings'],
-  Settings: ['Profile', 'Income', 'Expenses', 'Budget']
+  Settings: ['Profile', 'Income', 'Expenses', 'Budget', 'Start fresh']
 };
 for (const row of checks) {
   if (row.items.join('|') !== expected[row.label].join('|')) problems.push('items '+row.label+' '+row.items.join('|'));
