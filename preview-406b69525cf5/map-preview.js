@@ -327,6 +327,7 @@ html.yp-preview .maplibregl-ctrl-bottom-right{bottom:calc(var(--sab) + 76px)!imp
 html.yp-preview .maplibregl-ctrl-attrib{font-size:10px;line-height:1.3;background:rgba(255,255,255,.92);border-radius:8px}
 html.yp-menu-open .maplibregl-ctrl-bottom-right{display:none!important}
 html.yp-preview #yp-fresh-note{position:absolute!important;top:calc(var(--sat) + 6px)!important;left:8px!important;right:8px!important;z-index:80!important;box-sizing:border-box}
+html.yp-preview #date{display:block!important}
 html.yp-preview #toast{z-index:82!important;left:50%!important;right:auto!important;width:max-content;max-width:min(340px,calc(100vw - 24px));transform:translateX(-50%)!important;text-align:center}
 html.yp-preview #toast.show{transform:translateX(-50%)!important}
 #yp-pending .hwx,#yp-history .hwx,#yp-property-menu .hwx,#yp-section-menu .hwx,#yp-soon .hwx{background:none;border:0;color:#5a6780;min-height:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
