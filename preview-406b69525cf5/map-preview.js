@@ -256,7 +256,7 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-pending,#yp-history,#yp-soon,#yp-apply-review,#yp-history-detail,#yp-away{position:fixed;inset:0;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
 #yp-apply-review{z-index:52}
 #yp-history-detail{z-index:54}
-#yp-where .card,#yp-prop .card,#yp-rent-list .card,#yp-rent-detail .card,#yp-apply-review .card,#yp-history-detail .card,#yp-away .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);max-height:calc(100dvh - 256px);overflow:auto;margin:0}
+#yp-where .card,#yp-prop .card,#yp-rent-list .card,#yp-rent-detail .card,#yp-apply-review .card,#yp-history-detail .card,#yp-away .card,#yp-pending .card,#yp-history .card,#yp-soon .card,#yp-property-menu .card,#yp-section-menu .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);max-height:calc(100dvh - 256px);overflow:auto;margin:0}
 #yp-where p:not(.yp-kicker),#yp-where-status,#yp-prop p:not(.yp-kicker),#yp-rent-list p:not(.yp-kicker),#yp-rent-detail p:not(.yp-kicker),#yp-apply-review p:not(.yp-kicker),#yp-history-detail p:not(.yp-kicker),#yp-away p:not(.yp-kicker){margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
 #yp-search-area{position:absolute;left:50%;bottom:calc(132px + var(--sab));transform:translateX(-50%);z-index:46;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 15px Inter,system-ui,sans-serif;min-height:44px;padding:0 16px;cursor:pointer}
 #yp-rent-list .yp-rent-row{display:block;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
@@ -303,18 +303,16 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-where-privacy{text-align:left}
 #yp-prop .choices{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 #yp-property-menu,#yp-section-menu{position:fixed;inset:0 0 calc(var(--sab) + 74px) 0;z-index:47;display:block;padding:0;overflow:visible;background:transparent}
-#yp-pending .card,#yp-history .card,#yp-soon .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);max-height:calc(100dvh - 256px);overflow:auto;margin:0}
 #yp-pending p,#yp-history p,#yp-property-menu p,#yp-section-menu p,#yp-soon p{margin:0 0 10px;font-size:14.5px;line-height:1.35;color:#5a6780;text-align:center}
 #yp-pending .yp-rent-row,#yp-history .yp-rent-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer;text-align:left;padding:10px 12px}
 #yp-pending .yp-row-title,#yp-history .yp-row-title{font-weight:750}
 #yp-pending .yp-row-meta,#yp-history .yp-row-meta,#yp-pending .yp-row-price,#yp-history .yp-row-price{font:500 13px Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-pending .hwb,#yp-history .hwb,#yp-soon .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
 #yp-history .yp-close,#yp-history-detail .yp-close,#yp-away .yp-close{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#0a3a8c;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
-#yp-property-menu,#yp-section-menu{inset:0 0 calc(var(--sab) + 74px) 0;z-index:47;background:transparent;padding:0;overflow:visible}
 html.yp-preview nav button{transition:none}
-#yp-property-menu .card,#yp-section-menu .card{position:absolute;left:0;top:0;right:auto;bottom:auto;width:max-content;min-width:220px;max-width:min(260px,calc(100vw - 16px));margin:0;padding:0 0 6px;border-radius:24px;text-align:left;overflow:visible;box-shadow:none;filter:drop-shadow(0 8px 16px rgba(11,37,69,.22))}
-#yp-property-menu .yp-menu-item,#yp-section-menu .yp-menu-item{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:44px;height:44px;margin:0;padding:0 16px;border:0;border-radius:0;background:transparent;color:#3d4a63;font:600 14px Inter,system-ui,sans-serif;text-align:left;cursor:pointer;box-shadow:none}
-#yp-property-menu .yp-menu-item+.yp-menu-item,#yp-section-menu .yp-menu-item+.yp-menu-item{box-shadow:inset 0 1px 0 #e4eaf2}
+#yp-property-menu .card,#yp-section-menu .card{position:absolute;left:0;top:0;width:max-content;min-width:248px;max-width:min(280px,calc(100vw - 16px));text-align:left;overflow:visible}
+#yp-property-menu .yp-menu-item,#yp-section-menu .yp-menu-item{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:44px;height:44px;margin:0;padding:0 16px;border:0;border-radius:0;background:#fff;color:#3d4a63;font:600 14px Inter,system-ui,sans-serif;text-align:left;cursor:pointer}
+#yp-property-menu .yp-menu-item+.yp-menu-item,#yp-section-menu .yp-menu-item+.yp-menu-item{border-top:1px solid rgba(20,33,61,.08)}
 #yp-property-menu .yp-menu-item:active,#yp-section-menu .yp-menu-item:active{background:#fff4ec}
 #yp-property-menu .yp-notch,#yp-section-menu .yp-notch{position:absolute;bottom:-7px;width:14px;height:8px;background:#fff;clip-path:polygon(0 0,100% 0,50% 100%)}
 html.yp-preview .maplibregl-ctrl-bottom-right{bottom:calc(var(--sab) + 76px)!important;left:8px!important;right:auto!important;max-width:calc(100vw - 72px)}
@@ -336,7 +334,6 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 .yp-card-head h2{margin:0;color:#fff;font:700 18px/1.25 Inter,system-ui,sans-serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 22px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
 .yp-card-head .yp-x:focus-visible{outline:3px solid #fff;outline-offset:2px}
-#yp-property-menu .card > .yp-card-head,#yp-section-menu .card > .yp-card-head{margin:0;border-radius:24px 24px 0 0}
 #sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}
 html.yp-preview body.sheetopen nav{transform:none;opacity:1;pointer-events:auto}
 html.yp-preview #date{display:block}`;
