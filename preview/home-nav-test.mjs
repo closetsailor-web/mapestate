@@ -161,10 +161,52 @@ await shot('home-after-history-close-390x844.png');
 await evalJson(`ypOpenPropertyHistory();1`);
 await evalJson(`document.getElementById('yp-history-x').click();1`);
 const afterX = await evalJson(stateExpr());
-await evalJson(`UI.port();1`);
-await delay(80);
-const bank = await evalJson(`(()=>{const sheet=document.querySelector('.sheet.open');const h2=sheet.querySelector('h2');const x=sheet.querySelector('.close');const sr=sheet.getBoundingClientRect();sheet.scrollTop=sheet.scrollHeight;const hr=h2.getBoundingClientRect();const xr=x.getBoundingClientRect();return {title:h2.textContent,label:x.getAttribute('aria-label'),w:Math.round(xr.width),h:Math.round(xr.height),headTop:Math.round(hr.top-sr.top),xInHead:xr.top>=hr.top-2&&xr.bottom<=hr.bottom+6};})()`);
+async function openSheet(call){
+  await evalJson(`(()=>{${call};return 1;})()`);
+  await evalJson(`new Promise(resolve=>{const el=document.querySelector('.sheet.open');const done=()=>requestAnimationFrame(()=>requestAnimationFrame(resolve));if(!el||typeof el.getAnimations!=='function')return done();Promise.all(el.getAnimations().map(a=>a.finished.catch(()=>0))).then(done);})`);
+  await delay(450);
+}
+function sheetBoxExpr(){
+  return `(()=>{
+    const sheet=document.querySelector('.sheet.open');
+    const r=sheet.getBoundingClientRect();
+    const header=document.querySelector('header').getBoundingClientRect();
+    const nav=document.querySelector('nav').getBoundingClientRect();
+    const h2=sheet.querySelector('h2');
+    const x=sheet.querySelector('.close');
+    const hr=h2.getBoundingClientRect();
+    const xr=x.getBoundingClientRect();
+    const left=r.left, right=window.innerWidth-r.right;
+    return {
+      title:(h2.textContent||'').trim(),
+      left:Math.round(left*10)/10,
+      right:Math.round(right*10)/10,
+      gapDelta:Math.round(Math.abs(left-right)*10)/10,
+      top:Math.round(r.top),
+      bottom:Math.round(r.bottom),
+      headerClear:Math.round(r.top-header.bottom),
+      navClear:Math.round(nav.top-r.bottom),
+      onScreen:r.left>=-0.5&&r.right<=window.innerWidth+0.5&&r.top>=-0.5&&r.bottom<=window.innerHeight+0.5,
+      label:x.getAttribute('aria-label'),
+      w:Math.round(xr.width),
+      h:Math.round(xr.height),
+      headTop:Math.round(hr.top-r.top),
+      xInHead:xr.top>=hr.top-2&&xr.bottom<=hr.bottom+6,
+      grab:getComputedStyle(sheet.querySelector('.grab')).display
+    };
+  })()`;
+}
+await openSheet('UI.port()');
+const bank = await evalJson(sheetBoxExpr());
 await shot('bank-sheet-close-390x844.png');
+await openSheet('UI.mine()');
+const owned = await evalJson(sheetBoxExpr());
+await shot('property-owned-sheet-390x844.png');
+const sharedSheets = [];
+for (const call of ['UI.money()', 'UI.income()', 'UI.expenses()', 'UI.lead()']) {
+  await openSheet(call);
+  sharedSheets.push(await evalJson(sheetBoxExpr()));
+}
 await evalJson(`UI.close();1`);
 
 await evalJson(`(()=>{([...document.querySelectorAll('nav button')].find(b=>b.getAttribute('aria-label')==='Listings')).click();document.getElementById('yp-section-menu').dispatchEvent(new MouseEvent('click',{bubbles:true}));return 1;})()`);
@@ -187,14 +229,17 @@ if (!(fromMenu.history && !fromMenu.detail && fromMenu.home && !fromMenu.mapOn))
 if (!(!afterHistory.history && !afterHistory.menu && afterHistory.home && !afterHistory.mapOn && afterHistory.nav)) problems.push('history close '+JSON.stringify(afterHistory));
 if (!(pin.scrolled && pin.headStuck && pin.label==='Close' && pin.text==='✕' && pin.w>=44 && pin.h>=44 && pin.xInside && pin.closeKept==='Close' && pin.color==='rgb(255, 255, 255)')) problems.push('history header pin '+JSON.stringify(pin));
 if (!(!afterX.history && !afterX.detail && afterX.home && !afterX.mapOn)) problems.push('history cross '+JSON.stringify(afterX));
-if (!(bank.label==='Close' && bank.w>=44 && bank.h>=44 && bank.xInHead && bank.headTop<40)) problems.push('bank close '+JSON.stringify(bank));
+const sheets = [bank, owned, ...sharedSheets];
+const offCentre = sheets.filter(box=>!(box.gapDelta<=1 && box.onScreen && box.headerClear>=8 && box.navClear>=8 && box.grab==='none' && box.label==='Close' && box.w>=44 && box.h>=44));
+if (offCentre.length) problems.push('sheet bounds '+JSON.stringify(offCentre));
+if (!(bank.xInHead && bank.headTop<40 && owned.xInHead)) problems.push('sheet close '+JSON.stringify({bank,owned}));
 if (!(afterMenu.home && !afterMenu.mapOn && !afterMenu.menu)) problems.push('menu close '+JSON.stringify(afterMenu));
 if (!(onMap.mapOn && !onMap.home)) problems.push('For Rent did not open the map '+JSON.stringify(onMap));
 if (!(centred && Math.abs(centred.off) < 40 && centred.clear > 8)) problems.push('history list is not centred '+JSON.stringify(centred));
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exitCode = 1;
-} else console.log('PASS home navigation', {tilesAtHome, tilesBeforeMap, onMap: onMap.mapOn});
+} else console.log('PASS home navigation', {tilesAtHome, tilesBeforeMap, onMap: onMap.mapOn, sheets: sheets.map(box=>({title:box.title,left:box.left,right:box.right,headerClear:box.headerClear,navClear:box.navClear}))});
 
 server.kill('SIGTERM');
 chrome.kill('SIGTERM');
