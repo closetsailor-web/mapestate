@@ -10,8 +10,8 @@ import {fileURLToPath} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'preview-406b69525cf5');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 assert.equal(html.includes('game weeks passed while'), false);
-assert.ok(html.includes('if(n>1)window.__ypAway={n,cash:G.cash-c0}'));
-assert.ok(html.includes('if(n>2&&G.started&&typeof ypShowAwayCard===\'function\')ypShowAwayCard(n,G.cash-c0)'));
+assert.ok(html.includes('if(n>1)window.__ypAway={n,cash:G.cash-c0,income:window.__ypCatch.income,expense:window.__ypCatch.expense}'));
+assert.ok(html.includes('if(n>2&&G.started&&typeof ypShowAwayCard===\'function\')ypShowAwayCard(n,G.cash-c0,window.__ypCatch)'));
 assert.equal((html.match(/function toast\(/g)||[]).length, 1);
 assert.equal(html.includes('big?4500:2800'), false);
 
@@ -101,6 +101,7 @@ const away = await evalJson(`(()=>{
   return {
     title:document.getElementById('yp-away-title').textContent,
     weeks:document.getElementById('yp-away-weeks').textContent,
+    income:document.getElementById('yp-away-income')&&document.getElementById('yp-away-income').textContent,
     cash:document.getElementById('yp-away-cash').textContent,
     close:document.getElementById('yp-away-close').textContent,
     dialogs:ypOpenDialogs(),
@@ -124,7 +125,7 @@ const closedByX = await evalJson(`(()=>{document.getElementById('yp-away-x').cli
 const problems=[];
 if (timing.seen.join(',')!==timing.expect.join(',')) problems.push('timing '+JSON.stringify(timing));
 if (!timing.replaced||!timing.dismissed||timing.count!==1||timing.ms!==12000) problems.push('toast behaviour '+JSON.stringify(timing));
-if (!(away.title==='While you were away'&&away.weeks==='26 game weeks passed'&&away.cash==='Cash -$1,250'&&away.close==='Close'&&away.dialogs.length===1&&away.dialogs[0]==='yp-away'&&away.home&&away.centred&&away.onScreen)) problems.push('away '+JSON.stringify(away));
+if (!(away.title==='While you were away'&&away.weeks==='26'&&away.income==null&&away.cash==='-$1,250'&&away.close==='Close'&&away.dialogs.length===1&&away.dialogs[0]==='yp-away'&&away.home&&away.centred&&away.onScreen)) problems.push('away '+JSON.stringify(away));
 if (!(!closedByOther.away&&closedByOther.dialogs.length===1&&closedByOther.dialogs[0]==='sheet')) problems.push('replaced '+JSON.stringify(closedByOther));
 if (!(!closedByButton.away&&closedByButton.home&&!closedByX.away&&closedByX.home)) problems.push('close '+JSON.stringify({closedByButton,closedByX}));
 if (problems.length){console.error(problems.join('\n'));process.exitCode=1;}
