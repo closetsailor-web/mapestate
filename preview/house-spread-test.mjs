@@ -7,6 +7,8 @@ assert.equal(src.includes('function ypChooseFootprints'), false);
 assert.ok(src.includes('const YP_HOUSE_MIN_M2=80,YP_HOUSE_MAX_M2=450'));
 assert.ok(src.includes('ypSpreadSites(homes,10)'));
 assert.ok(src.includes('if(!(area>=YP_HOUSE_MIN_M2&&area<=YP_HOUSE_MAX_M2))continue'));
+assert.ok(src.includes("tone==='trade'||tone==='other'"));
+assert.equal(src.includes("props.tone!=='home'"), false);
 
 const start = src.indexOf('function ypDistanceM');
 const end = src.indexOf('function ypAreaStockReady');
