@@ -118,6 +118,12 @@ await evalJson(`document.getElementById('yp-history-detail-close').click();1`);
 await delay(40);
 const afterEntry = await evalJson(stateExpr());
 await shot('history-list-after-entry-close-390x844.png');
+await evalJson(`document.querySelector('#yp-history .yp-rent-row').click();1`);
+await delay(40);
+const entryX = await evalJson(`(()=>{const b=document.getElementById('yp-history-detail-x');const r=b.getBoundingClientRect();return {label:b.getAttribute('aria-label'),text:b.textContent,w:Math.round(r.width),h:Math.round(r.height),close:document.getElementById('yp-history-detail-close').textContent};})()`);
+await evalJson(`document.getElementById('yp-history-detail-x').click();1`);
+await delay(40);
+const afterEntryX = await evalJson(stateExpr());
 
 await evalJson(`(()=>{document.getElementById('yp-history')?.remove();document.getElementById('yp-history-detail')?.remove();([...document.querySelectorAll('nav button')].find(b=>b.getAttribute('aria-label')==='Property')).click();document.getElementById('yp-property-history-open').click();document.querySelector('#yp-history .yp-rent-row').click();return 1;})()`);
 await delay(40);
@@ -125,9 +131,41 @@ await evalJson(`document.getElementById('yp-history-detail-close').click();1`);
 await delay(40);
 const fromMenu = await evalJson(stateExpr());
 
+const pin = await evalJson(`(()=>{
+  const events=Array.from({length:28},(_,i)=>({key:'seed|applied|'+i,propertyId:'seed',kind:'applied',gameMs:i*1000,text:'Applied for Rental '+(i+1)}));
+  localStorage.setItem('yp.propertyHistory.v1',JSON.stringify({version:1,events}));
+  ypOpenPropertyHistory();
+  const card=document.querySelector('#yp-history .card');
+  card.scrollTop=card.scrollHeight;
+  const head=document.querySelector('#yp-history .hwh').getBoundingClientRect();
+  const cardR=card.getBoundingClientRect();
+  const xEl=document.getElementById('yp-history-x');
+  const x=xEl.getBoundingClientRect();
+  return {
+    scrolled:card.scrollTop>120,
+    headStuck:Math.abs(head.top-cardR.top)<4,
+    label:xEl.getAttribute('aria-label'),
+    text:xEl.textContent,
+    w:Math.round(x.width),
+    h:Math.round(x.height),
+    xInside:x.top>=head.top-1&&x.bottom<=head.bottom+1&&x.right<=head.right+1&&x.left>=head.left,
+    color:getComputedStyle(xEl).color,
+    closeKept:document.getElementById('yp-history-close').textContent
+  };
+})()`);
+await shot('history-scrolled-x-390x844.png');
+
 await evalJson(`document.getElementById('yp-history-close').click();1`);
 const afterHistory = await evalJson(stateExpr());
 await shot('home-after-history-close-390x844.png');
+await evalJson(`ypOpenPropertyHistory();1`);
+await evalJson(`document.getElementById('yp-history-x').click();1`);
+const afterX = await evalJson(stateExpr());
+await evalJson(`UI.port();1`);
+await delay(80);
+const bank = await evalJson(`(()=>{const sheet=document.querySelector('.sheet.open');const h2=sheet.querySelector('h2');const x=sheet.querySelector('.close');const sr=sheet.getBoundingClientRect();sheet.scrollTop=sheet.scrollHeight;const hr=h2.getBoundingClientRect();const xr=x.getBoundingClientRect();return {title:h2.textContent,label:x.getAttribute('aria-label'),w:Math.round(xr.width),h:Math.round(xr.height),headTop:Math.round(hr.top-sr.top),xInHead:xr.top>=hr.top-2&&xr.bottom<=hr.bottom+6};})()`);
+await shot('bank-sheet-close-390x844.png');
+await evalJson(`UI.close();1`);
 
 await evalJson(`(()=>{([...document.querySelectorAll('nav button')].find(b=>b.getAttribute('aria-label')==='Listings')).click();document.getElementById('yp-section-menu').dispatchEvent(new MouseEvent('click',{bubbles:true}));return 1;})()`);
 const afterMenu = await evalJson(stateExpr());
@@ -143,8 +181,13 @@ if (tilesAfterWait !== tilesAtHome) problems.push('tiles loaded on Home '+(tiles
 if (!(afterConfirm.history && afterConfirm.home && !afterConfirm.mapOn && afterConfirm.rows.includes('Applied for Rental'))) problems.push('confirm did not land on history '+JSON.stringify(afterConfirm));
 if (!(entry.detail && entry.history && entry.status === 'Pending' && entry.status[0] === entry.status[0].toUpperCase())) problems.push('entry card '+JSON.stringify(entry));
 if (!(afterEntry.history && !afterEntry.detail && afterEntry.home && !afterEntry.mapOn && afterEntry.hold)) problems.push('confirm route entry close '+JSON.stringify(afterEntry));
+if (!(entryX.label==='Close' && entryX.text==='✕' && entryX.w>=44 && entryX.h>=44 && entryX.close==='Close')) problems.push('entry cross '+JSON.stringify(entryX));
+if (!(afterEntryX.history && !afterEntryX.detail && afterEntryX.home && !afterEntryX.mapOn)) problems.push('entry cross close '+JSON.stringify(afterEntryX));
 if (!(fromMenu.history && !fromMenu.detail && fromMenu.home && !fromMenu.mapOn)) problems.push('menu route entry close '+JSON.stringify(fromMenu));
 if (!(!afterHistory.history && !afterHistory.menu && afterHistory.home && !afterHistory.mapOn && afterHistory.nav)) problems.push('history close '+JSON.stringify(afterHistory));
+if (!(pin.scrolled && pin.headStuck && pin.label==='Close' && pin.text==='✕' && pin.w>=44 && pin.h>=44 && pin.xInside && pin.closeKept==='Close' && pin.color==='rgb(255, 255, 255)')) problems.push('history header pin '+JSON.stringify(pin));
+if (!(!afterX.history && !afterX.detail && afterX.home && !afterX.mapOn)) problems.push('history cross '+JSON.stringify(afterX));
+if (!(bank.label==='Close' && bank.w>=44 && bank.h>=44 && bank.xInHead && bank.headTop<40)) problems.push('bank close '+JSON.stringify(bank));
 if (!(afterMenu.home && !afterMenu.mapOn && !afterMenu.menu)) problems.push('menu close '+JSON.stringify(afterMenu));
 if (!(onMap.mapOn && !onMap.home)) problems.push('For Rent did not open the map '+JSON.stringify(onMap));
 if (!(centred && Math.abs(centred.off) < 40 && centred.clear > 8)) problems.push('history list is not centred '+JSON.stringify(centred));
