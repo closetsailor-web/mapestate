@@ -823,10 +823,10 @@ header{position:absolute;top:calc(var(--sat) + 8px);left:8px;right:8px;z-index:3
 nav{position:absolute;bottom:calc(var(--sab) + 10px);left:10px;right:10px;z-index:45;display:flex;background:var(--glass);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);border-radius:24px;box-shadow:var(--shadow);padding:6px}
 nav button{flex:1;border:0;background:none;padding:6px 0 5px;font:600 10.5px Inter,system-ui,sans-serif;color:var(--mute);cursor:pointer;border-radius:18px;min-height:52px;transition:background .2s,color .2s}
 nav button span{display:grid;place-items:center;height:26px}nav button span svg{width:23px;height:23px}nav button.on{color:var(--navy);background:rgba(15,74,163,.14)}body.dark nav button.on{color:#5e96ea}
-.sheet{position:absolute;left:0;right:0;bottom:0;z-index:40;background:var(--card);border-radius:26px 26px 0 0;box-shadow:0 -10px 40px rgba(11,37,69,.25);padding:18px 18px calc(96px + var(--sab));transform:translateY(105%);transition:transform .38s cubic-bezier(.2,.9,.25,1);max-height:78%;overflow:auto;overscroll-behavior:contain}
-.sheet.open{transform:none}
-.grab{width:42px;height:5px;background:var(--line);border-radius:3px;margin:-8px auto 12px}
-.sheet h2{margin:0 0 4px;font-size:20px;font-weight:750;letter-spacing:-.3px;padding-right:40px}.sub{color:var(--mute);font-size:13px;margin-bottom:10px;line-height:1.45}
+.sheet{position:fixed;left:50%;top:50%;right:auto;bottom:auto;z-index:40;width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 256px);margin:0;transform:translate(-50%,-50%);background:var(--card);border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,.35);padding:0;display:none;flex-direction:column;overflow:hidden}
+.sheet.open{display:flex}
+#sheetBody{overflow:auto;flex:1 1 auto;min-height:0;padding:16px 18px 18px}
+.sub{color:var(--mute);font-size:13px;margin-bottom:10px;line-height:1.45}
 .row{display:flex;gap:8px;margin:8px 0}.kv{flex:1;background:var(--card2);border-radius:14px;padding:10px;min-width:0}
 .kv small{display:block;color:var(--mute);font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}.kv b{font-size:16px;font-variant-numeric:tabular-nums}
 .btn{width:100%;border:0;border-radius:16px;padding:14px;min-height:48px;font:700 15px Inter,system-ui,sans-serif;cursor:pointer;margin-top:8px;transition:transform .1s,filter .2s}.btn:active{transform:scale(.98)}
@@ -907,10 +907,7 @@ body.sheetopen #osmattr,body.sheetopen .fab{opacity:0;pointer-events:none}
 #coachbtns{display:flex;gap:6px;flex-wrap:wrap}#coachbtns button{border:0;border-radius:999px;padding:8px 12px;font:600 14px Inter,system-ui,sans-serif;background:#eef1f6;color:#14213d;cursor:pointer}#coachbtns button.go{background:#f47b20;color:#fff}
 /* ===== v25 mobile-first polish (design only) ===== */
 body{-webkit-font-smoothing:antialiased}
-.sheet{scroll-padding-top:72px}
-.sheet .close{position:sticky;float:right;top:0;z-index:6;margin:-4px -4px -40px 0;width:40px;height:40px;box-shadow:0 1px 4px rgba(18,36,63,.08)}
-.sheet h2{position:sticky;top:-18px;z-index:5;background:var(--card);margin:-18px -18px 8px;padding:22px 64px 10px 18px;font-size:22px;line-height:1.2}
-.sheet .grab{position:relative;z-index:7}
+.sheet{scroll-padding-top:0}
 .fin{border-radius:16px;padding:16px;margin:12px 0;font-size:14px;line-height:1.45;box-shadow:0 1px 2px rgba(11,37,69,.05)}
 .btn{min-height:48px;border-radius:14px;font-size:16px}
 .btn.sec{background:var(--card2)}
@@ -954,7 +951,7 @@ html,body{overflow:hidden;overscroll-behavior:none}
 @media (max-width:440px){.kv>*:first-child{font-size:10.5px}.kv b,.kv>*:last-child{font-size:16px}}
 .sheet input[type=number]::-webkit-inner-spin-button,.sheet input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.sheet input[type=number]{-moz-appearance:textfield}
 
-body.sheetopen nav{transform:translateY(140%);opacity:0;pointer-events:none}body.sheetopen .sheet{padding-bottom:calc(24px + var(--sab))}
+body.sheetopen nav{transform:translateY(140%);opacity:0;pointer-events:none}
 nav{transition:transform .3s cubic-bezier(.2,.9,.25,1),opacity .2s}
 nav button{border-radius:18px;font-size:11px;letter-spacing:0;min-height:52px;white-space:nowrap}
 nav button.on{background:rgba(244,123,32,.14);color:var(--orange,#f47b20)}
@@ -987,7 +984,7 @@ header .pill{background:rgba(255,255,255,.14);color:#fff}header .pill#coins,head
 .btn.buy{background:linear-gradient(135deg,#b8410a,#b8410a)!important;color:#fff!important;box-shadow:0 10px 22px rgba(196,71,11,.32)}
 body:not(.dark) .btn.sec,body:not(.dark) .pcard .btn.sec{background:#fff!important;color:var(--fblue)!important;border:2px solid var(--fblue)}
 body:not(.dark) .btn.lh2{color:var(--fblue);border:2px solid var(--fblue)}
-.sheet{border-radius:28px 28px 0 0}
+.sheet{border-radius:24px}
 body:not(.dark) nav{background:rgba(255,255,255,.96)}nav button.on{background:#fff1e6!important;color:var(--cta)!important}
 body:not(.dark) .fab{background:#fff;color:var(--navy);box-shadow:0 6px 18px rgba(11,37,69,.18)}.fab:active,.fab.zb:active{color:var(--orange)}
 body:not(.dark) #rsq{background-color:var(--card2);border:1.5px solid var(--line);border-radius:16px;min-height:48px}
@@ -1006,11 +1003,6 @@ nav button.on{background:rgba(10,58,140,.10)!important;color:var(--fblue)!import
 body:not(.dark) .hcard{background:#fff;border:1.5px solid var(--line)}body:not(.dark) .hcard b{color:var(--navy)}
 #coachnote{background:#eaf1fc;color:var(--navy)!important}
 body:not(.dark) .sheet .more summary,body:not(.dark) .sheet summary{color:var(--fblue)}
-/* v50 blue header band on sheets and pop-ups, same look as the start screens */
-body:not(.dark) .sheet h2{background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%)!important;color:#fff!important;margin:-18px -18px 12px!important;padding:24px 64px 14px 18px!important;top:-18px}
-body:not(.dark) .sheet h2 *{color:#fff}
-body:not(.dark) .sheet .close{background:rgba(255,255,255,.18)!important;color:#fff!important;box-shadow:none}
-body:not(.dark) .sheet .grab{background:rgba(255,255,255,.45)!important}
 #hwov .hwh{margin:-26px -22px 16px;padding:20px 22px 16px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);border-radius:24px 24px 0 0;color:#fff}
 #hwov .hwh h3{color:#fff;margin:0}#hwov .hwh .hwd{margin-bottom:10px}#hwov .hwh .hwd i{background:rgba(255,255,255,.35)}#hwov .hwh .hwd i.on{background:#ff8a33}
 /* Compact sizing for the 4-slide how-it-works run-down only. Starting picture and choose-home pop-ups do not use .hwrun. */
@@ -1037,7 +1029,7 @@ body.sheetopen #renotip{bottom:auto;top:calc(var(--sat) + 72px)}
 /* v31 safe areas: --sat/--sab = the real iOS insets, or a fallback when an in-app browser draws the page under the status bar / toolbar but reports 0 */
 :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
 html,body{height:var(--vvh,100dvh)}
-.sheet{max-height:min(78%,calc(var(--vvh,100dvh) - var(--sat) - 70px))!important;overflow-y:auto}
+.sheet{max-height:calc(100dvh - 256px)}
 header{opacity:1}header .hbtn,header button{color:#fff!important;opacity:1}
 #flow{background:linear-gradient(#0b2545 0 50%,#fff 50% 100%)}#flow #flowframe{position:absolute;left:0;right:0;top:var(--sat);height:calc(100% - var(--sat) - var(--sab));width:100%;border:0}
 .homechip{display:inline-block;background:#fff1e6;color:var(--cta,#b8410a);font-weight:700;border-radius:999px;padding:4px 12px;margin:6px 0 -4px}.ownwrap .mkhome{margin:6px 0 -4px;min-height:44px}
@@ -1051,7 +1043,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 button,a,.cc,nav *,.sheet *{touch-action:manipulation}
 input,select,textarea{font-size:16px!important}
 header,nav{margin-left:env(safe-area-inset-left);margin-right:env(safe-area-inset-right)}
-.sheet{padding-left:calc(18px + env(safe-area-inset-left));padding-right:calc(18px + env(safe-area-inset-right));max-height:min(78%,calc(100dvh - var(--sat) - 70px));-webkit-overflow-scrolling:touch}
+.sheet{max-height:calc(100dvh - 256px)}
 #drawer .panel,#drawer>div:not(.scrim){padding-top:var(--sat);padding-bottom:var(--sab)}
 #osmattr{left:calc(12px + env(safe-area-inset-left))}
 .fab{right:calc(12px + env(safe-area-inset-right))}#toast,.hint{margin-left:env(safe-area-inset-left)}
@@ -1116,7 +1108,7 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 <button class="fab" id="list3d" title="Listings" aria-label="Listings" onclick="listOpen()" style="bottom:calc(320px + var(--sab));font-size:10px;font-weight:800"><span>List</span></button><button class="fab" id="view3d" title="Top view" aria-label="Top view" onclick="w3(w=>{const t=w.toggleView();this.title=this.ariaLabel=t?'3D view':'Top view';this.querySelector('span').textContent=t?'3D':'Top';})" style="bottom:calc(264px + var(--sab));font-size:11px;font-weight:800"><span>Top</span></button><button class="fab zb" id="zoomin" title="Zoom in" aria-label="Zoom in" onclick="MapView.m.zoomIn()" style="bottom:calc(208px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="fab zb" id="zoomout" title="Zoom out" aria-label="Zoom out" onclick="MapView.m.zoomOut()" style="bottom:calc(152px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button class="fab" id="home" title="Recentre city" aria-label="Recentre city" aria-label="Recentre" style="bottom:calc(96px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
 <nav><button class="on" data-v="map"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg></span>Map</button><button data-v="sale" id="salebtn"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg></span>For sale</button><button data-v="mine" id="minebtn"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 3l9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>My properties</button><button data-v="shop"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span>Shop</button><button data-v="profile"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profile</button></nav>
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
-<div class="sheet" id="sheet"><div class="grab"></div><button class="close" aria-label="Close" onclick="UI.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="sheetBody"></div></div>
+<div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
