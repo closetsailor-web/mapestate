@@ -133,7 +133,7 @@ const after = await evalJson(`(async()=>{
   };
 })()`);
 const problems=[];
-if (menu.title!=='Settings'||menu.bg!=='rgb(255, 255, 255)'||menu.items.join('|')!=='Profile|Income|Expenses|Budget|Start fresh') problems.push('menu '+JSON.stringify(menu));
+if (menu.title!=='Settings'||menu.bg!=='rgb(255, 255, 255)'||menu.items.join('|')!=='Profile|Income|Expenses|Budget|Test option: fast clock|Start fresh') problems.push('menu '+JSON.stringify(menu));
 if (!(card.title==='Start fresh'&&card.copy==='This deletes your saved game on this device and starts again from the beginning.'&&card.go==='Delete and start fresh'&&card.cancel==='Cancel'&&card.x==='Close'&&card.red==='rgb(180, 35, 24)'&&card.dialogs.length===1&&card.dialogs[0]==='yp-start-fresh'&&!card.menu)) problems.push('card '+JSON.stringify(card));
 if (!(!cancelled.open&&cancelled.mine&&cancelled.other==='stay')) problems.push('cancel '+JSON.stringify(cancelled));
 const freshSave=after.previewSave?JSON.parse(after.previewSave):null;
