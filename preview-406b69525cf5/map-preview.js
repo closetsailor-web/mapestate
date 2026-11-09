@@ -272,7 +272,7 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-rent-detail .yp-listing,#yp-apply-review .yp-listing,#yp-history-detail .yp-listing{text-align:left;max-width:440px;max-height:min(78dvh,calc(100dvh - 160px));overflow:auto;margin:0 auto}
 #yp-rent-detail .yp-listing p,#yp-apply-review .yp-listing p,#yp-history-detail .yp-listing p,#yp-fixture-board .yp-listing p{text-align:left}
 .yp-listing .hwh{text-align:left}
-.yp-listing .yp-kicker{margin:0 0 6px;font:700 12px Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.88)}
+.yp-listing .yp-kicker,#yp-rent-detail .hwh .yp-kicker,#yp-apply-review .hwh .yp-kicker,#yp-history-detail .hwh .yp-kicker,#yp-rent-list .hwh .yp-kicker{margin:0 0 6px;font:700 12px Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#ff8a33}
 .yp-listing .hwh h2{font-size:22px;line-height:1.25;text-align:left}
 .yp-listing .yp-price{margin:16px 0 6px;color:#0b2545}
 .yp-listing .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;letter-spacing:-.5px}
