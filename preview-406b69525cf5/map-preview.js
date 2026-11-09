@@ -367,7 +367,6 @@ function ypBindMapControls(){
  document.documentElement.classList.add('yp-preview','yp-home');
  ypEnsureHomeBg();
  ypMountChrome();
- window.__ypBlockAutoLists=true;
  const prevBoot=window.W3D_BOOT;
  window.W3D_BOOT=function(){try{prevBoot&&prevBoot();}catch(e){console.error(e);}ypInstallBottomNav();};
  const prevStart=window.startView;
@@ -714,16 +713,12 @@ function ypWireSearch(ui,geoapifyKey){
  go.addEventListener('click',()=>{clearTimeout(streetTimer);loadStreet();});
  msg(geoapifyKey?'Choose a town, suburb or postcode area first, then type a street.':'Search key missing; no search request will be sent. Map selection still needs a map key.');
 }
-function ypCloseAutoOverlays(){
- const listings=document.getElementById('listings');if(listings)listings.remove();
- const hw=document.getElementById('hwov');if(hw&&window.__ypBlockAutoLists)hw.remove();
-}
+let ypStartHandoff=false;
 function ypInstallHandoff(){
  if(window.__ypHandoff)return;window.__ypHandoff=1;
- if(typeof listOpen==='function'){const orig=listOpen;window.listOpen=function(){if(window.__ypBlockAutoLists)return;ypExclusive('listings');const result=orig.apply(this,arguments);ypArmListings();return result;};}
- if(typeof hwSummary==='function'){const orig=hwSummary;window.hwSummary=function(){if(window.__ypBlockAutoLists)return;return orig.apply(this,arguments);};}
- if(typeof hwChoose==='function'){const orig=hwChoose;window.hwChoose=function(){if(window.__ypBlockAutoLists)return;return orig.apply(this,arguments);};}
- if(typeof statusDone==='function'){const orig=statusDone;window.statusDone=function(){const result=orig.apply(this,arguments);ypInstallBottomNav();ypCloseAutoOverlays();return result;};}
+ if(typeof listOpen==='function'){const orig=listOpen;window.listOpen=function(){if(ypStartHandoff)return;ypExclusive('listings');const result=orig.apply(this,arguments);ypArmListings();return result;};}
+ if(typeof hwSummary==='function'){const orig=hwSummary;window.hwSummary=function(){if(ypStartHandoff)return;return orig.apply(this,arguments);};}
+ if(typeof statusDone==='function'){const orig=statusDone;window.statusDone=function(kind){ypStartHandoff=true;let result;try{result=orig.apply(this,arguments);}finally{ypStartHandoff=false;}ypInstallBottomNav();if(kind==='rent')ypOpenListingMap('rent');return result;};}
  if(ypGameUI()&&typeof UI.sale==='function')UI.sale=function(){ypOpenListingsMenu();};
 }
 function ypShowWherePopup(){
