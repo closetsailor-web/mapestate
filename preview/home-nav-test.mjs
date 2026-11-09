@@ -131,10 +131,11 @@ await evalJson(`document.getElementById('yp-history-detail-close').click();1`);
 await delay(40);
 const fromMenu = await evalJson(stateExpr());
 
-const pin = await evalJson(`(()=>{
+const pin = await evalJson(`(async()=>{
   const events=Array.from({length:28},(_,i)=>({key:'seed|applied|'+i,propertyId:'seed',kind:'applied',gameMs:i*1000,text:'Applied for Rental '+(i+1)}));
   localStorage.setItem('yp.propertyHistory.v1',JSON.stringify({version:1,events}));
   ypOpenPropertyHistory();
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   const card=document.querySelector('#yp-history .card');
   card.scrollTop=card.scrollHeight;
   const head=document.querySelector('#yp-history .hwh').getBoundingClientRect();
@@ -148,6 +149,8 @@ const pin = await evalJson(`(()=>{
     text:xEl.textContent,
     w:Math.round(x.width),
     h:Math.round(x.height),
+    dy:Math.round(Math.abs((x.top+x.height/2)-(head.top+head.height/2))*10)/10,
+    rightPad:Math.round((head.right-x.right)*10)/10,
     xInside:x.top>=head.top-1&&x.bottom<=head.bottom+1&&x.right<=head.right+1&&x.left>=head.left,
     color:getComputedStyle(xEl).color,
     closeKept:document.getElementById('yp-history-close').textContent
@@ -192,6 +195,8 @@ function sheetBoxExpr(){
       h:Math.round(xr.height),
       headTop:Math.round(hr.top-r.top),
       xInHead:xr.top>=hr.top-2&&xr.bottom<=hr.bottom+6,
+      dy:Math.round(Math.abs((xr.top+xr.height/2)-(hr.top+hr.height/2))*10)/10,
+      rightPad:Math.round((hr.right-xr.right)*10)/10,
       grab:getComputedStyle(sheet.querySelector('.grab')).display
     };
   })()`;
@@ -208,6 +213,37 @@ for (const call of ['UI.money()', 'UI.income()', 'UI.expenses()', 'UI.lead()']) 
   sharedSheets.push(await evalJson(sheetBoxExpr()));
 }
 await evalJson(`UI.close();1`);
+async function measureCross(setup, headSel, btnSel){
+  await evalJson(`(()=>{${setup};return 1;})()`);
+  await evalJson(`new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))`);
+  return evalJson(`(()=>{
+    const head=document.querySelector(${JSON.stringify(headSel)});
+    const btn=document.querySelector(${JSON.stringify(btnSel)});
+    if(!head||!btn)return {missing:true,head:${JSON.stringify(headSel)},btn:${JSON.stringify(btnSel)}};
+    const h=head.getBoundingClientRect(), b=btn.getBoundingClientRect();
+    return {
+      title:(head.querySelector('h2')||head).textContent.trim().slice(0,48),
+      dy:Math.round(Math.abs((b.top+b.height/2)-(h.top+h.height/2))*10)/10,
+      rightPad:Math.round((h.right-b.right)*10)/10,
+      w:Math.round(b.width),
+      h:Math.round(b.height)
+    };
+  })()`);
+}
+const crosses = [];
+for (const [setup, headSel, btnSel] of [
+  [`['yp-history-detail','yp-pending','yp-soon','yp-where','yp-prop','yp-rent-list','yp-rent-detail','yp-apply-review'].forEach(id=>document.getElementById(id)?.remove());ypOpenPropertyHistory()`, '#yp-history .hwh', '#yp-history-x'],
+  [`document.querySelector('#yp-history .yp-rent-row').click()`, '#yp-history-detail .hwh', '#yp-history-detail-x'],
+  [`document.getElementById('yp-history-detail')?.remove();document.getElementById('yp-history')?.remove();ypOpenPendingOffers()`, '#yp-pending .hwh', '#yp-pending .yp-x'],
+  [`document.getElementById('yp-pending')?.remove();ypOpenComingSoon('Budget')`, '#yp-soon .hwh', '#yp-soon .yp-x'],
+  [`document.getElementById('yp-soon')?.remove();ypShowWherePopup()`, '#yp-where .hwh', '#yp-where .yp-x'],
+  [`ypCloseWhere();ypOpenListingsChoice()`, '#yp-prop .hwh', '#yp-prop .yp-x'],
+  [`ypShowEmptyCategory('sale')`, '#yp-prop .hwh', '#yp-prop .yp-x'],
+  [`document.getElementById('yp-prop')?.remove();ypRenderRentalList()`, '#yp-rent-list .hwh', '#yp-rent-list .yp-x'],
+  [`document.getElementById('yp-rent-list')?.remove();ypOpenRentalDetail(ypReadStock().rentals[0].id)`, '#yp-rent-detail .hwh', '#yp-rent-detail .yp-x'],
+  [`(()=>{const s=ypReadStock();s.rentals[0].status='available';ypWriteStock(s);document.getElementById('yp-rent-detail')?.remove();ypOpenApplyReview(s.rentals[0].id);})()`, '#yp-apply-review .hwh', '#yp-apply-review .yp-x']
+]) crosses.push(await measureCross(setup, headSel, btnSel));
+await evalJson(`['yp-history','yp-history-detail','yp-pending','yp-soon','yp-where','yp-prop','yp-rent-list','yp-rent-detail','yp-apply-review'].forEach(id=>document.getElementById(id)?.remove());1`);
 
 await evalJson(`(()=>{([...document.querySelectorAll('nav button')].find(b=>b.getAttribute('aria-label')==='Listings')).click();document.getElementById('yp-section-menu').dispatchEvent(new MouseEvent('click',{bubbles:true}));return 1;})()`);
 const afterMenu = await evalJson(stateExpr());
@@ -227,10 +263,12 @@ if (!(entryX.label==='Close' && entryX.text==='✕' && entryX.w>=44 && entryX.h>
 if (!(afterEntryX.history && !afterEntryX.detail && afterEntryX.home && !afterEntryX.mapOn)) problems.push('entry cross close '+JSON.stringify(afterEntryX));
 if (!(fromMenu.history && !fromMenu.detail && fromMenu.home && !fromMenu.mapOn)) problems.push('menu route entry close '+JSON.stringify(fromMenu));
 if (!(!afterHistory.history && !afterHistory.menu && afterHistory.home && !afterHistory.mapOn && afterHistory.nav)) problems.push('history close '+JSON.stringify(afterHistory));
-if (!(pin.scrolled && pin.headStuck && pin.label==='Close' && pin.text==='✕' && pin.w>=44 && pin.h>=44 && pin.xInside && pin.closeKept==='Close' && pin.color==='rgb(255, 255, 255)')) problems.push('history header pin '+JSON.stringify(pin));
+if (!(pin.scrolled && pin.headStuck && pin.label==='Close' && pin.text==='✕' && pin.w>=44 && pin.h>=44 && pin.xInside && pin.closeKept==='Close' && pin.color==='rgb(255, 255, 255)' && pin.dy<=1 && Math.abs(pin.rightPad-10)<=1)) problems.push('history header pin '+JSON.stringify(pin));
 if (!(!afterX.history && !afterX.detail && afterX.home && !afterX.mapOn)) problems.push('history cross '+JSON.stringify(afterX));
 const sheets = [bank, owned, ...sharedSheets];
-const offCentre = sheets.filter(box=>!(box.gapDelta<=1 && box.onScreen && box.headerClear>=8 && box.navClear>=8 && box.grab==='none' && box.label==='Close' && box.w>=44 && box.h>=44));
+const offCentre = sheets.filter(box=>!(box.gapDelta<=1 && box.onScreen && box.headerClear>=8 && box.navClear>=8 && box.grab==='none' && box.label==='Close' && box.w>=44 && box.h>=44 && box.dy<=1 && Math.abs(box.rightPad-10)<=1));
+const offCross = crosses.filter(box=>!(box.dy<=1 && box.w>=44 && box.h>=44 && Math.abs(box.rightPad-10)<=1));
+if (offCross.length) problems.push('header cross '+JSON.stringify(offCross));
 if (offCentre.length) problems.push('sheet bounds '+JSON.stringify(offCentre));
 if (!(bank.xInHead && bank.headTop<40 && owned.xInHead)) problems.push('sheet close '+JSON.stringify({bank,owned}));
 if (!(afterMenu.home && !afterMenu.mapOn && !afterMenu.menu)) problems.push('menu close '+JSON.stringify(afterMenu));
@@ -239,7 +277,7 @@ if (!(centred && Math.abs(centred.off) < 40 && centred.clear > 8)) problems.push
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exitCode = 1;
-} else console.log('PASS home navigation', {tilesAtHome, tilesBeforeMap, onMap: onMap.mapOn, sheets: sheets.map(box=>({title:box.title,left:box.left,right:box.right,headerClear:box.headerClear,navClear:box.navClear}))});
+} else console.log('PASS home navigation', {tilesAtHome, tilesBeforeMap, onMap: onMap.mapOn, sheets: sheets.map(box=>({title:box.title,dy:box.dy,rightPad:box.rightPad})), crosses: crosses.map(box=>({title:box.title,dy:box.dy,rightPad:box.rightPad}))});
 
 server.kill('SIGTERM');
 chrome.kill('SIGTERM');
