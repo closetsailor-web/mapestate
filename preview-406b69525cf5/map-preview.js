@@ -380,7 +380,6 @@ function ypBindMapControls(){
  setTimeout(ypOffsetFreshNote,400);
  if(typeof hud==='function'&&!hud.__ypHeader){const prevHud=hud;function ypHud(){const result=prevHud.apply(this,arguments);ypSyncHeader();return result;}ypHud.__ypHeader=1;window.hud=ypHud;}
  ypInstallHandoff();
- if(window.__ypAway){const away=window.__ypAway;delete window.__ypAway;ypShowAwayCard(away.n,away.cash,away);}
 })();
 
 function ypFoot(extra){const el=document.getElementById('yp-foot');if(!el)return;el.textContent=extra?extra+' '+YP_LIMIT:YP_LIMIT;}
@@ -528,6 +527,7 @@ function ypUseHome(){ypRememberMap();ypTilesHold=true;ypAbortMapRequests();docum
 let ypMapGate=null;
 function ypEnsureMap(){if(ypMapGate)return ypMapGate;const started=typeof ypEnterRealMap==='function'?ypEnterRealMap():null;ypMapGate=started&&typeof started.then==='function'?started:Promise.resolve();return ypMapGate;}
 let ypOpeningMap=false;
+if(window.__ypAway){const away=window.__ypAway;delete window.__ypAway;ypShowAwayCard(away.n,away.cash,away);}
 function ypUseMap(){ypOpeningMap=true;ypTilesHold=false;document.documentElement.classList.remove('yp-home');document.documentElement.classList.add('yp-map-on');const resume=()=>{ypAbortMapRequests();if(!ypMap)return;try{const view=window.__ypMapView;if(view&&Number.isFinite(+view.lon)&&Number.isFinite(+view.lat))ypMap.jumpTo({center:[+view.lon,+view.lat],zoom:Number.isFinite(+view.zoom)?+view.zoom:ypMap.getZoom()});if(typeof ypMap.resize==='function')ypMap.resize();}catch(e){}};const done=()=>{ypOpeningMap=false;return resume();};return ypEnsureMap().then(done,done);}
 function ypNormalizeSheet(){const sheet=document.getElementById('sheet'),body=document.getElementById('sheetBody');if(!sheet||!body)return;const old=body.querySelector('h2');if(!old)return;const title=old.textContent.replace(/\s+/g,' ').trim();const head=ypCardHeader({title,id:'yp-sheet-x',onClose:()=>{const ui=ypGameUI();if(ui&&ui.close)ui.close();}});old.remove();const prev=sheet.querySelector(':scope > .yp-card-head');if(prev)prev.replaceWith(head);else sheet.insertBefore(head,body);}
 function ypFitSheet(){const sheet=document.querySelector('.sheet.open');if(!sheet)return;const header=document.querySelector('header'),nav=document.querySelector('nav'),gap=12;const headerBottom=header?header.getBoundingClientRect().bottom:72;const navTop=nav?nav.getBoundingClientRect().top:window.innerHeight-84;const max=Math.max(160,Math.floor(Math.min(window.innerHeight-2*(headerBottom+gap),2*(navTop-gap)-window.innerHeight)));sheet.style.maxHeight=max+'px';}
