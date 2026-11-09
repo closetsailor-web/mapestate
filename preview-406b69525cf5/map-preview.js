@@ -625,7 +625,10 @@ function ypMountSearch(){
   ypMap.addLayer({id:'yp-rental-cluster',type:'circle',source:'yp-rentals',filter:['has','point_count'],paint:{'circle-color':'#0a3a8c','circle-radius':18,'circle-opacity':.9}});
   const glyphStyle=ypMap.getStyle()||{};
   if(glyphStyle.glyphs){const sample=(glyphStyle.layers||[]).find(l=>l.layout&&l.layout['text-font']);const textFont=sample?sample.layout['text-font']:['Open Sans Regular'];ypMap.addLayer({id:'yp-rental-count',type:'symbol',source:'yp-rentals',filter:['has','point_count'],layout:{'text-field':['get','point_count_abbreviated'],'text-size':12,'text-font':textFont},paint:{'text-color':'#fff'}});}
-  ypMap.addLayer({id:'yp-rental-point',type:'circle',source:'yp-rentals',filter:['!',['has','point_count']],paint:{'circle-color':'#b8410a','circle-radius':8,'circle-stroke-width':2,'circle-stroke-color':'#fff'}});
+  const pinBlue=getComputedStyle(document.documentElement).getPropertyValue('--navy2').trim();
+  const pinShade=getComputedStyle(document.documentElement).getPropertyValue('--navy').trim();
+  ypMap.addLayer({id:'yp-rental-shadow',type:'circle',source:'yp-rentals',filter:['!',['has','point_count']],paint:{'circle-color':pinShade,'circle-radius':12,'circle-blur':0.45,'circle-opacity':0.28,'circle-translate':[0,1]}});
+  ypMap.addLayer({id:'yp-rental-point',type:'circle',source:'yp-rentals',filter:['!',['has','point_count']],paint:{'circle-color':pinBlue,'circle-radius':9,'circle-stroke-width':2,'circle-stroke-color':'#fff'}});
   if(tiles&&!document.getElementById('yp-logo')){const logo=document.createElement('a');logo.id='yp-logo';logo.href='https://www.maptiler.com/';logo.target='_blank';logo.rel='noopener';const img=document.createElement('img');img.src='https://api.maptiler.com/resources/logo.svg';img.alt='MapTiler logo';logo.appendChild(img);box.appendChild(logo);}
   ypReady=true;
   ypRematch();
@@ -638,7 +641,9 @@ function ypMountSearch(){
   ypMap.on('idle',()=>{clearTimeout(ypPinWait);ypPinWait=setTimeout(()=>{if(window.__ypListCentre)ypApplyPlacePins();},400);});
  });
  ypMap.on('click','yp-rental-cluster',e=>{const f=e.features&&e.features[0];if(!f)return;const cid=f.properties.cluster_id;ypMap.getSource('yp-rentals').getClusterExpansionZoom(cid,(err,zoom)=>{if(!err)ypMap.easeTo({center:f.geometry.coordinates,zoom});});});
- ypMap.on('click','yp-rental-point',e=>{const f=e.features&&e.features[0];if(f&&f.properties&&f.properties.id)ypOpenRentalDetail(f.properties.id);});
+ const openRentalPin=e=>{const f=e.features&&e.features[0];if(f&&f.properties&&f.properties.id)ypOpenRentalDetail(f.properties.id);};
+ ypMap.on('click','yp-rental-point',openRentalPin);
+ ypMap.on('click','yp-rental-shadow',openRentalPin);
  ypMap.on('moveend',()=>{if(!ypReady)return;try{const c=ypMap.getCenter();window.__ypMapView={lon:+Number(c.lng).toFixed(6),lat:+Number(c.lat).toFixed(6),zoom:+ypMap.getZoom()};ypSaveCentre();}catch(e){}ypSyncRentalMarkers();});
  ypMap.on('idle',()=>{if(ypReady)ypRematch();});
  ypMap.on('click',e=>{
