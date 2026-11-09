@@ -312,7 +312,7 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-property-menu,#yp-section-menu{inset:0 0 calc(var(--sab) + 74px) 0;z-index:47;background:transparent;padding:0;overflow:visible}
 html.yp-preview nav button{transition:none}
 #yp-property-menu .card,#yp-section-menu .card{position:absolute;left:0;top:0;right:auto;bottom:auto;width:max-content;min-width:168px;max-width:min(240px,calc(100vw - 16px));margin:0;padding:4px 0 6px;border-radius:14px;text-align:left;overflow:visible;box-shadow:none;filter:drop-shadow(0 8px 16px rgba(11,37,69,.22))}
-#yp-property-menu .yp-menu-item,#yp-section-menu .yp-menu-item{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:44px;height:44px;margin:0;padding:0 16px;border:0;border-radius:0;background:transparent;color:#b8410a;font:600 15px Inter,system-ui,sans-serif;text-align:left;cursor:pointer;box-shadow:none}
+#yp-property-menu .yp-menu-item,#yp-section-menu .yp-menu-item{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:44px;height:44px;margin:0;padding:0 16px;border:0;border-radius:0;background:transparent;color:#3d4a63;font:600 14px Inter,system-ui,sans-serif;text-align:left;cursor:pointer;box-shadow:none}
 #yp-property-menu .yp-menu-item+.yp-menu-item,#yp-section-menu .yp-menu-item+.yp-menu-item{box-shadow:inset 0 1px 0 #e4eaf2}
 #yp-property-menu .yp-menu-item:active,#yp-section-menu .yp-menu-item:active{background:#fff4ec}
 #yp-property-menu .yp-notch,#yp-section-menu .yp-notch{position:absolute;bottom:-7px;width:14px;height:8px;background:#fff;clip-path:polygon(0 0,100% 0,50% 100%)}
