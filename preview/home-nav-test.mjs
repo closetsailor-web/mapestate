@@ -109,6 +109,7 @@ await evalJson(`(()=>{
   document.getElementById('yp-review-confirm').click();
   return 1;
 })()`);
+const centred = await evalJson(`(()=>{const card=document.querySelector('#yp-history .card');const h=document.querySelector('header').getBoundingClientRect();const n=document.querySelector('nav').getBoundingClientRect();const r=card.getBoundingClientRect();return {off:Math.round(((r.top+r.bottom)/2)-((h.bottom+n.top)/2)),clear:Math.round(Math.min(r.top-h.bottom,n.top-r.bottom))};})()`);
 const afterConfirm = await evalJson(stateExpr());
 await evalJson(`document.querySelector('#yp-history .yp-rent-row').click();1`);
 await delay(50);
@@ -146,6 +147,7 @@ if (!(fromMenu.history && !fromMenu.detail && fromMenu.home && !fromMenu.mapOn))
 if (!(!afterHistory.history && !afterHistory.menu && afterHistory.home && !afterHistory.mapOn && afterHistory.nav)) problems.push('history close '+JSON.stringify(afterHistory));
 if (!(afterMenu.home && !afterMenu.mapOn && !afterMenu.menu)) problems.push('menu close '+JSON.stringify(afterMenu));
 if (!(onMap.mapOn && !onMap.home)) problems.push('For Rent did not open the map '+JSON.stringify(onMap));
+if (!(centred && Math.abs(centred.off) < 40 && centred.clear > 8)) problems.push('history list is not centred '+JSON.stringify(centred));
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exitCode = 1;
