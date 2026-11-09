@@ -105,7 +105,10 @@ const result = await evalJson(`(()=>{
   if(Math.round(got.income)===Math.round(cash))problems.push('income collapsed to net cash '+cash);
   const shown=ypAwayRows(4,cash,got);
   const incomeRow=shown.find(item=>item.label==='Income received');
-  const cashRow=shown.find(item=>item.label==='Cash change');
+  const cashRow=shown.find(item=>item.label==='Savings');
+  const savedNeg=ypAwayRows(2,-350,{income:1,expense:1}).find(item=>item.label==='Savings');
+  const savedPos=ypAwayRows(2,350,{income:1,expense:1}).find(item=>item.label==='Savings');
+  if(!savedNeg||savedNeg.value!=='-$350'||!savedPos||savedPos.value!=='$350'||savedPos.value.includes('+'))problems.push('savings format '+JSON.stringify({savedNeg,savedPos}));
   const power=shown.find(item=>item.label==='Borrowing power');
   if(!incomeRow||incomeRow.value!==fmt(got.income))problems.push('income row '+JSON.stringify(incomeRow));
   if(!cashRow||cashRow.value!==fmt(cash))problems.push('cash row '+JSON.stringify(cashRow));
