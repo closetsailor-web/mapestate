@@ -320,7 +320,6 @@ html.yp-preview .maplibregl-ctrl-bottom-right{bottom:calc(var(--sab) + 76px)!imp
 html.yp-preview .maplibregl-ctrl-attrib{font-size:10px;line-height:1.3;background:rgba(255,255,255,.92);border-radius:8px}
 html.yp-menu-open .maplibregl-ctrl-bottom-right{display:none!important}
 html.yp-preview #yp-fresh-note{position:absolute!important;top:calc(var(--sat) + 6px)!important;left:8px!important;right:8px!important;z-index:80!important;box-sizing:border-box}
-html.yp-preview #date{display:block!important}
 html.yp-preview #toast{z-index:82!important;left:50%!important;right:auto!important;width:max-content;max-width:min(340px,calc(100vw - 24px));transform:translateX(-50%)!important;text-align:center}
 html.yp-preview #toast.show{transform:translateX(-50%)!important}
 #yp-pending .hwx,#yp-history .hwx,#yp-property-menu .hwx,#yp-section-menu .hwx,#yp-soon .hwx{background:none;border:0;color:#5a6780;min-height:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
@@ -336,8 +335,7 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 .yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 22px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
 .yp-card-head .yp-x:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}
-html.yp-preview body.sheetopen nav{transform:none;opacity:1;pointer-events:auto}
-html.yp-preview #date{display:block}`;
+html.yp-preview body.sheetopen nav{transform:none;opacity:1;pointer-events:auto}`;
 
 function ypZoom(dir){
  if(!ypMap||typeof ypMap.getZoom!=='function'){ypShowAreaNote('The map is not ready, so zoom did not change.');return;}
@@ -447,7 +445,7 @@ function ypSyncRentalMarkers(){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp
 function ypOpenSelectedList(){ypCloseWhere();window.__ypListPage=1;ypRenderRentalList();}
 function ypSyncRadius(){const c=window.__ypListCentre;if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-search-radius'))return;if(!c){ypMap.getSource('yp-search-radius').setData(ypEmpty());return;}const ring=ypRadiusRing(c.lon,c.lat,2000);ypMap.getSource('yp-search-radius').setData({type:'FeatureCollection',features:[{type:'Feature',properties:{kind:'search-area'},geometry:{type:'Polygon',coordinates:[ring]}}]});}
 function ypShowAreaNote(text){const host=document.getElementById('map');if(!host)return;let note=document.getElementById('yp-chosen-note');if(!note){note=document.createElement('p');note.id='yp-chosen-note';note.setAttribute('role','status');host.appendChild(note);}note.textContent=text;}
-function ypSyncHeader(){const el=document.getElementById('cityname');const held=typeof G!=='undefined'&&G&&G.homeChosen&&G.placeName;const p=window.__ypListCentre;const label=held?G.placeName:(p&&p.label);if(!label)return;if(typeof G!=='undefined'&&G&&!G.homeChosen&&p&&p.label)G.placeName=p.label;if(!el)return;el.textContent=label;el.title=label;}
+function ypSyncHeader(){if(typeof G==='undefined'||!G||G.homeChosen)return;const p=window.__ypListCentre;if(p&&p.label)G.placeName=p.label;}
 function ypIsBuildingLayer(layer){const sourceLayer=String(layer&&(layer['source-layer']||layer.sourceLayer)||'').toLowerCase();if(sourceLayer==='building')return true;if(!sourceLayer&&/^(building|building-3d)$/i.test(layer&&layer.id||''))return true;return false;}
 function ypMappedBuildings(map,place){if(!map||!map.getStyle||!place)return [];const layers=((map.getStyle()||{}).layers||[]).filter(l=>['fill','fill-extrusion'].includes(l.type)&&ypIsBuildingLayer(l));if(!layers.length)return [];const records=[];const seen=new Set();for(const layer of layers){const found=[];try{if(map.queryRenderedFeatures)found.push(...(map.queryRenderedFeatures({layers:[layer.id]})||[]));}catch(e){}try{if(map.querySourceFeatures&&layer.source)found.push(...(map.querySourceFeatures(layer.source,layer['source-layer']?{sourceLayer:layer['source-layer']}:{})||[]));}catch(e){}for(const feature of found){const sig=JSON.stringify(feature&&feature.geometry&&feature.geometry.coordinates);if(seen.has(sig))continue;seen.add(sig);records.push({geometry:feature.geometry,sourceLayer:'building'});}}return ypBuildingSites(records,place);}
 let ypStockHold={key:'',sig:'',tilesLoaded:false};
@@ -596,7 +594,7 @@ function ypOpenLivingArrangement(){
  const ev=confirmed||(rental?{text:'Tenancy confirmed',kind:'confirmed',gameMs:((typeof G!=='undefined'&&G&&G.lease?G.lease.start:rental.startWeek)||0)*ypWeekMs(),propertyId:rental.id}:null);
  const rows=rental?ypRentalRecordRows(ev,rental):[{label:'Status',hint:'Current home',value:(typeof ypLivingFacts==='function'&&ypLivingFacts().status)||'No tenancy yet'}];
  const ends=ypLeaseEndLabel();
- if(ends) rows.push({label:'Lease ends',hint:'Confirmation date plus the tenancy length',value:ends});
+ if(ends) rows.push({label:'Lease ends',hint:'Renew lease or vacate',value:ends});
  const panel=document.createElement('div');
  panel.id='yp-living';
  panel.setAttribute('role','dialog');

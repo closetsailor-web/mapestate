@@ -87,7 +87,8 @@ try {
     ypWriteStock({version:1,rentals:[rental]});
     ypRecordHistory([ypHistoryEvent(rental.id,'applied',0)]);
     hud();
-    const before=document.getElementById('cityname').textContent;
+    const before=G.placeName;
+    const logoText=(document.querySelector('header .logo')?.textContent||'').replace(/\s+/g,' ').trim();
     advance(10*60*60*1000);
     const paused={week:G.week|0,pill:document.getElementById('date').textContent,acc:G.acc};
     ypSubmitConfirm(rental.id);
@@ -101,7 +102,7 @@ try {
     return {
       before, paused, status:cur&&cur.status, bond:cur&&cur.bondPaid, cash:G.cash, week:G.week|0, acc:G.acc,
       home:!!G.homeChosen, clock:!!G.clockOn, pill:document.getElementById('date').textContent,
-      city:document.getElementById('cityname').textContent, cur:G.cur, place:G.placeName,
+      logo:logoText, townNode:!!document.getElementById('cityname'), cur:G.cur, place:G.placeName,
       lease:G.lease&&{id:G.lease.id,months:G.lease.months,start:G.lease.start,end:G.lease.end,rent:G.lease.rent},
       living:facts.status, time:facts.time, events, appliedWhen:applied&&applied.when, card:status
     };
@@ -113,26 +114,32 @@ try {
     document.querySelector('nav button[aria-label="Property"]')?.click();
     const hooked=document.getElementById('yp-prop-living')?.textContent||'';
     document.getElementById('yp-prop-living')?.click();
-    const rows=[...document.querySelectorAll('#yp-living .yp-flow div')].map(row=>({label:row.dataset.label||'',value:row.querySelector('dd')?.textContent||''}));
-    return {open:!!document.getElementById('yp-living'),title:document.getElementById('yp-living-title')?.textContent||'',hooked,rows,city:document.getElementById('cityname').textContent,pill:document.getElementById('date').textContent};
+    const rows=[...document.querySelectorAll('#yp-living .yp-flow div')].map(row=>({label:row.dataset.label||'',value:row.querySelector('dd')?.textContent||'',hint:row.querySelector('.yp-hint')?.textContent||''}));
+    const logo=document.querySelector('header .logo');
+    const plot=logo.querySelector('b').getBoundingClientRect();
+    const box=logo.getBoundingClientRect();
+    const stats=document.querySelector('header .stats').getBoundingClientRect();
+    return {open:!!document.getElementById('yp-living'),title:document.getElementById('yp-living-title')?.textContent||'',hooked,rows,logo:(logo.textContent||'').replace(/\s+/g,' ').trim(),townNode:!!logo.querySelector('small')||!!document.getElementById('cityname'),place:G.placeName,pill:document.getElementById('date').textContent,wordmarkTop:plot.top-box.top,overlap:plot.right-stats.left};
   })()`);
   await shot('living-arrangement-390x844.png');
   const livingRow=(label)=> (living.rows||[]).find(row=>row.label===label);
   if (living.hooked !== 'Living Arrangement') problems.push('menu hook '+living.hooked);
   if (!living.open || living.title !== 'Living Arrangement') problems.push('living card '+JSON.stringify({open:living.open,title:living.title}));
-  if (living.city !== 'Kepnock' || living.pill !== 'Wk 0') problems.push('living header '+living.city+' '+living.pill);
+  if (living.logo !== 'Your Plot' || living.townNode || living.place !== 'Kepnock' || living.pill !== 'Wk 0') problems.push('living header '+JSON.stringify({logo:living.logo,townNode:living.townNode,place:living.place,pill:living.pill}));
   if (!livingRow('Event') || livingRow('Event').value !== 'Tenancy confirmed') problems.push('living event '+JSON.stringify(living.rows));
   if (!livingRow('Property ID') || livingRow('Property ID').value !== kepnock) problems.push('living id '+JSON.stringify(living.rows));
   if (!livingRow('Location') || livingRow('Location').value !== 'Kepnock') problems.push('living town '+JSON.stringify(living.rows));
   if (!livingRow('Weekly rent') || livingRow('Weekly rent').value !== '$400') problems.push('living rent '+JSON.stringify(living.rows));
   if (!livingRow('Six-week bond') || livingRow('Six-week bond').value !== '$2,400') problems.push('living bond '+JSON.stringify(living.rows));
   if (!livingRow('Tenancy length') || livingRow('Tenancy length').value !== '6 months') problems.push('living length '+JSON.stringify(living.rows));
-  if (!livingRow('Lease ends') || livingRow('Lease ends').value !== 'Mon 6 Jul 2026') problems.push('lease ends '+JSON.stringify(living.rows));
-  if (confirmed.before !== 'Bargara, Queensland, Australia') problems.push('search header '+confirmed.before);
+  if (!livingRow('Lease ends') || livingRow('Lease ends').value !== 'Mon 6 Jul 2026' || livingRow('Lease ends').hint !== 'Renew lease or vacate') problems.push('lease ends '+JSON.stringify(living.rows));
+  if (!(living.wordmarkTop < 4) || living.overlap > 1) problems.push('header '+JSON.stringify({wordmarkTop:living.wordmarkTop,overlap:living.overlap,logo:living.logo,pill:living.pill}));
+  if (confirmed.before !== 'Bargara, Queensland, Australia') problems.push('stored search '+confirmed.before);
+  if (confirmed.logo !== 'Your Plot' || confirmed.townNode) problems.push('logo '+confirmed.logo+' town '+confirmed.townNode);
   if (confirmed.paused.week !== 0 || confirmed.paused.pill !== 'Paused') problems.push('pre-confirm '+JSON.stringify(confirmed.paused));
   if (confirmed.status !== 'active' || confirmed.bond !== 2400 || confirmed.cash !== 27600) problems.push('bond '+JSON.stringify({status:confirmed.status,bond:confirmed.bond,cash:confirmed.cash}));
   if (confirmed.week !== 0 || confirmed.acc !== 0 || confirmed.pill !== 'Wk 0' || !confirmed.home || !confirmed.clock) problems.push('clock '+JSON.stringify(confirmed));
-  if (confirmed.city !== 'Kepnock' || /Coralwood|Bargara/.test(confirmed.city||'')) problems.push('town '+confirmed.city);
+  if (confirmed.place !== 'Kepnock') problems.push('stored town '+confirmed.place);
   if (confirmed.cur !== 'c1') problems.push('cur '+confirmed.cur);
   if (!confirmed.lease || confirmed.lease.id !== kepnock || confirmed.lease.months !== 6 || confirmed.lease.start !== 0 || confirmed.lease.end !== 26 || confirmed.lease.rent !== 400) problems.push('lease '+JSON.stringify(confirmed.lease));
   if (confirmed.living !== 'Renting' || confirmed.time !== 26) problems.push('living '+confirmed.living+' '+confirmed.time);
@@ -151,11 +158,12 @@ try {
     advance(CFG.weekMs);
     hud();
     document.getElementById('toast')?.classList.remove('show');
-    return {before, week:G.week|0, pill:document.getElementById('date').textContent, city:document.getElementById('cityname').textContent, ms:CFG.weekMs};
+    const logo=document.querySelector('header .logo');
+    return {before, week:G.week|0, pill:document.getElementById('date').textContent, logo:(logo.textContent||'').replace(/\s+/g,' ').trim(), place:G.placeName, ms:CFG.weekMs};
   })()`);
   await shot('confirmed-week-390x844.png');
   if (advanced.ms !== 30000 || advanced.week !== advanced.before+1 || advanced.pill !== 'Wk '+advanced.week) problems.push('advance '+JSON.stringify(advanced));
-  if (advanced.city !== 'Kepnock') problems.push('city after week '+advanced.city);
+  if (advanced.logo !== 'Your Plot' || advanced.place !== 'Kepnock') problems.push('after week '+JSON.stringify(advanced));
   const footprint = await evalJson(`(()=>{
     ypSetTestClock(false);
     G.homeChosen=0; G.clockOn=0; G.week=0; G.acc=0; G.cash=30000; delete G.lease; G.placeName=''; G.cur='c1'; G.statusLease=12;
@@ -163,14 +171,14 @@ try {
     const rental={id:'preview:bargara queensland australia:1',footprintId:'ypb-bargara-1',suburbKey:'bargara queensland australia',placeLabel:'Bargara, Queensland, Australia',locality:'Bargara',placement:'footprint',n:1,lon:152.465,lat:-24.813,weeklyRent:420,bond:2520,kind:'game-starter',status:'approved',owner:'game',expiresAt:Date.now()+86400000};
     ypWriteStock({version:1,rentals:[rental]});
     hud();
-    const before=document.getElementById('cityname').textContent;
+    const before=G.placeName;
     ypSubmitConfirm(rental.id);
     document.getElementById('toast')?.classList.remove('show');
     const cur=ypReadStock().rentals.find(r=>r.id===rental.id);
-    return {before, status:cur&&cur.status, id:G.lease&&G.lease.id, city:document.getElementById('cityname').textContent, pill:document.getElementById('date').textContent, week:G.week|0, home:!!G.homeChosen};
+    return {before, status:cur&&cur.status, id:G.lease&&G.lease.id, place:G.placeName, pill:document.getElementById('date').textContent, week:G.week|0, home:!!G.homeChosen};
   })()`);
   if (footprint.before !== 'Kepnock') problems.push('footprint before '+footprint.before);
-  if (footprint.status !== 'active' || footprint.id !== 'ypb-bargara-1' || footprint.city !== 'Bargara' || footprint.pill !== 'Wk 0' || footprint.week !== 0 || !footprint.home) problems.push('footprint '+JSON.stringify(footprint));
+  if (footprint.status !== 'active' || footprint.id !== 'ypb-bargara-1' || footprint.place !== 'Bargara' || footprint.pill !== 'Wk 0' || footprint.week !== 0 || !footprint.home) problems.push('footprint '+JSON.stringify(footprint));
   const oldSave = await evalJson(`(()=>{
     const rental={id:${JSON.stringify(kepnock)},suburbKey:'kepnock queensland australia',placeLabel:'Kepnock, Queensland, Australia',locality:'Kepnock',n:6,lon:152.37,lat:-24.87,weeklyRent:400,bond:2400,kind:'game-starter',status:'active',owner:'game',bondCharged:true,bondPaid:2400,startWeek:0,lastChargedWeek:0,confirmedAt:Date.now()};
     ypWriteStock({version:1,rentals:[rental]});
@@ -190,13 +198,13 @@ try {
     document.getElementById('flow')?.remove();
     document.getElementById('toast')?.classList.remove('show');
     const rental=ypReadStock().rentals.find(r=>r.id===${JSON.stringify(kepnock)});
-    return {status:rental&&rental.status,bond:!!(rental&&rental.bondCharged),week:G.week|0,home:!!G.homeChosen,clock:!!G.clockOn,pill:document.getElementById('date').textContent,city:document.getElementById('cityname').textContent,addr:G.lease&&G.lease.addr||'',id:G.lease&&G.lease.id||''};
+    return {status:rental&&rental.status,bond:!!(rental&&rental.bondCharged),week:G.week|0,home:!!G.homeChosen,clock:!!G.clockOn,pill:document.getElementById('date').textContent,place:G.placeName||'',logo:(document.querySelector('header .logo')?.textContent||'').replace(/\s+/g,' ').trim(),addr:G.lease&&G.lease.addr||'',id:G.lease&&G.lease.id||''};
   })()`);
   if (!resumed.home || !resumed.clock || resumed.status !== 'active' || !resumed.bond) problems.push('resume tenancy '+JSON.stringify(resumed));
   if (resumed.week !== 1 || resumed.pill !== 'Wk 1') problems.push('resume week '+JSON.stringify(resumed));
-  if (resumed.city !== 'Kepnock' || resumed.addr !== 'Kepnock' || resumed.id !== kepnock) problems.push('resume place '+JSON.stringify(resumed));
+  if (resumed.place !== 'Kepnock' || resumed.logo !== 'Your Plot' || resumed.addr !== 'Kepnock' || resumed.id !== kepnock) problems.push('resume place '+JSON.stringify(resumed));
   if (problems.length) { console.error(problems.join('\n')); console.error(JSON.stringify({confirmed, living, advanced, footprint, oldSave, resumed}, null, 2).slice(0, 5000)); await finish(1); }
-  else { console.log('PASS confirm clock', {city: confirmed.city, pill: confirmed.pill, cash: confirmed.cash, history: texts, footprint: footprint.city, resumed: resumed.pill}); await finish(0); }
+  else { console.log('PASS confirm clock', {place: confirmed.place, pill: confirmed.pill, cash: confirmed.cash, history: texts, footprint: footprint.place, resumed: resumed.pill}); await finish(0); }
 } catch (error) {
   console.error(error);
   await finish(1);
