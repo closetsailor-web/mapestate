@@ -574,13 +574,15 @@ function ypPlainClose(btn){if(!btn)return;btn.classList.add('yp-x');btn.textCont
 function ypArmDrawer(){const pane=document.querySelector('#drawer .pane');if(!pane||pane.querySelector('.yp-card-head'))return;pane.prepend(ypCardHeader({title:'Menu',onClose:()=>{const ui=ypGameUI();if(ui&&ui.menu)ui.menu(false);}}));}
 function ypArmListings(){const panel=document.getElementById('listings');if(!panel||panel.querySelector('.yp-card-head'))return;panel.prepend(ypCardHeader({title:'Listings',id:'yp-listings-x',onClose:()=>{if(typeof listClose==='function')listClose();}}));}
 function ypArmHwov(){const card=document.querySelector('#hwov .hwc');if(!card||card.querySelector('.yp-card-head'))return;const titleEl=card.querySelector('h3');const head=ypCardHeader({title:titleEl?titleEl.textContent:'',onClose:()=>{if(document.getElementById('hwov')&&document.getElementById('hwov').classList.contains('hwrun')&&typeof hwClose==='function')hwClose();else{const next=document.getElementById('hw_next');if(next)next.click();else if(typeof lsClose==='function')lsClose();}}});if(titleEl)titleEl.remove();card.prepend(head);}
+function ypSuburbCode(name){const w=String(name||'').toUpperCase().replace(/[^A-Z ]/g,'').trim().split(/\s+/).filter(Boolean);if(!w.length)return 'YPL';if(w.length>1)return (w[0].slice(0,2)+w[w.length-1][0]).padEnd(3,'X');const x=w[0],c=x.slice(1).replace(/[AEIOU]/g,'');return (x[0]+(c.length>=2?c.slice(-2):x.slice(1,3))).padEnd(3,'X');}
+function ypPublicCode(id,suburb){if(!id)return '';const key=(window.__ypPreviewNs||'yp.')+'publicCodes';let reg={};try{reg=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(e){reg={};}if(!reg.ids)reg={ids:{},next:{}};if(reg.ids[id])return reg.ids[id];const pre=ypSuburbCode(suburb);const n=(reg.next[pre]||0)+1;reg.next[pre]=n;const code=pre+'-'+String(n).padStart(4,'0');reg.ids[id]=code;try{localStorage.setItem(key,JSON.stringify(reg));}catch(e){}return code;}
 function ypRentalRecordRows(ev, rental){
  const bond=rental?(Number.isFinite(+rental.bond)?+rental.bond:(Number.isFinite(+rental.weeklyRent)?Math.round(+rental.weeklyRent)*6:NaN)):NaN;
  const rows=[
   {label:'Event',hint:'Recorded action',value:ev&&ev.text||''},
   {label:'Date',hint:'Date and time',value:ev?ypEventClockLabel(ev):''},
   {label:'Reason',hint:'Why this was recorded',value:ev&&ev.reason||''},
-  {label:'Property ID',hint:'Game ID',value:(ev&&ev.propertyId)||(rental&&rental.id)||''}
+  {label:'Property ID',hint:'Property code',value:ypPublicCode((ev&&ev.propertyId)||(rental&&rental.id)||'',rental?ypDisplaySuburb(rental):'')}
  ];
  if(rental) rows.push(
   {label:'Location',hint:'Suburb',value:ypDisplaySuburb(rental)},
