@@ -500,7 +500,63 @@ function ypOpenRentalDetail(id,note){ypExclusive('yp-rent-detail');clearInterval
 function ypOpenMissingOffer(id){ypExclusive('yp-rent-detail');let panel=document.getElementById('yp-rent-detail');if(panel)panel.remove();panel=document.createElement('div');panel.id='yp-rent-detail';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Application');const card=document.createElement('div');card.className='card yp-listing';const head=document.createElement('div');head.className='hwh';const h=document.createElement('h2');h.textContent='Application';head.appendChild(h);ypHeaderDismiss(head,()=>panel.remove());const copy=document.createElement('p');copy.className='yp-limit';copy.textContent=id?'This application is no longer open. Nothing was charged.':'That notice does not match a current rental application.';const back=document.createElement('button');back.type='button';back.className='hwx';back.textContent='Back';back.addEventListener('click',()=>panel.remove());card.append(head,copy,back);panel.appendChild(card);document.body.appendChild(panel);}
 function ypOfferStatus(status){return { 'application-pending':'Pending','approved':'Approved','active':'Tenancy confirmed','withdrawn':'Withdrawn','declined':'Declined','expired':'Expired','cancelled':'Cancelled' }[status]||status;}
 function ypHistoryCardStatus(ev,rental){const kind=ev&&ev.kind||'';const status=rental&&rental.status||'';let label='';if(kind==='cancelled'||status==='cancelled')label='Cancelled';else if(kind==='expired')label='Expired';else if(kind==='declined')label='Declined';else if(kind==='withdrawn')label='Withdrawn';else if(kind==='confirmed')label='Tenancy confirmed';else if(kind==='accepted')label='Approved';else if(kind==='applied'&&(!status||status==='available'||status==='application-pending'))label='Pending';else label=ypOfferStatus(status)||'';label=String(label).trim();if(!label)return '';return label.charAt(0).toUpperCase()+label.slice(1);}
-function ypOpenPendingOffers(){ypExclusive('yp-pending');ypUseHome();ypSyncSample(ypReadClock());let panel=document.getElementById('yp-pending');if(panel)panel.remove();panel=document.createElement('div');panel.id='yp-pending';panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Pending Offers');const card=document.createElement('div');card.className='card';const head=document.createElement('div');head.className='hwh';const h=document.createElement('h2');h.textContent='Pending Offers';head.appendChild(h);ypHeaderDismiss(head,()=>panel.remove());const note=document.createElement('p');note.textContent='These are your rental applications. They stay here when the map search changes. Nothing is charged until you confirm one.';card.append(head,note);const rows=ypReadStock().rentals.filter(r=>['application-pending','approved','active','withdrawn','declined','expired'].includes(r.status));if(!rows.length){const empty=document.createElement('p');empty.textContent='No rental applications yet.';card.appendChild(empty);}rows.forEach(r=>{const btn=document.createElement('button');btn.type='button';btn.className='yp-rent-row';btn.dataset.id=r.id;const t=document.createElement('span');t.className='yp-row-title';t.textContent=(r.placeLabel||r.id);const s=document.createElement('span');s.className='yp-row-meta';s.textContent=ypOfferStatus(r.status);btn.append(t,s);btn.addEventListener('click',()=>{panel.remove();ypOpenRentalDetail(r.id);});card.appendChild(btn);});const hist=document.createElement('button');hist.type='button';hist.className='hwx';hist.id='yp-open-history';hist.textContent='Property History';hist.addEventListener('click',()=>{panel.remove();ypOpenPropertyHistory();});const back=document.createElement('button');back.type='button';back.className='hwx';back.textContent='Back';back.addEventListener('click',()=>panel.remove());card.append(hist,back);panel.appendChild(card);document.body.appendChild(panel);}
+function ypPendingOfferRows(store){return (store&&store.rentals||[]).filter(r=>r&&(r.status==='application-pending'||r.status==='approved'));}
+function ypOpenPendingOffers(){
+ ypExclusive('yp-pending');
+ ypUseHome();
+ ypSyncSample(ypReadClock());
+ let panel=document.getElementById('yp-pending');
+ if(panel)panel.remove();
+ panel=document.createElement('div');
+ panel.id='yp-pending';
+ panel.setAttribute('role','dialog');
+ panel.setAttribute('aria-labelledby','yp-pending-title');
+ const card=document.createElement('div');
+ card.className='card';
+ const shut=()=>{panel.remove();ypUseHome();};
+ const head=ypCardHeader({title:'Pending Offers',titleId:'yp-pending-title',onClose:shut});
+ card.appendChild(head);
+ const rows=ypPendingOfferRows(ypReadStock());
+ if(!rows.length){
+  const empty=document.createElement('p');
+  empty.id='yp-pending-empty';
+  empty.textContent='You have no pending offers';
+  card.appendChild(empty);
+ }else{
+  const note=document.createElement('p');
+  note.textContent='These are your rental applications. They stay here when the map search changes. Nothing is charged until you confirm one.';
+  card.appendChild(note);
+ }
+ rows.forEach(r=>{
+  const btn=document.createElement('button');
+  btn.type='button';
+  btn.className='yp-rent-row';
+  btn.dataset.id=r.id;
+  const t=document.createElement('span');
+  t.className='yp-row-title';
+  t.textContent=(r.placeLabel||r.id);
+  const s=document.createElement('span');
+  s.className='yp-row-meta';
+  s.textContent=ypOfferStatus(r.status);
+  btn.append(t,s);
+  btn.addEventListener('click',()=>{panel.remove();ypOpenRentalDetail(r.id);});
+  card.appendChild(btn);
+ });
+ const hist=document.createElement('button');
+ hist.type='button';
+ hist.className='hwx';
+ hist.id='yp-open-history';
+ hist.textContent='Property History';
+ hist.addEventListener('click',()=>{panel.remove();ypOpenPropertyHistory();});
+ const back=document.createElement('button');
+ back.type='button';
+ back.className='hwx';
+ back.textContent='Back';
+ back.addEventListener('click',shut);
+ card.append(hist,back);
+ panel.appendChild(card);
+ document.body.appendChild(panel);
+}
 function ypSavedTenancyLabel(){const lease=typeof G!=='undefined'&&G?G.lease:null;const fromLease=lease?+lease.months:NaN;const fromStatus=typeof G!=='undefined'&&G?+G.statusLease:NaN;const months=(fromLease===3||fromLease===6||fromLease===12)?fromLease:((fromStatus===3||fromStatus===6||fromStatus===12)?fromStatus:0);return months?months+' months':'';}
 function ypFlow(rows){const flow=document.createElement('dl');flow.className='yp-flow';(rows||[]).forEach(item=>{if(!item||item.value==null||item.value==='')return;const row=document.createElement('div');row.dataset.label=item.label||'';const dt=document.createElement('dt');dt.textContent=item.label||'';if(item.hint){const hint=document.createElement('span');hint.className='yp-hint';hint.textContent=item.hint;dt.appendChild(hint);}const dd=document.createElement('dd');if(item.id)dd.id=item.id;dd.textContent=String(item.value);if(item.neg)dd.classList.add('yp-neg');row.append(dt,dd);flow.appendChild(row);});return flow;}
 function ypLeaseWeeksLeft(){const L=typeof G!=='undefined'&&G?G.lease:null;if(!L||L.broken||L.m2m||!Number.isFinite(+L.end)||L.end<=G.week)return null;return L.end-G.week;}
