@@ -334,6 +334,7 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 .yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 22px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
 .yp-card-head .yp-x:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #yp-living .hwh h2,#yp-living .yp-card-head h2{white-space:normal}
+#yp-living .yp-flow div[data-label="Left each week"] dd{color:#f26b1d}
 .yp-flow dd a.yp-link{color:#1a5fd6;text-decoration:underline;font-weight:700}
 #sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}
 html.yp-preview body.sheetopen nav{transform:none;opacity:1;pointer-events:auto}`;
