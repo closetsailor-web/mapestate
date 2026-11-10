@@ -648,6 +648,7 @@ function ypOpenLivingArrangement(){
  const confirmed=[...events].reverse().find(e=>e.kind==='confirmed')||null;
  const ev=confirmed||(rental?{text:'Tenancy confirmed',kind:'confirmed',gameMs:((typeof G!=='undefined'&&G&&G.lease?G.lease.start:rental.startWeek)||0)*ypWeekMs(),propertyId:rental.id}:null);
  const rows=rental?ypRentalRecordRows(ev,rental):[{label:'Status',hint:'Current home',value:(()=>{const s=typeof ypLivingFacts==='function'?ypLivingFacts().status:'';return s&&s!=='Renting'?s:'Currently homeless';})()}];
+ if(rental&&rows[0]&&rows[0].label==='Event'){const s=typeof ypLivingFacts==='function'?ypLivingFacts().status:'';const map={'Property owner':'Living in own home','Room Sharing':'Room sharing'};rows[0]={label:'Arrangement',hint:'How you live now',value:map[s]||s||'Renting'};}
  const ends=ypLeaseEndLabel();
  if(ends) rows.push({label:'Lease ends',hint:'Renew lease or vacate',value:ends});
  const panel=document.createElement('div');
