@@ -85,7 +85,8 @@ try {
     window.__ypListCentre={label:'Bargara, Queensland, Australia',lon:152.4632,lat:-24.8186,stockKey:'Bargara, Queensland, Australia'};
     const rental={id:${JSON.stringify(kepnock)},suburbKey:'kepnock queensland australia',placeLabel:'Kepnock, Queensland, Australia',locality:'Kepnock',placement:'mapped-building',n:6,lon:152.37,lat:-24.87,weeklyRent:400,bond:2400,kind:'game-starter',status:'approved',owner:'game',appliedGameMs:0,approveGameMs:0,expiresAt:Date.now()+86400000};
     ypWriteStock({version:1,rentals:[rental]});
-    ypRecordHistory([ypHistoryEvent(rental.id,'applied',0)]);
+    const appliedAt=Date.now()-3*60000;
+    ypRecordHistory([ypHistoryEvent(rental.id,'applied',0,null,appliedAt)]);
     hud();
     const before=G.placeName;
     const logoText=(document.querySelector('header .logo')?.textContent||'').replace(/\s+/g,' ').trim();
@@ -94,7 +95,7 @@ try {
     ypSyncSample(ypReadClock());
     document.getElementById('toast')?.classList.remove('show');
     const cur=ypReadStock().rentals.find(r=>r.id===rental.id);
-    const events=ypMergeHistory(ypReadHistory(),[]).events.filter(e=>e.propertyId===rental.id).map(e=>({kind:e.kind,text:e.text,when:ypGameClockLabel(e.gameMs)}));
+    const events=ypMergeHistory(ypReadHistory(),[]).events.filter(e=>e.propertyId===rental.id).map(e=>({kind:e.kind,text:e.text,at:e.at,when:ypEventClockLabel(e)}));
     const applied=events.find(e=>e.kind==='applied');
     const facts=ypLivingFacts();
     ypOpenHistoryDetail(ypMergeHistory(ypReadHistory(),[]).events.find(e=>e.propertyId===rental.id&&e.kind==='applied'));
@@ -104,7 +105,7 @@ try {
       home:!!G.homeChosen, clock:!!G.clockOn, pill:document.getElementById('date').textContent,
       logo:logoText, townNode:!!document.getElementById('cityname'), cur:G.cur, place:G.placeName,
       lease:G.lease&&{id:G.lease.id,months:G.lease.months,start:G.lease.start,end:G.lease.end,rent:G.lease.rent},
-      living:facts.status, time:facts.time, events, appliedWhen:applied&&applied.when, card:status
+      living:facts.status, time:facts.time, events, appliedWhen:applied&&applied.when, appliedWant:ypRealClockLabel(appliedAt), card:status
     };
   })()`);
   await shot('confirmed-rental-390x844.png');
@@ -119,7 +120,7 @@ try {
     const plot=logo.querySelector('b').getBoundingClientRect();
     const box=logo.getBoundingClientRect();
     const stats=document.querySelector('header .stats').getBoundingClientRect();
-    return {open:!!document.getElementById('yp-living'),title:document.getElementById('yp-living-title')?.textContent||'',hooked,rows,logo:(logo.textContent||'').replace(/\s+/g,' ').trim(),townNode:!!logo.querySelector('small')||!!document.getElementById('cityname'),place:G.placeName,pill:document.getElementById('date').textContent,wordmarkTop:plot.top-box.top,overlap:plot.right-stats.left};
+    const acc=ypMergeHistory(ypReadHistory(),[]).events.find(e=>e.kind==='accepted');return {leaseWant:acc&&ypRealDateLabel(acc.at+26*CFG.weekMs),leaseDays:acc&&26*CFG.weekMs/86400000,open:!!document.getElementById('yp-living'),title:document.getElementById('yp-living-title')?.textContent||'',hooked,rows,logo:(logo.textContent||'').replace(/\s+/g,' ').trim(),townNode:!!logo.querySelector('small')||!!document.getElementById('cityname'),place:G.placeName,pill:document.getElementById('date').textContent,wordmarkTop:plot.top-box.top,overlap:plot.right-stats.left};
   })()`);
   await shot('living-arrangement-390x844.png');
   const livingRow=(label)=> (living.rows||[]).find(row=>row.label===label);
@@ -132,7 +133,7 @@ try {
   if (!livingRow('Weekly rent') || livingRow('Weekly rent').value !== '$400') problems.push('living rent '+JSON.stringify(living.rows));
   if (!livingRow('Six-week bond') || livingRow('Six-week bond').value !== '$2,400') problems.push('living bond '+JSON.stringify(living.rows));
   if (!livingRow('Tenancy length') || livingRow('Tenancy length').value !== '6 months') problems.push('living length '+JSON.stringify(living.rows));
-  if (!livingRow('Lease ends') || livingRow('Lease ends').value !== 'Mon 6 Jul 2026' || livingRow('Lease ends').hint !== 'Renew lease or vacate') problems.push('lease ends '+JSON.stringify(living.rows));
+  if (!livingRow('Lease ends') || livingRow('Lease ends').value !== living.leaseWant || !(living.leaseDays > 14.5 && living.leaseDays < 15.5) || livingRow('Lease ends').hint !== 'Renew lease or vacate') problems.push('lease ends '+JSON.stringify(living.rows));
   if (!(living.wordmarkTop < 4) || living.overlap > 1) problems.push('header '+JSON.stringify({wordmarkTop:living.wordmarkTop,overlap:living.overlap,logo:living.logo,pill:living.pill}));
   if (confirmed.before !== 'Bargara, Queensland, Australia') problems.push('stored search '+confirmed.before);
   if (confirmed.logo !== 'Your Plot' || confirmed.townNode) problems.push('logo '+confirmed.logo+' town '+confirmed.townNode);
@@ -145,7 +146,9 @@ try {
   if (confirmed.living !== 'Renting' || confirmed.time !== 26) problems.push('living '+confirmed.living+' '+confirmed.time);
   const texts = (confirmed.events||[]).map(e=>e.text);
   if (!texts.includes('Applied for Rental') || !texts.includes('Tenancy confirmed')) problems.push('history '+JSON.stringify(confirmed.events));
-  if (confirmed.appliedWhen !== 'Mon 5 Jan 2026, 12:00\u00a0AM') problems.push('applied date '+confirmed.appliedWhen);
+  if (!confirmed.appliedWhen || confirmed.appliedWhen !== confirmed.appliedWant || /5 Jan 2026/.test(confirmed.appliedWhen)) problems.push('applied date '+confirmed.appliedWhen+' want '+confirmed.appliedWant);
+  const acceptedEv = (confirmed.events||[]).find(e=>e.kind==='accepted');
+  if (!acceptedEv || !(acceptedEv.at > Date.now()-120000) || /5 Jan 2026/.test(acceptedEv.when)) problems.push('accepted date '+JSON.stringify(acceptedEv));
   const cardStatus = (confirmed.card||[]).find(row=>row.label==='Status');
   const cardEvent = (confirmed.card||[]).find(row=>row.label==='Event');
   if (!cardEvent || cardEvent.value !== 'Applied for Rental') problems.push('card event '+JSON.stringify(confirmed.card));

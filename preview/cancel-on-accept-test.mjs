@@ -93,7 +93,7 @@ const before = await evalJson(`(()=>{
     status:rows.map(r=>r.status),
     later,
     held:rows.slice(1).every(r=>!r.bondCharged&&!r.bondPaid),
-    cancelled:events.filter(e=>e.kind==='cancelled').map(e=>({id:e.propertyId,text:e.text,reason:e.reason,when:ypGameClockLabel(e.gameMs)})),
+    cancelled:events.filter(e=>e.kind==='cancelled').map(e=>({id:e.propertyId,text:e.text,reason:e.reason,when:ypEventClockLabel(e)})),
     accepted:events.filter(e=>e.kind==='accepted').length
   };
 })()`);
