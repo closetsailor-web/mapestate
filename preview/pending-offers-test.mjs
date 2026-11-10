@@ -104,7 +104,7 @@ try {
   if (empty.title !== 'Pending Offers' || !empty.head || !empty.close) problems.push('empty header '+JSON.stringify(empty));
   if (empty.empty !== 'You have no pending offers') problems.push('empty copy '+JSON.stringify(empty.empty));
   if (empty.rows.length) problems.push('empty rows '+JSON.stringify(empty.rows));
-  if (empty.helper.join(',') !== 'application-pending,approved') problems.push('helper '+JSON.stringify(empty.helper));
+  if (empty.helper.join(',') !== 'application-pending') problems.push('helper '+JSON.stringify(empty.helper));
 
   const pending = await evalJson(`(()=>{
     document.getElementById('yp-pending')?.remove();
@@ -131,9 +131,9 @@ try {
     delete G.lease; G.placeName='';
     const store=ypReadStock();
     const keep=store.rentals.find(r=>r.id===${JSON.stringify(kepnock)});
-    if(keep){keep.status='approved';keep.expiresAt=Date.now()+86400000;}
+    if(keep){keep.status='application-pending';keep.approveAt=Date.now()-1000;keep.approveGameMs=0;}
     ypWriteStock(store);
-    ypSubmitConfirm(${JSON.stringify(kepnock)});
+    ypSyncSample(ypReadClock());
     document.getElementById('toast')?.classList.remove('show');
     const stock=ypReadStock().rentals.map(r=>({id:r.id,status:r.status}));
     ypOpenPendingOffers();

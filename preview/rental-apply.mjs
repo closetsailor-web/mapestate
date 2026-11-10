@@ -1,10 +1,13 @@
 import {spawn} from 'node:child_process';
 import {mkdirSync, writeFileSync} from 'node:fs';
 import {setTimeout as delay} from 'node:timers/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
 
 const OUT = '/opt/cursor/artifacts/map-preview';
 mkdirSync(OUT, {recursive: true});
-const server = spawn('python3', ['preview/localhost-server.py', '--port', '8773'], {cwd: '/workspace', stdio: 'ignore'});
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'preview-406b69525cf5');
+const server = spawn('python3', ['-m', 'http.server', '8773', '--bind', '127.0.0.1'], {cwd: root, stdio: 'ignore'});
 const chrome = spawn('google-chrome', [
   '--headless=new', '--disable-gpu', '--no-sandbox', '--disable-dev-shm-usage',
   '--remote-debugging-port=9246', '--user-data-dir=/tmp/chrome-yp-apply', 'about:blank',
@@ -83,33 +86,33 @@ try {
     ypSubmitApply(ids[1]);
     const both=ypReadStock().rentals.filter(r=>r.status==='application-pending').map(r=>r.id);
     const dup=ypApplySample(ypReadStock(),ids[0],ypReadClock());
+    document.getElementById('yp-rent-detail')?.remove();
+    document.getElementById('minebtn').click();
+    const menu=[...document.querySelectorAll('#yp-property-menu button')].map(b=>({label:b.dataset.label||b.textContent,disabled:b.disabled}));
+    ypOpenPendingOffers();
+    const offers=[...document.querySelectorAll('#yp-pending .yp-rent-row')].map(b=>b.innerText.replace(/\\s+/g,' ').trim());
+    document.getElementById('yp-pending')?.remove();
     advance(20000);
     const paused={acc:G.acc|0,status:ypReadStock().rentals[0].status,cash:G.cash};
     const hour=CFG.weekMs/168;
     G.clockOn=1;
     advance(Math.floor(hour)-1);
     const beforeHour={acc:Math.round(G.acc),status:ypSyncSample(ypReadClock()).rentals.map(r=>r.status),cash:G.cash};
-    advance(5);
-    ypSyncSample(ypReadClock());
-    const afterHour={status:ypReadStock().rentals.map(r=>r.status),cash:G.cash,notices:(G.notifs||[]).filter(n=>n.ypRental).map(n=>({id:n.ypRental,read:!!n.read,msg:n.msg})),badge:document.getElementById('badge')?.textContent||''};
-    window.__ypListCentre=elsewhere;
-    document.getElementById('yp-rent-detail')?.remove();
-    document.getElementById('minebtn').click();
-    const menu=[...document.querySelectorAll('#yp-property-menu button')].map(b=>({label:b.dataset.label||b.textContent,disabled:b.disabled}));
-    const offersBtn=document.getElementById('yp-pending-offers');
-    if(!offersBtn||!offersBtn.disabled)return {menu,error:'offers-should-stay-unwired',cash0};
-    ypOpenPendingOffers();
-    const offers=[...document.querySelectorAll('#yp-pending .yp-rent-row')].map(b=>b.innerText.replace(/\\s+/g,' ').trim());
     const beforeFail=JSON.stringify(ypReadStock().rentals.map(r=>r.status));
     G.cash=100;
+    advance(5);
+    ypSyncSample(ypReadClock());
     ypSubmitConfirm(ids[0]);
     const failed={cash:G.cash,status:ypReadStock().rentals.map(r=>r.status),same:JSON.stringify(ypReadStock().rentals.map(r=>r.status))===beforeFail,text:document.getElementById('yp-short')?.textContent||''};
     G.cash=cash0;
     const histBefore=ypReadHistory().events.length;
-    ypSubmitConfirm(ids[0]);
+    ypSyncSample(ypReadClock());
     const again=G.cash;
     ypSubmitConfirm(ids[0]);
     const confirmed={cash:G.cash,again,status:ypReadStock().rentals.map(r=>r.status),active:ypReadStock().rentals.filter(r=>r.status==='active').length,sale:JSON.stringify(window.__saleOffers)};
+    window.__ypListCentre=elsewhere;
+    document.getElementById('yp-rent-detail')?.remove();
+    const afterHour={status:ypReadStock().rentals.map(r=>r.status),cash:G.cash,notices:(G.notifs||[]).filter(n=>n.ypRental).map(n=>({id:n.ypRental,read:!!n.read,msg:n.msg})),badge:document.getElementById('badge')?.textContent||''};
     const keys=ypReadHistory().events.map(e=>e.key);
     const detail=(()=>{ypOpenRentalDetail(ids[1]);return [...document.querySelectorAll('#yp-property-history p')].map(p=>p.dataset.key).filter(Boolean);})();
     document.getElementById('yp-rent-detail')?.remove();
@@ -133,16 +136,16 @@ try {
   const ok = report.both.length === 2 && report.dup === 'already'
     && report.paused.acc === 0 && report.paused.status === 'application-pending' && report.paused.cash === report.cash0
     && report.beforeHour.status.every(s => s === 'application-pending') && report.beforeHour.cash === report.cash0
-    && report.afterHour.status.every(s => s === 'approved') && report.afterHour.cash === report.cash0
-    && report.afterHour.notices.length === 2 && report.afterHour.badge !== ''
-    && report.menu.map(item => item.label).join('|').startsWith('Property Owned|Living Arrangement|Pending Offers|Property History')
-    && report.menu.find(item => item.label === 'Pending Offers').disabled && !report.menu.find(item => item.label === 'Property History').disabled
+    && report.afterHour.status[0] === 'active' && report.afterHour.status[1] === 'cancelled' && report.afterHour.cash === report.cash0 - 3000
+    && report.afterHour.notices.length >= 1 && report.afterHour.badge !== ''
+    && report.menu.map(item => item.label).filter(l=>l!=='✕').join('|').startsWith('Property Owned|Living Arrangement|Pending Offers|Property History')
+    && !report.menu.find(item => item.label === 'Property History').disabled
     && report.offers.length === 2
     && report.failed.cash === 100 && report.failed.same && report.failed.text.includes('Nothing was charged')
     && report.confirmed.cash === report.cash0 - 3000 && report.confirmed.again === report.confirmed.cash
-    && report.confirmed.active === 1 && report.confirmed.status.includes('withdrawn') && report.confirmed.sale === '[{"id":"sale-keep","kind":"sale"}]'
-    && keys.includes('applied') && keys.includes('accepted') && keys.includes('confirmed') && keys.includes('withdrawn')
-    && report.detail.includes(report.keys.find(k => k.includes('withdrawn')))
+    && report.confirmed.active === 1 && report.confirmed.status.includes('cancelled') && report.confirmed.sale === '[{"id":"sale-keep","kind":"sale"}]'
+    && keys.includes('applied') && keys.includes('accepted') && keys.includes('confirmed') && keys.includes('cancelled')
+    && report.detail.includes(report.keys.find(k => k.includes('cancelled')))
     && report.history.length === report.keys.length && report.dupHist === report.keys.length
     && report.reloaded === keys
     && cdp.errors.length === 0;

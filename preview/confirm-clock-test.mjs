@@ -91,7 +91,7 @@ try {
     const logoText=(document.querySelector('header .logo')?.textContent||'').replace(/\s+/g,' ').trim();
     advance(10*60*60*1000);
     const paused={week:G.week|0,pill:document.getElementById('date').textContent,acc:G.acc};
-    ypSubmitConfirm(rental.id);
+    ypSyncSample(ypReadClock());
     document.getElementById('toast')?.classList.remove('show');
     const cur=ypReadStock().rentals.find(r=>r.id===rental.id);
     const events=ypMergeHistory(ypReadHistory(),[]).events.filter(e=>e.propertyId===rental.id).map(e=>({kind:e.kind,text:e.text,when:ypGameClockLabel(e.gameMs)}));
@@ -172,7 +172,7 @@ try {
     ypWriteStock({version:1,rentals:[rental]});
     hud();
     const before=G.placeName;
-    ypSubmitConfirm(rental.id);
+    ypSyncSample(ypReadClock());
     document.getElementById('toast')?.classList.remove('show');
     const cur=ypReadStock().rentals.find(r=>r.id===rental.id);
     return {before, status:cur&&cur.status, id:G.lease&&G.lease.id, place:G.placeName, pill:document.getElementById('date').textContent, week:G.week|0, home:!!G.homeChosen};

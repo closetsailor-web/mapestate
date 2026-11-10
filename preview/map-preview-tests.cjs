@@ -507,6 +507,54 @@ async function serverChecks() {
   }
 }
 
+
+check('preview rentals auto-activate when the landlord approves', () => {
+  const previewJs = fs.readFileSync(path.join(root, 'preview-406b69525cf5', 'map-preview.js'), 'utf8');
+  assert.equal(previewJs.includes('Confirm and pay bond'), false);
+  assert.ok(previewJs.includes('Your Application'));
+  assert.ok(previewJs.includes('Confirm application'));
+  const src = previewJs.split('// END TESTABLE IDENTITY')[1].split('// END TESTABLE STOCK')[0];
+  const api = vm.runInNewContext(src + '\n;({ypShouldHideLabel,ypFreshStock,ypApplySample,ypRefreshSample,ypConfirmSample,ypMergeHistory,ypHistoryFor,ypHourMs,ypRentPicture,ypRentalIsDue,ypAutoActivateTenancy,ypListingModel})', {});
+  const weekMs = 30000;
+  const hour = api.ypHourMs({weekMs});
+  const clock0 = {week:0, acc:0, weekMs, wall:5000};
+  const sampleRent = {id:'s1', weeklyRent:500, bond:3000, status:'available', owner:'game', placeLabel:'Area A'};
+  const other = {id:'s2', weeklyRent:420, bond:2520, status:'available', placeLabel:'Area B'};
+  const sampleApplied = api.ypApplySample({version:1, rentals:[sampleRent, other]}, 's1', clock0);
+  const secondApplied = api.ypApplySample(sampleApplied.store, 's2', clock0);
+  assert.equal(sampleApplied.ok && secondApplied.ok, true);
+  const dueClock = {week:0, acc:Math.ceil(hour), weekMs, wall:7000};
+  assert.equal(api.ypRentalIsDue(secondApplied.store.rentals[0], dueClock), true);
+  const stillPending = api.ypRefreshSample(secondApplied.store, dueClock);
+  assert.equal(stillPending.store.rentals[0].status, 'application-pending');
+  assert.equal(stillPending.store.rentals[1].status, 'application-pending');
+  assert.equal(stillPending.events.length, 0);
+  const playerMoney = {incomeWk:1158, expenseWk:0, bank:30000};
+  const poor = api.ypConfirmSample(stillPending.store, 's1', {week:0, acc:Math.ceil(hour), weekMs, wall:8000}, playerMoney, 100, 4);
+  assert.equal(poor.ok, false);
+  assert.equal(poor.reason, 'short');
+  assert.equal(poor.store.rentals[0].status, 'application-pending');
+  assert.equal(poor.store.rentals[1].status, 'application-pending');
+  const paid = api.ypConfirmSample(stillPending.store, 's1', {week:0, acc:Math.ceil(hour), weekMs, wall:8000}, playerMoney, 30000, 4);
+  assert.equal(paid.ok, true);
+  assert.equal(paid.charged, 3000);
+  assert.equal(paid.cash, 27000);
+  assert.equal(paid.store.rentals[0].status, 'active');
+  assert.equal(paid.store.rentals[1].status, 'cancelled');
+  let history = api.ypMergeHistory(null, sampleApplied.events.concat(secondApplied.events, paid.events));
+  assert.equal(api.ypHistoryFor(history, 's1').map(e => e.kind).join(','), 'applied,accepted,confirmed');
+  assert.equal(api.ypHistoryFor(history, 's2').map(e => e.kind).join(','), 'applied,cancelled');
+  const already = api.ypAutoActivateTenancy(paid.store, dueClock);
+  assert.equal(already.ok, false);
+  assert.equal(already.reason, 'already-active');
+  const approvedLegacy = JSON.parse(JSON.stringify(secondApplied.store));
+  approvedLegacy.rentals[0].status = 'approved';
+  assert.equal(api.ypRentalIsDue(approvedLegacy.rentals[0], clock0), true);
+  const listing = api.ypListingModel({kind:'rent', status:'approved', weeklyRent:500});
+  assert.equal(listing.action, null);
+  assert.equal((listing.status||'').includes('Confirm and pay bond'), false);
+});
+
 (async () => {
   await check('missing search key does not build a request', async () => {
     let calls = 0;

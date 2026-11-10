@@ -109,11 +109,11 @@ try {
     try{clockStep();}finally{Date.now=real;}
     const cur=ypReadStock().rentals.find(r=>r.id==='${open.id}');
     ypOpenRentalDetail('${open.id}');
-    return {status:cur.status,week:G.week,home:!!G.homeChosen,pill:document.getElementById('date').textContent,title:document.getElementById('yp-listing-title')?.textContent||'',text:document.getElementById('yp-rent-detail')?.innerText||''};
+    return {status:cur.status,week:G.week,home:!!G.homeChosen,clock:!!G.clockOn,charged:!!cur.bondCharged,pill:document.getElementById('date').textContent,title:document.getElementById('yp-listing-title')?.textContent||'',text:document.getElementById('yp-rent-detail')?.innerText||''};
   })()`);
   await shot('application-decided-390x844.png');
-  if (decided.status !== 'approved' || decided.week !== 0 || decided.home || decided.pill !== 'Paused') problems.push('decided '+JSON.stringify(decided));
-  if (!/Confirm and pay bond|Approved|approval/i.test(decided.text)) problems.push('decision text '+decided.text.slice(0, 240));
+  if (decided.status !== 'active' || decided.week !== 0 || !decided.home || !decided.clock || !decided.charged || decided.pill !== 'Wk 0') problems.push('decided '+JSON.stringify(decided));
+  if (!/accepted|bond|tenancy/i.test(decided.text) || /Confirm and pay bond/i.test(decided.text)) problems.push('decision text '+decided.text.slice(0, 240));
   const futureId = await evalJson(`(()=>{
     const place={label:'Bargara',lon:152.4632,lat:-24.8186,stockKey:'Bargara'};
     const store=ypEnsureSuburbStock(ypFreshStock(),place,[{lon:152.466,lat:-24.814}]);
@@ -125,6 +125,7 @@ try {
   await cdp.send('Page.navigate', {url: `http://127.0.0.1:${port}/?reload=future`}, sessionId);
   await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{if(typeof ypReadStock==='function'&&document.readyState==='complete')r(1);else if(Date.now()-t>30000)r(0);else setTimeout(tick,100)};tick()})`);
   await delay(500);
+  await evalJson(`clockStep();1`);
   const future = await evalJson(`(()=>{const rental=ypReadStock().rentals.find(r=>r.id==='${futureId}');return {status:rental&&rental.status,week:G.week,home:!!G.homeChosen};})()`);
   const pastId = await evalJson(`(()=>{
     const place={label:'Bargara',lon:152.4632,lat:-24.8186,stockKey:'Bargara'};
@@ -137,11 +138,33 @@ try {
   await cdp.send('Page.navigate', {url: `http://127.0.0.1:${port}/?reload=past`}, sessionId);
   await evalJson(`new Promise(r=>{const t=Date.now();const tick=()=>{if(typeof ypReadStock==='function'&&document.readyState==='complete')r(1);else if(Date.now()-t>30000)r(0);else setTimeout(tick,100)};tick()})`);
   await delay(500);
-  const past = await evalJson(`(()=>{const rental=ypReadStock().rentals.find(r=>r.id==='${pastId}');return {status:rental&&rental.status,week:G.week,home:!!G.homeChosen,pill:document.getElementById('date')?.textContent||''};})()`);
+  await evalJson(`clockStep();1`);
+  const past = await evalJson(`(()=>{const rental=ypReadStock().rentals.find(r=>r.id==='${pastId}');return {status:rental&&rental.status,week:G.week,home:!!G.homeChosen,clock:!!G.clockOn,charged:!!(rental&&rental.bondCharged),pill:document.getElementById('date')?.textContent||''};})()`);
   const after = {future: future.status, past: past.status, week: past.week, home: past.home, pill: past.pill};
-  if (future.status !== 'application-pending' || past.status !== 'approved' || past.week !== 0 || past.home) problems.push('reload '+JSON.stringify(after));
+  if (future.status !== 'application-pending' || past.status !== 'active' || past.week !== 0 || !past.home || !past.clock || !past.charged || past.pill !== 'Wk 0') problems.push('reload '+JSON.stringify(after));
+  const advanced = await evalJson(`(()=>{
+    document.getElementById('yp-rent-detail')?.remove();
+    document.getElementById('toast')?.classList.remove('show');
+    const before=G.week|0;
+    advance(CFG.weekMs);
+    hud();
+    return {before,week:G.week|0,pill:document.getElementById('date')?.textContent||'',clock:!!G.clockOn,home:!!G.homeChosen,ms:CFG.weekMs};
+  })()`);
+  await shot('application-week-advanced-390x844.png');
+  if (advanced.week !== advanced.before+1 || advanced.pill !== 'Wk '+advanced.week || !advanced.clock || !advanced.home) problems.push('advance '+JSON.stringify(advanced));
+  const away = await evalJson(`(()=>{
+    const before=G.week|0;
+    const lag=CFG.weekMs+1000;
+    G.last=Date.now()-lag;
+    CLK=Date.now()-lag;
+    clockStep();
+    hud();
+    return {before,week:G.week|0,pill:document.getElementById('date')?.textContent||'',clock:!!G.clockOn};
+  })()`);
+  await shot('application-week-after-away-390x844.png');
+  if (away.week < away.before+1 || away.pill !== 'Wk '+away.week || !away.clock) problems.push('away '+JSON.stringify(away));
   if (problems.length) { console.error(problems.join('\n')); await finish(1); }
-  else { console.log('PASS application hour', {waitMin: +(open.wait/60000).toFixed(2), hourMin: +(open.hour/60000).toFixed(2), early: early.status, decided: decided.status, reload: after}); await finish(0); }
+  else { console.log('PASS application hour', {waitMin: +(open.wait/60000).toFixed(2), hourMin: +(open.hour/60000).toFixed(2), early: early.status, decided: decided.status, reload: after, advanced, away}); await finish(0); }
 } catch (error) {
   console.error(error);
   await finish(1);

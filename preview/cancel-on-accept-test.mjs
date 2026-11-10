@@ -133,9 +133,9 @@ const reloaded = await evalJson(`(()=>{
 })()`);
 
 const problems = [];
-if (before.cash !== before.cash0) problems.push('cash moved '+before.cash0+' -> '+before.cash);
-if (before.status.join(',') !== 'approved,cancelled,cancelled') problems.push('status '+before.status.join(','));
-if (before.later.join(',') !== 'approved,cancelled,cancelled') problems.push('later '+before.later.join(','));
+if (before.cash !== before.cash0 - 2400) problems.push('cash moved '+before.cash0+' -> '+before.cash);
+if (before.status.join(',') !== 'active,cancelled,cancelled') problems.push('status '+before.status.join(','));
+if (before.later.join(',') !== 'active,cancelled,cancelled') problems.push('later '+before.later.join(','));
 if (!before.held) problems.push('held amount left on a cancelled application');
 if (before.accepted !== 1 || before.cancelled.length !== 2) problems.push('events '+JSON.stringify(before));
 if (!before.cancelled.every(e => e.text === 'Cancelled' && e.reason === 'Another application was accepted' && e.when)) problems.push('cancelled copy '+JSON.stringify(before.cancelled));
@@ -143,7 +143,7 @@ if (!(list.rows.includes('Accepted') && list.rows.includes('Cancelled') && list.
 const status = card.detail.find(row => row.label === 'Status');
 const reason = card.detail.find(row => row.label === 'Reason');
 if (!(card.title === 'Cancelled' && card.kicker && status && status.value === 'Cancelled' && reason && reason.value === 'Another application was accepted' && card.dialogs.length === 1 && !card.listOpen)) problems.push('card '+JSON.stringify(card));
-if (reloaded.status.join(',') !== 'approved,cancelled,cancelled' || reloaded.accepted !== 1 || reloaded.cancelled.length !== 2) problems.push('reload '+JSON.stringify(reloaded));
+if (reloaded.status.join(',') !== 'active,cancelled,cancelled' || reloaded.accepted !== 1 || reloaded.cancelled.length !== 2) problems.push('reload '+JSON.stringify(reloaded));
 if (problems.length) {
   console.error(problems.join('\n'));
   process.exitCode = 1;
