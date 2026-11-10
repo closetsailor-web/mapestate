@@ -2353,8 +2353,8 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
       <select id="bizsel" style="width:100%;padding:8px">${Object.entries(BIZ).map(([k,b])=>`<option value="${k}">${b.icon} ${b.label} — setup ${fmtK(bizSetup(k))}, turnover ~${fmtK(bizTurn(k))}/yr</option>`).join('')}</select>
       <button class="btn sec" onclick="startDev('${id}','shop',bizsel.value,${L})">Build shop & run my own business</button>
       <small>Costs: BMT 2026 cost table, ATO small business benchmarks, real ${P.label} council DA fees. Finished values are market estimates; a development can lose money where rents are low.</small></div>`;},
-  bankBox(){const b=bank(),r=(k,v,st)=>`<tr><td>${k}</td><td style="text-align:right;${st||''}">${v}</td></tr>`,best=LENDERS.map(L=>[L,maxPrice(L)]).sort((x,y)=>y[1]-x[1])[0],pct=x=>(x*100).toFixed(2)+'%';
-    return `<div class="fin" id="bankbox"><div id="borrowtop">${borrowSimple(b,'bb')}</div>
+  bankBox(withCash){const b=bank(),r=(k,v,st)=>`<tr><td>${k}</td><td style="text-align:right;${st||''}">${v}</td></tr>`,best=LENDERS.map(L=>[L,maxPrice(L)]).sort((x,y)=>y[1]-x[1])[0],pct=x=>(x*100).toFixed(2)+'%';
+    return `<div class="fin" id="bankbox"><div id="borrowtop">${withCash?`<div class="brow"><span>Savings</span><b>${fmt(G.cash)}</b></div><div class="bhead" style="margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase">Monthly Breakdown</div>`:''}${borrowSimple(b,'bb')}</div>
     <details id="borrowdetail"><summary><b>ⓘ How the bank works this out</b></summary>
     <div class="sub" style="margin:6px 0">The bank checks two things. Can you afford the repayments? And is the loan too big for your pay? It uses the smaller answer.</div>
     <table style="width:100%;font-size:12.5px;border-collapse:collapse">
@@ -2436,7 +2436,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
       ${it('sliders','Settings','Dark mode, motion',"UI.settings()")}${it('help','Help','How it works · Replay tutorial',"UI.help()")}${it('alert','Start over / new player','Wipes this game and shows the welcome screens',"startOver()")}
       <div class="sub" style="padding:14px 12px 0">${GEN[G.cur].osm?'Bundaberg coast & water data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL).':''} Game ${gdate(G.week)}.</div>`;
     d.querySelector('.pane').insertAdjacentHTML('beforeend',`<div class="buildid" id="buildid_menu" style="padding:10px 12px 18px;font-size:11px;color:#5a6780">Test build ${TEST_BUILD_ID}</div>`);d.classList.add('open');},
-  lenders(){this.money();setTimeout(()=>{const e=document.getElementById('bankbox');if(e)e.scrollIntoView({behavior:'smooth'});},80);},
+  lenders(){this.open(`<h2>Borrowing Power</h2>${UI.bankBox(true)}<button class="btn sec" onclick="UI.el.classList.remove('open');document.body.classList.remove('sheetopen')">Close</button>`);this.el.style.zIndex=60;},
   profile(){this.money();},
   sale(){findForSale();},
   settings(){const dark=document.body.classList.contains('dark');this.open(`<h2>${ic('sliders')} Settings</h2>
@@ -2711,7 +2711,7 @@ function collapseLong(root){if(window.NOCOLLAPSE)return;root.querySelectorAll('s
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.lm');if(!a)return;e.preventDefault();const el=a.parentElement;if(el&&el.dataset.full!=null){el.innerHTML=el.dataset.full;delete el.dataset.full;el.dataset.opened=1;}});
 /* v24 simple borrowing summary (age-13 reading level). Presentation only: numbers come straight from bank(). */
 function borrowSimple(b,pre){const inM=b.net/12,outM=b.hem+(b.existing||0)/*existing already includes rent paid and other debts*/,left=b.surplus,rep=b.power>0?b.power/annuity(CFG.rateIP,BANK.termY*12):0,L=(t,v,c)=>`<div class="brow"><span>${t}</span><b style="${c||''}">${v}</b></div>`;
-  return `${L('💰 Money in (income)',fmt(inM)+' a month')}${L('Money out (expenses)',fmt(outM)+' a month')}${L('Left over',fmt(left)+' a month',left<0?'color:#c0672b':'color:#1a478a')}
+  return `${L('Income',fmt(inM))}${L('Expenses',fmt(outM))}${L('Left over',fmt(left),left<0?'color:#c0672b':'color:#1a478a')}
   <div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(b.power)}</b><div class="bsub">Repayments would be about <b id="${pre}_rep">${fmt(rep)}</b> a month</div></div>`;}
 /* v24 expenses editor: one screen, used from the tutorial, My income and Profile */
 let expDraft=null,expFrom=null;
