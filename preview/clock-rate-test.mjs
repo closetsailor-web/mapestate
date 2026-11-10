@@ -10,7 +10,13 @@ assert.equal(html.includes('1 game week = 30 s'), false);
 assert.equal(html.includes('every 30 seconds is one week'), false);
 assert.equal(html.includes('A game week takes 30 seconds'), false);
 assert.equal(js.includes(':30000'), false);
-assert.ok(html.includes('1 game year passes every 30 real days.'));
+assert.equal(html.includes('1 game year passes every 30 real days.'), false);
+assert.ok(html.includes('1 game year passes every 14 real days.'));
+assert.ok(html.includes('const YP_YEAR_REAL_DAYS=14;'));
+assert.ok(html.includes('const YP_TEST_WEEK_MS=30*1000;'));
+assert.ok(html.includes('Test clock: one game week takes 30 seconds.'));
+assert.ok(html.includes("q==='test'||q==='real'"));
+assert.ok(html.includes("mode==='test'?YP_TEST_WEEK_MS:YP_WEEK_MS"));
 assert.ok(html.includes('function ypMigrateSavedClock'));
 assert.ok(html.includes('function ypScaleGameMs'));
 assert.ok(js.includes('function ypRescaleClockRecords'));
@@ -18,28 +24,38 @@ assert.ok(js.includes('Test option: fast clock'));
 assert.ok(js.includes('ypWeekMs(clock)'));
 assert.equal(js.includes('return n>0?n:30000'), false);
 
-const sandbox = {localStorage: {getItem(){return null;}, setItem(){}}, location: {search: ''}, URLSearchParams};
-vm.createContext(sandbox);
-vm.runInContext(`
-const YP_WEEKS_PER_YEAR=52.1775;
-const YP_YEAR_REAL_DAYS=30;
-const YP_WEEK_MS=Math.round(YP_YEAR_REAL_DAYS/YP_WEEKS_PER_YEAR*24*60*60*1000);
-const YP_TEST_WEEK_MS=30*1000;
-function ypScaleGameMs(ms,from,to){if(!Number.isFinite(+ms)||!(from>0)||!(to>0)||from===to)return +ms;const week=Math.floor(+ms/from),into=+ms-week*from;return week*to+into*to/from;}
+function runClock(search){
+  const sandbox = {localStorage: {getItem(){return null;}, setItem(){}}, location: {search}, URLSearchParams};
+  vm.createContext(sandbox);
+  const start = html.indexOf('const YP_WEEKS_PER_YEAR=');
+  const end = html.indexOf('const CFG=');
+  assert.ok(start > 0 && end > start, 'clock block is in the page');
+  vm.runInContext(html.slice(start, end) + `
+this.YP_YEAR_REAL_DAYS=YP_YEAR_REAL_DAYS;
 this.YP_WEEK_MS=YP_WEEK_MS;
 this.YP_TEST_WEEK_MS=YP_TEST_WEEK_MS;
-this.hour=YP_WEEK_MS/168;
+this.resolved=ypResolveWeekMs();
 this.years90=90*YP_YEAR_REAL_DAYS/365.2425;
 this.scale=ypScaleGameMs;
 `, sandbox);
+  return sandbox;
+}
+const sandbox = runClock('');
+const testClock = runClock('?speed=test');
+assert.equal(sandbox.YP_YEAR_REAL_DAYS, 14);
+assert.equal(sandbox.resolved, sandbox.YP_WEEK_MS, 'default speed is the real year, not the test clock');
+assert.equal(testClock.resolved, testClock.YP_TEST_WEEK_MS);
+assert.equal(testClock.YP_TEST_WEEK_MS, 30 * 1000);
+assert.notEqual(sandbox.YP_WEEK_MS, testClock.YP_TEST_WEEK_MS);
 
 const weekMs = sandbox.YP_WEEK_MS;
-const hourMin = sandbox.hour / 60000;
-assert.equal(weekMs, Math.round(30 / 52.1775 * 24 * 60 * 60 * 1000));
+const hourMin = weekMs / 168 / 60000;
+assert.equal(weekMs, Math.round(14 / 52.1775 * 24 * 60 * 60 * 1000));
 assert.ok(html.includes('const YP_WEEK_MS=Math.round(YP_YEAR_REAL_DAYS/YP_WEEKS_PER_YEAR*24*60*60*1000);'));
-assert.ok(Math.abs(weekMs / 3600000 - (13 + 48 / 60)) < 0.02, 'week is about 13h48m');
-assert.ok(Math.abs(hourMin - 4.93) < 0.02, 'game hour is about 4.93 real minutes');
-assert.ok(Math.abs(sandbox.years90 - 7.4) < 0.05, '90 game years is about 7.4 real years');
+assert.ok(Math.abs(weekMs / 3600000 - (6 + 27 / 60)) < 0.02, 'week is about 6h27m');
+assert.ok(Math.abs(hourMin - 2.30) < 0.02, 'game hour scales with the 14-day year');
+assert.ok(Math.abs(sandbox.years90 - 3.45) < 0.05, '90 game years is about 3.45 real years');
+assert.ok(Math.abs(52 * weekMs / 86400000 - 14) < 0.2, '12-month lease is about 14 real days');
 
 const old = sandbox.YP_TEST_WEEK_MS;
 const acc = 15000;

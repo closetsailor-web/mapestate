@@ -101,10 +101,11 @@ try {
   const applied = await evalJson(`(()=>{
     document.getElementById('yp-review-confirm').click();
     const first=ypReadStock().rentals.find(r=>r.id===${JSON.stringify(review.ids[0])});
-    window.__ypOff+=60000;
+    const step=Math.floor(CFG.weekMs/168/4);
+    window.__ypOff+=step;
     ypSubmitApply(${JSON.stringify(review.ids[1])});
     const second=ypReadStock().rentals.find(r=>r.id===${JSON.stringify(review.ids[1])});
-    window.__ypOff+=120000;
+    window.__ypOff+=step;
     clockStep();
     const hist=ypMergeHistory(ypReadHistory(),[]).events.map(e=>({kind:e.kind,id:e.propertyId,at:e.at,gameMs:e.gameMs}));
     const rows=[...document.querySelectorAll('#yp-history .yp-rent-row')].map(b=>({title:b.querySelector('.yp-row-title')?.textContent||'',when:b.querySelector('.yp-row-price')?.textContent||''}));
@@ -158,8 +159,9 @@ try {
   const dateRow = (living.rows||[]).find(r=>r.label==='Date');
   const leaseEnd = accepted.approveAt + 52*living.weekMs;
   if (accepted.lease?.months !== 12 || accepted.lease?.end - accepted.lease?.start !== 52) problems.push('lease '+JSON.stringify(accepted.lease));
-  if (Math.abs(52*living.weekMs - 30*86400000) > 86400000) problems.push('12-month lease is not about 30 real days '+living.weekMs);
-  if (!ends || ends.value !== dateLabel(leaseEnd) || (leaseEnd - accepted.approveAt) / 86400000 < 29.5) problems.push('lease ends '+JSON.stringify(ends)+' want '+dateLabel(leaseEnd));
+  const leaseDays = 52*living.weekMs/86400000;
+  if (Math.abs(leaseDays - 14) > 1) problems.push('12-month lease is not about 14 real days '+living.weekMs);
+  if (!ends || ends.value !== dateLabel(leaseEnd) || leaseDays < 13) problems.push('lease ends '+JSON.stringify(ends)+' want '+dateLabel(leaseEnd));
   if (!dateRow || dateRow.value !== want.accepted) problems.push('living date '+JSON.stringify(dateRow)+' want '+want.accepted);
   if (problems.length) { console.error(problems.join('\n')); await finish(1); }
   else { console.log('PASS real time', {applied: want.applied, accepted: want.accepted, leaseEnds: ends.value, leaseDays: +((leaseEnd - accepted.approveAt)/86400000).toFixed(2), history: historyView, notification: note.when}); await finish(0); }

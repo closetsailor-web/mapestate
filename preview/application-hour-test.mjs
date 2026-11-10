@@ -93,7 +93,9 @@ try {
     };
   })()`);
   await shot('application-pending-390x844.png');
-  if (open.weekMs !== 49676585) problems.push('not the real clock '+open.weekMs);
+  const realWeekMs = Math.round(14 / 52.1775 * 24 * 60 * 60 * 1000);
+  if (open.weekMs !== realWeekMs) problems.push('not the real clock '+open.weekMs);
+  if (open.weekMs === 30000) problems.push('default clock is the test speed');
   if (Math.abs(open.hour - open.weekMs/168) > 1) problems.push('hour '+open.hour);
   if (open.status !== 'application-pending') problems.push('status '+open.status);
   if (open.week !== 0 || open.home || open.clock) problems.push('clock moved '+JSON.stringify(open));

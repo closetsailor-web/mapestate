@@ -1119,17 +1119,17 @@ try{localStorage.setItem('mt.build',TEST_BUILD_ID);['mt.reset1','mt.reset2','mt.
 /* Every $ figure is a real, sourced Australian/QLD number (see REAL-FIGURES.md) or is marked EST (estimate) or GAME (game mechanic, no real equivalent). */
 const STARTING_CASH=30000; // every player AND every SAMPLE AI rival starts with exactly this, no properties
 const YP_WEEKS_PER_YEAR=52.1775;
-const YP_YEAR_REAL_DAYS=30;
+const YP_YEAR_REAL_DAYS=14;
 const YP_WEEK_MS=Math.round(YP_YEAR_REAL_DAYS/YP_WEEKS_PER_YEAR*24*60*60*1000);
 const YP_TEST_WEEK_MS=30*1000;
 function ypResolveWeekMs(){let mode='real';try{const q=new URLSearchParams(location.search).get('speed');if(q==='test'||q==='real')mode=q;else if(localStorage.getItem('yp.clockSpeed')==='test')mode='test';if(q==='test'||q==='real')localStorage.setItem('yp.clockSpeed',mode);}catch(e){}return mode==='test'?YP_TEST_WEEK_MS:YP_WEEK_MS;}
-function ypClockSentence(){return CFG.weekMs===YP_TEST_WEEK_MS?'Test clock: one game week takes 30 seconds.':'1 game year passes every 30 real days.';}
+function ypClockSentence(){return CFG.weekMs===YP_TEST_WEEK_MS?'Test clock: one game week takes 30 seconds.':'1 game year passes every 14 real days.';}
 function ypTestClockOn(){return CFG.weekMs===YP_TEST_WEEK_MS;}
 function ypScaleGameMs(ms,from,to){if(!Number.isFinite(+ms)||!(from>0)||!(to>0)||from===to)return +ms;const week=Math.floor(+ms/from),into=+ms-week*from;return week*to+into*to/from;}
 function ypShiftClock(from,to){if(!(from>0)||!(to>0)||from===to)return;if(G&&G.acc>0)G.acc=Math.min(to-1,Math.round(G.acc*to/from));CFG.weekMs=to;if(G)G.clockMs=to;if(typeof ypRescaleClockRecords==='function')ypRescaleClockRecords(from,to);}
 function ypSetTestClock(on){const to=on?YP_TEST_WEEK_MS:YP_WEEK_MS,from=CFG.weekMs;try{localStorage.setItem('yp.clockSpeed',on?'test':'real');}catch(e){}ypShiftClock(from,to);if(typeof save==='function')save();if(typeof hud==='function')hud();if(typeof toast==='function')toast(ypClockSentence());}
 function ypMigrateSavedClock(){const next=CFG.weekMs,saved=Number(G&&G.clockMs),from=saved>0?saved:YP_TEST_WEEK_MS;if(from!==next){if(G&&G.acc>0)G.acc=Math.min(next-1,Math.round(G.acc*next/from));window.__ypClockFrom=from;}if(G)G.clockMs=next;}
-const CFG={startCash:STARTING_CASH,weekMs:ypResolveWeekMs()/*GAME: 1 game year = 30 real days*/,offlineCapWeeks:26,
+const CFG={startCash:STARTING_CASH,weekMs:ypResolveWeekMs()/*GAME: 1 game year = 14 real days*/,offlineCapWeeks:26,
   rateIP:0.0672/*avg investor variable P&I, Ratesniffers 20 Oct 2026*/,rateIO:0.0714/*avg investor interest-only variable, Canstar 2 Oct 2026*/,termY:30,
   pmFee:0.075/*QLD avg mgmt fee, LocalAgentFinder 2026*/,pmFeeComm:0.05/*EST commercial net-lease mgmt*/,lettingWeeks:1/*QLD avg letting fee*/,
   commission:0.025/*QLD avg 2.57% (OpenAgent Aug 2026)*/,marketing:2000/*OpenAgent: campaigns from ~$2,000*/,aucMarketing:1900/*EST Bundaberg $800–3,000*/,auctioneer:700/*$400–1,000*/,legal:1800/*EST conveyancing*/,
@@ -1507,7 +1507,7 @@ const uname=()=>G.username||'player';
 const pname=id=>{const l=lot(id),g=GEN[cityOf(id)];return l?l.addr+', '+g.subs[l.si].name:id;};
 function log(t,amt){G.hist.unshift({w:G.week,t,amt});G.hist.length=Math.min(G.hist.length,200);}
 const gdate=w=>ypRealDateLabel(ypWallAt(w*CFG.weekMs));
-/* Card, history and notification dates use the player's real local clock, not a game calendar. Game time runs 1:1 with real time while the clock is on (one game week = CFG.weekMs real ms, so 1 game year = 30 real days), so a game instant maps to now plus its distance from the current game time. */
+/* Card, history and notification dates use the player's real local clock, not a game calendar. Game time runs 1:1 with real time while the clock is on (one game week = CFG.weekMs real ms, so 1 game year = 14 real days), so a game instant maps to now plus its distance from the current game time. */
 function ypWallAt(gameMs){if(!Number.isFinite(+gameMs))return NaN;const now=(typeof G!=='undefined'&&G)?(G.week|0)*CFG.weekMs+Math.max(0,+G.acc||0):0;return Date.now()+(+gameMs-now);}
 const YP_DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],YP_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function ypRealDateLabel(wall){if(!Number.isFinite(+wall))return '';const at=new Date(+wall);return YP_DAYS[at.getDay()]+' '+at.getDate()+' '+YP_MONTHS[at.getMonth()]+' '+at.getFullYear();}
