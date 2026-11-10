@@ -647,7 +647,7 @@ function ypOpenLivingArrangement(){
  const events=rental?ypHistoryFor(ypReadHistory(),rental.id):[];
  const confirmed=[...events].reverse().find(e=>e.kind==='confirmed')||null;
  const ev=confirmed||(rental?{text:'Tenancy confirmed',kind:'confirmed',gameMs:((typeof G!=='undefined'&&G&&G.lease?G.lease.start:rental.startWeek)||0)*ypWeekMs(),propertyId:rental.id}:null);
- const rows=rental?ypRentalRecordRows(ev,rental):[{label:'Status',hint:'Current home',value:(typeof ypLivingFacts==='function'&&ypLivingFacts().status)||'No tenancy yet'}];
+ const rows=rental?ypRentalRecordRows(ev,rental):[{label:'Status',hint:'Current home',value:(()=>{const s=typeof ypLivingFacts==='function'?ypLivingFacts().status:'';return s&&s!=='Renting'?s:'Currently homeless';})()}];
  const ends=ypLeaseEndLabel();
  if(ends) rows.push({label:'Lease ends',hint:'Renew lease or vacate',value:ends});
  const panel=document.createElement('div');
