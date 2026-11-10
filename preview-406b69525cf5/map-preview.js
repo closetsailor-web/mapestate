@@ -333,7 +333,8 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 .yp-card-head h2{margin:0;color:#fff;font:700 18px/1.25 Inter,system-ui,sans-serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 22px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
 .yp-card-head .yp-x:focus-visible{outline:3px solid #fff;outline-offset:2px}
-#yp-living .yp-card-head h2{white-space:normal}
+#yp-living .hwh h2,#yp-living .yp-card-head h2{white-space:normal}
+.yp-flow dd a.yp-link{color:#1a5fd6;text-decoration:underline;font-weight:700}
 #sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}
 html.yp-preview body.sheetopen nav{transform:none;opacity:1;pointer-events:auto}`;
 
@@ -558,7 +559,7 @@ function ypOpenPendingOffers(){
  document.body.appendChild(panel);
 }
 function ypSavedTenancyLabel(){const lease=typeof G!=='undefined'&&G?G.lease:null;const fromLease=lease?+lease.months:NaN;const fromStatus=typeof G!=='undefined'&&G?+G.statusLease:NaN;const months=(fromLease===3||fromLease===6||fromLease===12)?fromLease:((fromStatus===3||fromStatus===6||fromStatus===12)?fromStatus:0);return months?months+' months':'';}
-function ypFlow(rows){const flow=document.createElement('dl');flow.className='yp-flow';(rows||[]).forEach(item=>{if(!item||item.value==null||item.value==='')return;const row=document.createElement('div');row.dataset.label=item.label||'';const dt=document.createElement('dt');dt.textContent=item.label||'';if(item.hint){const hint=document.createElement('span');hint.className='yp-hint';hint.textContent=item.hint;dt.appendChild(hint);}const dd=document.createElement('dd');if(item.id)dd.id=item.id;dd.textContent=String(item.value);if(item.neg)dd.classList.add('yp-neg');row.append(dt,dd);flow.appendChild(row);});return flow;}
+function ypFlow(rows){const flow=document.createElement('dl');flow.className='yp-flow';(rows||[]).forEach(item=>{if(!item||item.value==null||item.value==='')return;const row=document.createElement('div');row.dataset.label=item.label||'';const dt=document.createElement('dt');dt.textContent=item.label||'';if(item.hint){const hint=document.createElement('span');hint.className='yp-hint';hint.textContent=item.hint;dt.appendChild(hint);}const dd=document.createElement('dd');if(item.id)dd.id=item.id;if(item.onClick){const a=document.createElement('a');a.href='#';a.className='yp-link';a.textContent=String(item.value);a.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();item.onClick();});dd.appendChild(a);}else dd.textContent=String(item.value);if(item.neg)dd.classList.add('yp-neg');row.append(dt,dd);flow.appendChild(row);});return flow;}
 function ypLeaseWeeksLeft(){const L=typeof G!=='undefined'&&G?G.lease:null;if(!L||L.broken||L.m2m||!Number.isFinite(+L.end)||L.end<=G.week)return null;return L.end-G.week;}
 function ypLivingFacts(){if(typeof G==='undefined'||!G||typeof housing!=='function')return {status:'',time:null};const h=housing();if(h==='home')return {status:'Property owner',time:null};if(h==='family'){const home=G.famHome;if(home&&home.room)return {status:'Room Sharing',time:null};if(home)return {status:typeof boardWk==='function'&&boardWk()>0?'Boarding':'Living with family or friends',time:null};return {status:'',time:null};}if(G.homeChosen&&G.lease&&!G.lease.broken)return {status:'Renting',time:ypLeaseWeeksLeft()};if(G.homeChosen)return {status:'Renting',time:null};if(G.clockOn)return {status:'Boarding',time:null};if(G.statusPick==='rent')return {status:'Renting',time:null};return {status:'',time:null};}
 function ypAwayRows(weeks,cashDelta,ledger){const n=weeks|0;const live=ypLivingFacts();const rows=[{label:'Game weeks passed',value:String(n),id:'yp-away-weeks'}];const income=ledger&&Number.isFinite(+ledger.income)?+ledger.income:null;const expense=ledger&&Number.isFinite(+ledger.expense)?+ledger.expense:0;if(income!=null)rows.push({label:'Income received',value:fmt(income),neg:income<0,id:'yp-away-income'});if(Number.isFinite(+cashDelta)&&(income==null||expense!==0||Math.round(+cashDelta)!==Math.round(income)))rows.push({label:'Extra savings',value:fmt(+cashDelta),neg:+cashDelta<0,id:'yp-away-cash'});if(typeof bank==='function'){const power=bank().power;if(Number.isFinite(+power))rows.push({label:'Borrowing power',value:fmt(power),id:'yp-away-power'});}if(live.status)rows.push({label:'Living status',value:live.status,id:'yp-away-status'});if(live.time!=null)rows.push({label:'Time left',value:live.time+(live.time===1?' week':' weeks'),id:'yp-away-time'});return rows;}
@@ -575,6 +576,7 @@ function ypArmDrawer(){const pane=document.querySelector('#drawer .pane');if(!pa
 function ypArmListings(){const panel=document.getElementById('listings');if(!panel||panel.querySelector('.yp-card-head'))return;panel.prepend(ypCardHeader({title:'Listings',id:'yp-listings-x',onClose:()=>{if(typeof listClose==='function')listClose();}}));}
 function ypArmHwov(){const card=document.querySelector('#hwov .hwc');if(!card||card.querySelector('.yp-card-head'))return;const titleEl=card.querySelector('h3');const head=ypCardHeader({title:titleEl?titleEl.textContent:'',onClose:()=>{if(document.getElementById('hwov')&&document.getElementById('hwov').classList.contains('hwrun')&&typeof hwClose==='function')hwClose();else{const next=document.getElementById('hw_next');if(next)next.click();else if(typeof lsClose==='function')lsClose();}}});if(titleEl)titleEl.remove();card.prepend(head);}
 function ypSuburbCode(name){const w=String(name||'').toUpperCase().replace(/[^A-Z ]/g,'').trim().split(/\s+/).filter(Boolean);if(!w.length)return 'YPL';if(w.length>1)return (w[0].slice(0,2)+w[w.length-1][0]).padEnd(3,'X');const x=w[0],c=x.slice(1).replace(/[AEIOU]/g,'');return (x[0]+(c.length>=2?c.slice(-2):x.slice(1,3))).padEnd(3,'X');}
+function ypGoToProperty(r){['yp-living','yp-history','yp-history-detail'].forEach(id=>{const el=document.getElementById(id);if(el)el.remove();});window.__ypMapView={lon:+r.lon,lat:+r.lat,zoom:18};ypOpenListingMap('rent');}
 function ypPublicCode(id,suburb){if(!id)return '';const key=(window.__ypPreviewNs||'yp.')+'publicCodes';let reg={};try{reg=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(e){reg={};}if(!reg.ids)reg={ids:{},next:{}};if(reg.ids[id])return reg.ids[id];const pre=ypSuburbCode(suburb);const n=(reg.next[pre]||0)+1;reg.next[pre]=n;const code=pre+'-'+String(n).padStart(4,'0');reg.ids[id]=code;try{localStorage.setItem(key,JSON.stringify(reg));}catch(e){}return code;}
 function ypRentalRecordRows(ev, rental){
  const bond=rental?(Number.isFinite(+rental.bond)?+rental.bond:(Number.isFinite(+rental.weeklyRent)?Math.round(+rental.weeklyRent)*6:NaN)):NaN;
@@ -582,7 +584,7 @@ function ypRentalRecordRows(ev, rental){
   {label:'Event',hint:'Recorded action',value:ev&&ev.text||''},
   {label:'Date',hint:'Date and time',value:ev?ypEventClockLabel(ev):''},
   {label:'Reason',hint:'Why this was recorded',value:ev&&ev.reason||''},
-  {label:'Property ID',hint:'Property code',value:ypPublicCode((ev&&ev.propertyId)||(rental&&rental.id)||'',rental?ypDisplaySuburb(rental):'')}
+  {label:'Property ID',hint:'Property code',value:ypPublicCode((ev&&ev.propertyId)||(rental&&rental.id)||'',rental?ypDisplaySuburb(rental):''),onClick:rental&&Number.isFinite(+rental.lon)&&Number.isFinite(+rental.lat)?()=>ypGoToProperty(rental):null}
  ];
  if(rental) rows.push(
   {label:'Location',hint:'Suburb',value:ypDisplaySuburb(rental)},
@@ -609,11 +611,11 @@ function ypMountRecordCard(panel, opts){
  head.className='hwh';
  const kicker=document.createElement('p');
  kicker.className='yp-kicker';
- kicker.textContent=opts.kicker||'Property history';
+ kicker.textContent=opts.kicker||'';
  const h=document.createElement('h2');
  h.id=opts.titleId||'yp-history-detail-title';
  h.textContent=opts.title||'History';
- head.append(kicker,h);
+ if(opts.kicker) head.append(kicker,h); else head.append(h);
  card.appendChild(head);
  card.appendChild(ypFlow(opts.rows||[]));
  const shut=event=>{if(event){event.preventDefault();event.stopPropagation();}panel.remove();if(opts.onClose)opts.onClose();};
