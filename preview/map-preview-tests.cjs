@@ -553,6 +553,10 @@ check('preview rentals auto-activate when the landlord approves', () => {
   const listing = api.ypListingModel({kind:'rent', status:'approved', weeklyRent:500});
   assert.equal(listing.action, null);
   assert.equal((listing.status||'').includes('Confirm and pay bond'), false);
+  assert.equal(listing.approval, 'Your application has been approved.');
+  const active = api.ypListingModel({kind:'rent', status:'active', weeklyRent:420});
+  assert.equal(active.approval, 'Your application has been approved.');
+  assert.ok((active.status||'').includes('Test tenancy started'));
 });
 
 (async () => {
