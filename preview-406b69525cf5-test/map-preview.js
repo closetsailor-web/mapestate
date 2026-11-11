@@ -327,11 +327,11 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 #yp-apply-review .yp-flow .yp-hint{white-space:normal}
 #yp-apply-review .yp-flow dd{min-width:0}
 #yp-apply-review h3{margin:4px 0 0;font:700 16px Inter,system-ui,sans-serif;color:#14213d;text-align:left}
-.yp-card-head{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:54px minmax(0,1fr) 54px;align-items:center;margin:0 -22px 12px;padding:12px 10px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);color:#fff;border-radius:24px 24px 0 0}
-.yp-card-head .yp-card-titles{grid-column:1/-1;grid-row:1;min-width:0;text-align:center;padding:0 54px}
+.yp-card-head{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;margin:0 -22px 12px;padding:6px 8px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);color:#fff;border-radius:24px 24px 0 0}
+.yp-card-head .yp-card-titles{grid-column:1/-1;grid-row:1;min-width:0;text-align:center;padding:0 44px}
 .yp-card-head .yp-kicker{margin:0 0 4px;font:700 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#ff8a33}
-.yp-card-head h2{margin:0;color:#fff;font:700 18px/1.25 Inter,system-ui,sans-serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 22px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
+.yp-card-head h2{margin:0;color:#fff;font:700 16px/1.25 Inter,system-ui,sans-serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 19px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
 .yp-card-head .yp-x:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #yp-living .hwh h2,#yp-living .yp-card-head h2{white-space:normal}
 #yp-living .yp-flow div[data-label="Left each week"] dd,#yp-living .yp-flow div[data-label="Left each week"] dt{color:#f26b1d}
