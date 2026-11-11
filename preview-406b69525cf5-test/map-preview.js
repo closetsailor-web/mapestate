@@ -305,7 +305,7 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 #yp-pending p,#yp-history p,#yp-property-menu p,#yp-section-menu p,#yp-soon p{margin:0 0 10px;font-size:14.5px;line-height:1.35;color:#5a6780;text-align:center}
 #yp-pending .yp-rent-row,#yp-history .yp-rent-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer;text-align:left;padding:10px 12px}
 #yp-pending .yp-row-title,#yp-history .yp-row-title{font-weight:750}
-#yp-pending #yp-pending-empty{display:block;width:100%;text-align:center;margin:16px 0 20px;padding:0}
+#yp-pending #yp-pending-empty,.yp-empty-msg{display:block;width:100%;text-align:center;margin:16px 0 20px;padding:0}.yp-empty-msg{color:#5a6780}#yp-pending #yp-pending-empty{font-size:16px;margin-top:24px}.yp-empty-msg{font-size:16px}
 #yp-pending .yp-row-meta,#yp-history .yp-row-meta,#yp-pending .yp-row-price,#yp-history .yp-row-price{font:500 13px Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-pending .hwb,#yp-history .hwb,#yp-soon .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
 #yp-history .yp-close,#yp-history-detail .yp-close,#yp-living .yp-close,#yp-away .yp-close,#yp-start-fresh .yp-cancel{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#0a3a8c;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
