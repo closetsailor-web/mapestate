@@ -18,3 +18,7 @@ The game id on an adopted building is assigned by this package from the frozen g
 Map tiles, when a local key is present, come from MapTiler and stay under MapTiler's own terms. The page hides MapTiler building polygons so the click target is this overlay. MapTiler attribution stays on the map control.
 
 Game saves, rental applications, and valuations are separate records. This preview does not read or rewrite them.
+
+## Suburb codes
+
+Property codes (for example BGR-1514) use the official suburb of each building from "Locality boundaries - Queensland", © State of Queensland (Department of Natural Resources and Mines, Manufacturing and Regional and Rural Development), licensed under Creative Commons Attribution 4.0. https://www.data.qld.gov.au/dataset/locality-boundaries-queensland. Fetched 12 Nov 2026 from the official ArcGIS service (PlanningCadastre/LandParcelPropertyFramework layer 19). The boundaries were used to assign each building a locality; the boundary shapes are not shipped. Codes, prefixes and numbering rules are in `data/codes/localities.json`.

@@ -1100,10 +1100,6 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 </style><style>#map canvas#w3dc{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}body.map3d #map{background:#cfe6f6}</style>
 <style id="yp-preview-css">html.yp-preview #rsearch,html.yp-preview #yp-foot,html.yp-preview #yp-map-status,html.yp-preview #yp-locate,html.yp-preview #yp-locate-note,html.yp-preview #yp-locate-status,html.yp-preview #yp-properties,html.yp-preview #yp-search-extra{display:none!important}
 html.yp-preview:not(.yp-map-on) #map{visibility:hidden}
-#yp-home-bg{display:none;position:fixed;inset:0;z-index:3;pointer-events:none;background:#c5d4c4}
-html.yp-home #yp-home-bg{display:block}
-#yp-home-bg img{width:100%;height:100%;object-fit:cover;object-position:center center}
-#yp-home-bg::after{content:"";position:absolute;inset:0;background:rgba(11,37,69,.16)}
 html.yp-home #map,html.yp-home #ypbasemap{display:none!important;visibility:hidden!important}
 html.yp-home .fab,html.yp-home #yp-search-area,html.yp-home .maplibregl-ctrl-bottom-right{display:none!important}
 html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon{background:rgba(11,37,69,.28)}
@@ -1200,10 +1196,31 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 #yp-living .hwh h2,#yp-living .yp-card-head h2{white-space:normal}
 #yp-living .yp-flow div[data-label="Left each week"] dd,#yp-living .yp-flow div[data-label="Left each week"] dt{color:#f26b1d}
 #yp-living .yp-flow div[data-label="You could borrow about"]{margin-top:10px;padding:12px 14px;border:2px solid #f26b1d;border-radius:14px;background:#fff4ec;align-items:center}#yp-living .yp-flow div[data-label="You could borrow about"] dt{font-weight:700;color:#14213d}#yp-living .yp-flow div[data-label="You could borrow about"] dd{font-size:20px;font-weight:800;color:#f26b1d}#yp-living .yp-flow div[data-label="You could borrow about"]+div{border-top:0}#yp-living .yp-flow div[data-label="Game borrowing power"]{margin-top:10px;padding:12px 14px;border:1.5px solid rgba(20,33,61,.18);border-radius:14px;background:#f5f7fb;align-items:center}#yp-living .yp-flow div[data-label="Game borrowing power"] dt{font-weight:700;color:#14213d}#yp-living .yp-flow div[data-label="Game borrowing power"] dd{font-size:18px;font-weight:800;color:#14213d}
-.yp-flow dd a.yp-link{color:#1a5fd6;text-decoration:underline;font-weight:700}
-#sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}html header .pill#coins,html header .pill#nw,html header .pill#date{min-height:33px;box-sizing:border-box;background:rgba(255,255,255,.14)!important;color:#fff!important;box-shadow:none!important}html header .pill#date{display:inline-flex;align-items:center;justify-content:center;opacity:1!important;font-weight:700}html header .pill#date *{color:#fff!important;opacity:1!important}</style>
+a.yp-link{color:#1a5fd6;text-decoration:underline;font-weight:700}
+#sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}html header .pill#coins,html header .pill#nw,html header .pill#date{min-height:33px;box-sizing:border-box;background:rgba(255,255,255,.14)!important;color:#fff!important;box-shadow:none!important}html header .pill#date{display:inline-flex;align-items:center;justify-content:center;opacity:1!important;font-weight:700}html header .pill#date *{color:#fff!important;opacity:1!important}#yp-feed{display:none;position:fixed;left:0;right:0;top:calc(var(--sat) + 88px);bottom:calc(var(--sab) + 86px);z-index:5;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 10px 12px;box-sizing:border-box;scrollbar-width:none}
+#yp-feed::-webkit-scrollbar{display:none}
+html.yp-home #yp-feed:not([hidden]){display:block}
+.yp-feed-card{max-width:440px;margin:0 auto;padding:4px 16px;background:#fff;border-radius:24px;box-shadow:var(--shadow)}
+.yp-feed-row{display:flex;align-items:center;gap:12px;width:100%;margin:0;padding:12px 0;border:0;border-top:1px solid rgba(20,33,61,.08);background:none;text-align:left;font-family:Inter,system-ui,sans-serif;color:#14213d;cursor:pointer;touch-action:manipulation}
+.yp-feed-row:first-child{border-top:0}
+.yp-feed-pic{position:relative;flex:none;width:88px;height:66px;border-radius:12px;overflow:hidden;background:#e7f0ff;display:flex;align-items:center;justify-content:center}
+.yp-feed-pic svg{width:30px;height:30px;margin-top:10px;fill:#0a3a8c;opacity:.55}
+.yp-feed-badge{position:absolute;left:6px;top:6px;padding:3px 7px;border-radius:999px;color:#fff;font:800 10.5px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em}
+.yp-feed-badge--sale{background:#0a3fb0}
+.yp-feed-badge--sold{background:#f26b1d}
+.yp-feed-id{font:500 13px/1.3 Inter,system-ui,sans-serif;white-space:nowrap}
+.yp-feed-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.yp-feed-tag{font:700 12px/1.2 Inter,system-ui,sans-serif;color:#5a6780}
+.yp-feed-price{font:700 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}
+.yp-feed-meta{font:500 13px/1.3 Inter,system-ui,sans-serif;color:#5a6780;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yp-feed-ad{margin:4px 0;padding:12px;border:0;border-radius:14px;background:#fff4ec}
+.yp-feed-ad+.yp-feed-row{border-top:0}
+.yp-feed-ad .yp-feed-pic{width:44px;height:44px;border-radius:12px;background:#f26b1d;color:#fff;font:700 20px Inter,system-ui,sans-serif}
+.yp-feed-ad .yp-feed-tag{color:#f26b1d}
+.yp-feed-ad .yp-feed-meta{white-space:normal}
+</style>
 </head><body>
-<div id="map"></div><div id="yp-home-bg" aria-hidden="true"><img src="assets/home-bg.webp" alt=""></div><div id="osmattr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+<div id="map"></div><div id="osmattr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
 <header><button class="hbtn" id="menubtn" aria-label="Menu" onclick="UI.menu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><i class="ypico" aria-hidden="true"></i><div class="logo">Your <b>Plot</b></div><div class="stats"><div class="pill coins" id="coins" data-l="Bank" onclick="UI.port()" style="cursor:pointer" title="Money in your bank">$0</div><div class="pill" id="nw" data-l="Assets" onclick="UI.port()" style="cursor:pointer" title="Cash + property values − loans">$0</div><div class="pill" id="date">—</div></div><button class="hbtn" id="bell" aria-label="Notifications" onclick="UI.notifs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span id="badge"></span></button></header>
 <div id="rsearch"><input id="rsq" type="search" placeholder="Search a street or suburb" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Search a street or suburb"><div id="rsres"></div></div><div id="toast"></div><div class="hint" id="hint"></div>
 <button class="fab" id="list3d" title="Listings" aria-label="Listings" onclick="listOpen()" style="bottom:calc(320px + var(--sab));font-size:10px;font-weight:800"><span>List</span></button><button class="fab zb" id="zoomin" title="Zoom in" aria-label="Zoom in" onclick="MapView.m.zoomIn()" style="bottom:calc(208px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="fab zb" id="zoomout" title="Zoom out" aria-label="Zoom out" onclick="MapView.m.zoomOut()" style="bottom:calc(152px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button class="fab" id="home" title="Recentre" aria-label="Recentre on the search area" style="bottom:calc(96px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
@@ -3724,6 +3741,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=gbprows-2ee1096"></script>
+<script src="map-preview.js?v=codesfeed-cdea3a9"></script>
 <script src="overture-layer.js"></script>
 </body></html>
