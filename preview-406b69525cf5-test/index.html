@@ -917,7 +917,7 @@ body{-webkit-font-smoothing:antialiased}
 .sheet table td{padding:6px 0;vertical-align:top}.sheet table td:last-child{white-space:nowrap;padding-left:12px;font-variant-numeric:tabular-nums}
 .brow{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}.brow:last-of-type{border-bottom:0}
 .brow span{flex:1;min-width:0;color:var(--txt)}.brow b{white-space:nowrap;font-variant-numeric:tabular-nums}
-.banswer{margin-top:12px;padding:16px;border-radius:14px;border:2px solid #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:14px;color:#14213d;font-weight:700}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}
+.banswer{margin-top:12px;padding:14px;border-radius:14px;border:2px solid #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}
 #borrowdetail summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--mute)}
 .seg{display:flex;gap:4px;padding:4px;background:var(--card2);border-radius:14px;margin:8px 0}.seg button{flex:1;min-height:40px;border:0;border-radius:11px;background:transparent;font:600 15px Inter,system-ui,sans-serif;color:var(--mute);cursor:pointer;transition:background .2s,color .2s}.seg button.on{background:var(--card);color:var(--txt);box-shadow:0 1px 4px rgba(11,37,69,.12)}
 .erow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}.erow>span{flex:1;min-width:0;font-size:15px}
@@ -2815,7 +2815,7 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 /* v24 simple borrowing summary (age-13 reading level). Presentation only: numbers come straight from bank(). */
 function borrowSimple(b,pre){const inM=b.net/12,outM=b.hem+(b.existing||0)/*existing already includes rent paid and other debts*/,left=b.surplus,rep=b.power>0?b.power/annuity(CFG.rateIP,BANK.termY*12):0,L=(t,v,c)=>`<div class="brow"><span>${t}</span><b style="${c||''}">${v}</b></div>`;
   return `${L('Income',fmt(inM))}${L('Expenses',fmt(outM))}${L('Left over',fmt(left),left<0?'color:#c0672b':'color:#1a478a')}
-  <div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(b.power)}</b><div class="bsub">Repayments <b id="${pre}_rep">${fmt(rep)}</b>/mo</div></div>`;}
+  <div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(b.power)}</b><div class="bsub">Repayments would be about <b id="${pre}_rep">${fmt(rep)}</b> a month</div></div>`;}
 /* v24 expenses editor: one screen, used from the tutorial, My income and Profile */
 let expDraft=null,expFrom=null;
 const expTypical=()=>{const t=Math.round(hemMo(SALARY+INC().partner)),o=Object.fromEntries(EXP_CATS.map(([k,,p])=>[k,Math.round(t*p)]));o.other+=t-expTotal(o);return o;}; // total equals the existing HEM-style figure exactly
