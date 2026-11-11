@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<!DOCTYPE html><html lang="en" class="yp-preview yp-home"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <script>
@@ -822,7 +822,7 @@ header{position:absolute;top:calc(var(--sat) + 8px);left:8px;right:8px;z-index:3
 .fab{position:absolute;right:12px;z-index:10;width:48px;height:48px;border-radius:16px;border:0;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--navy);box-shadow:var(--shadow);cursor:pointer;display:grid;place-items:center}body.dark .fab{color:#fff}.fab svg{width:22px;height:22px}
 nav{position:absolute;bottom:calc(var(--sab) + 10px);left:10px;right:10px;z-index:45;display:flex;background:var(--glass);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);border-radius:24px;box-shadow:var(--shadow);padding:6px}
 nav button{flex:1;border:0;background:none;padding:6px 0 5px;font:600 10.5px Inter,system-ui,sans-serif;color:var(--mute);cursor:pointer;border-radius:18px;min-height:52px;transition:background .2s,color .2s}
-nav button span{display:grid;place-items:center;height:26px}nav button span svg{width:23px;height:23px}nav button.on{color:var(--navy);background:rgba(15,74,163,.14)}body.dark nav button.on{color:#5e96ea}
+nav button span{display:grid;place-items:center;height:26px}nav button span svg{width:23px;height:23px}
 .sheet{position:fixed;left:50%;top:50%;right:auto;bottom:auto;z-index:40;width:min(440px,calc(100% - 32px));max-height:calc(100dvh - 256px);margin:0;transform:translate(-50%,-50%);background:var(--card);border-radius:24px;box-shadow:0 20px 50px rgba(0,0,0,.35);padding:0;display:none;flex-direction:column;overflow:hidden}
 .sheet.open{display:flex}
 #sheetBody{overflow:auto;flex:1 1 auto;min-height:0;padding:16px 18px 24px}
@@ -951,10 +951,8 @@ html,body{overflow:hidden;overscroll-behavior:none}
 @media (max-width:440px){.kv>*:first-child{font-size:10.5px}.kv b,.kv>*:last-child{font-size:16px}}
 .sheet input[type=number]::-webkit-inner-spin-button,.sheet input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.sheet input[type=number]{-moz-appearance:textfield}
 
-body.sheetopen nav{transform:translateY(140%);opacity:0;pointer-events:none}
 nav{transition:transform .3s cubic-bezier(.2,.9,.25,1),opacity .2s}
 nav button{border-radius:18px;font-size:11px;letter-spacing:0;min-height:52px;white-space:nowrap}
-nav button.on{background:rgba(244,123,32,.14);color:var(--orange,#f47b20)}
 .sheet .sub{margin-bottom:8px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}.chip{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:13px;background:var(--card2);color:var(--mute);font-size:12.5px;font-weight:600;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.chip.blue{background:rgba(26,111,176,.12);color:#1a6fb0}
 body.dark .chip.blue{color:#7cc0f5}
@@ -985,7 +983,7 @@ header .pill{background:rgba(255,255,255,.14);color:#fff}header .pill#coins,head
 body:not(.dark) .btn.sec,body:not(.dark) .pcard .btn.sec{background:#fff!important;color:var(--fblue)!important;border:2px solid var(--fblue)}
 body:not(.dark) .btn.lh2{color:var(--fblue);border:2px solid var(--fblue)}
 .sheet{border-radius:24px}
-body:not(.dark) nav{background:rgba(255,255,255,.96)}nav button.on{background:#fff1e6!important;color:var(--cta)!important}
+body:not(.dark) nav{background:rgba(255,255,255,.96)}
 body:not(.dark) .fab{background:#fff;color:var(--navy);box-shadow:0 6px 18px rgba(11,37,69,.18)}.fab:active,.fab.zb:active{color:var(--orange)}
 body:not(.dark) #rsq{background-color:var(--card2);border:1.5px solid var(--line);border-radius:16px;min-height:48px}
 #rsq:focus{border-color:var(--fblue);outline:none}
@@ -1101,12 +1099,117 @@ html,body{position:fixed;left:0;top:0;width:100%}</style><style id="noselect">bo
 #toast,#toast.big{position:fixed!important;top:calc(var(--sat,0px) + 6px)!important;left:50%;transform:translate(-50%,-12px)!important;width:auto;max-width:min(92%,560px)!important;padding:8px 14px!important;border-radius:12px!important;font-size:14px!important;font-weight:600;line-height:1.3;z-index:200;pointer-events:auto;cursor:pointer}
 #toast.show,#toast.big.show{transform:translate(-50%,0)!important}
 #toast:not(.show){pointer-events:none}
-</style><style>#map canvas#w3dc{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}body.map3d #map{background:#cfe6f6}</style></head><body>
-<div id="map"></div><div id="osmattr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+</style><style>#map canvas#w3dc{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}body.map3d #map{background:#cfe6f6}</style>
+<style id="yp-preview-css">html.yp-preview #rsearch,html.yp-preview #yp-foot,html.yp-preview #yp-map-status,html.yp-preview #yp-locate,html.yp-preview #yp-locate-note,html.yp-preview #yp-locate-status,html.yp-preview #yp-properties,html.yp-preview #yp-search-extra{display:none!important}
+html.yp-preview:not(.yp-map-on) #map{visibility:hidden}
+#yp-home-bg{display:none;position:fixed;inset:0;z-index:3;pointer-events:none;background:#c5d4c4}
+html.yp-home #yp-home-bg{display:block}
+#yp-home-bg img{width:100%;height:100%;object-fit:cover;object-position:center center}
+#yp-home-bg::after{content:"";position:absolute;inset:0;background:rgba(11,37,69,.16)}
+html.yp-home #map,html.yp-home #ypbasemap{display:none!important;visibility:hidden!important}
+html.yp-home .fab,html.yp-home #yp-search-area,html.yp-home .maplibregl-ctrl-bottom-right{display:none!important}
+html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon{background:rgba(11,37,69,.28)}
+html.yp-preview .fab{z-index:8}
+#ypbasemap{position:absolute;inset:0;z-index:2;background:#e7eef5}
+#yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
+#yp-logo img{width:88px;background:#ffffffc9;display:block}
+html.yp-preview #w3dc,html.yp-preview #map canvas#w3dc,body.ypbasemap #w3dc{display:none!important;visibility:hidden!important;pointer-events:none!important}
+body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-index:5}
+#yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-pending,#yp-history,#yp-soon,#yp-apply-review,#yp-history-detail,#yp-living,#yp-away,#yp-start-fresh{position:fixed;inset:0;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
+#yp-apply-review{z-index:52}
+#yp-history-detail,#yp-living{z-index:54}
+#yp-where .card,#yp-prop .card,#yp-rent-list .card,#yp-rent-detail .card,#yp-apply-review .card,#yp-history-detail .card,#yp-living .card,#yp-away .card,#yp-pending .card,#yp-history .card,#yp-soon .card,#yp-start-fresh .card,#yp-property-menu .card,#yp-section-menu .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 24px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);max-height:calc(100dvh - 256px);overflow:auto;margin:0}
+#yp-where p:not(.yp-kicker),#yp-where-status,#yp-prop p:not(.yp-kicker),#yp-rent-list p:not(.yp-kicker),#yp-rent-detail p:not(.yp-kicker):not(.yp-approval),#yp-apply-review p:not(.yp-kicker):not(.yp-approval),#yp-history-detail p:not(.yp-kicker):not(.yp-approval),#yp-living p:not(.yp-kicker):not(.yp-approval),#yp-away p:not(.yp-kicker):not(.yp-approval),#yp-start-fresh p:not(.yp-kicker):not(.yp-approval){margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
+#yp-search-area{position:absolute;left:50%;bottom:calc(132px + var(--sab));transform:translateX(-50%);z-index:46;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 15px Inter,system-ui,sans-serif;min-height:44px;padding:0 16px;cursor:pointer}
+#yp-rent-list .yp-rent-row{display:block;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}
+#yp-where-town{display:block;width:100%;box-sizing:border-box;border-radius:14px;border:1px solid rgba(20,33,61,.12);background:#fff;padding:11px 14px;font:500 16px Inter,system-ui,sans-serif;color:#14213d}
+#yp-where-town:focus,#yp-where-town:focus-visible{outline:none;border-color:#0a3a8c;box-shadow:0 0 0 4px rgba(10,58,140,.15)}
+#yp-where #yp-where-move{margin-top:16px}
+#yp-chosen-note{position:absolute;left:50%;top:calc(72px + var(--sat));transform:translateX(-50%);z-index:6;margin:0;max-width:min(440px,92vw);padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.95);color:#14213d;font:600 14px Inter,system-ui,sans-serif;text-align:center;pointer-events:none}
+#yp-where .hwb,#yp-prop .hwb,#yp-rent-list .hwb,#yp-rent-detail .hwb,#yp-apply-review .hwb,#yp-history-detail .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
+#yp-where #yp-where-close{min-height:54px;padding:0 16px;font-size:17px;font-weight:700;box-shadow:0 10px 22px rgba(196,71,11,.32)}
+#yp-where .hwx,#yp-prop .hwx,#yp-rent-list .hwx,#yp-rent-detail .hwx,#yp-apply-review .hwx{background:none;border:0;color:#5a6780;min-height:44px;min-width:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer;padding:10px 14px}
+#yp-where .hwb:focus,#yp-where .hwb:focus-visible,#yp-where .hwx:focus,#yp-where .hwx:focus-visible,#yp-prop button:focus,#yp-prop button:focus-visible,#yp-rent-list button:focus,#yp-rent-detail button:focus{outline:3px solid #0a3a8c;outline-offset:3px}
+#yp-rent-detail .yp-listing,#yp-apply-review .yp-listing,#yp-history-detail .yp-listing,#yp-living .yp-listing,#yp-away .yp-listing{text-align:left;max-width:440px;max-height:min(78dvh,calc(100dvh - 160px));overflow:auto;margin:0 auto}
+#yp-rent-detail .yp-listing p:not(.yp-kicker),#yp-apply-review .yp-listing p:not(.yp-kicker),#yp-history-detail .yp-listing p:not(.yp-kicker),#yp-living .yp-listing p:not(.yp-kicker),#yp-fixture-board .yp-listing p:not(.yp-kicker){text-align:left}
+.yp-listing .yp-price{margin:16px 0 6px;color:#0b2545}
+.yp-listing .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;letter-spacing:-.5px}
+.yp-listing .yp-per{margin-left:8px;font:700 16px Inter,system-ui,sans-serif;color:#5a6780}
+.yp-listing .yp-place{margin:0 0 14px;font:600 16px/1.35 Inter,system-ui,sans-serif;color:#14213d;overflow-wrap:anywhere}
+.yp-listing .yp-facts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.yp-listing .yp-facts div{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#e7f0ff;color:#0a3a8c}
+.yp-listing .yp-facts svg{width:16px;height:16px;flex:none}
+.yp-listing dt,.yp-listing dd{font:600 14px Inter,system-ui,sans-serif;color:#0a3a8c}
+.yp-listing dd{margin:0;font-weight:700}
+.yp-flow{margin:0 0 12px}
+.yp-flow div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid rgba(20,33,61,.08)}
+.yp-flow dt{font:600 14px Inter,system-ui,sans-serif;color:#3d4a63}
+.yp-flow dd{margin:0;font:700 15px Inter,system-ui,sans-serif;color:#14213d;text-align:right}
+.yp-flow .yp-hint{display:block;font:500 12px Inter,system-ui,sans-serif;color:#5a6780}
+.yp-listing .yp-neg{color:#c0672b}
+#yp-rent-detail .yp-listing .yp-approval,#yp-apply-review .yp-listing .yp-approval,.yp-listing .yp-approval{margin:10px 0 8px;font:800 17px/1.3 Inter,system-ui,sans-serif;color:#0b2545;text-align:left}
+.yp-listing .yp-status,.yp-listing .yp-limit,.yp-listing .yp-fixture{font-size:13.5px;line-height:1.45}
+.yp-listing .yp-limit{color:#3d4a63}
+.yp-listing .yp-fixture{color:#8a4b08;font-weight:650}
+.yp-listing .hwb:disabled{opacity:.55;cursor:default}
+#yp-rent-list .yp-rent-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;height:auto;white-space:normal;text-align:left;padding:10px 12px}
+#yp-rent-list .yp-row-title{font-weight:750}
+#yp-rent-list .yp-row-meta{font:500 13px Inter,system-ui,sans-serif;color:#3d4a63;overflow-wrap:anywhere}
+#yp-rent-list .yp-row-price{font-weight:750;color:#0b2545}
+#yp-fixture-board{position:fixed;inset:0;z-index:50;overflow:auto;background:#e7eef5;padding:16px}
+#yp-fixture-board .yp-listing{margin:0 auto 16px;max-width:440px}
+#yp-where-suggestions{text-align:left;max-height:160px;overflow:auto;margin-top:6px}
+#yp-where-suggestions button{display:block;width:100%;min-height:44px;margin:4px 0;text-align:left;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 15px Inter,system-ui,sans-serif;padding:8px 12px;cursor:pointer;touch-action:manipulation}
+#yp-where-suggestions button:hover,#yp-where-suggestions button.on{background:#d4e4ff;color:#0a3a8c}
+#yp-where-suggestions button:focus,#yp-where-suggestions button:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;background:#d4e4ff}
+#yp-where-suggestions button:active,#yp-where-suggestions button.press{background:#c5d9fb;transform:scale(.98)}
+#yp-where-privacy{text-align:left}
+#yp-prop .choices{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+#yp-property-menu,#yp-section-menu{position:fixed;inset:0 0 calc(var(--sab) + 74px) 0;z-index:47;display:block;padding:0;overflow:visible;background:transparent}
+#yp-pending p,#yp-history p,#yp-property-menu p,#yp-section-menu p,#yp-soon p{margin:0 0 10px;font-size:14.5px;line-height:1.35;color:#5a6780;text-align:center}
+#yp-pending .yp-rent-row,#yp-history .yp-rent-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;min-height:44px;margin:6px 0;border:0;border-radius:12px;background:#e7f0ff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer;text-align:left;padding:10px 12px}
+#yp-pending .yp-row-title,#yp-history .yp-row-title{font-weight:750}
+#yp-pending #yp-pending-empty,.yp-empty-msg{display:block;width:100%;text-align:center;margin:16px 0 20px;padding:0}.yp-empty-msg{color:#5a6780}#yp-pending #yp-pending-empty{font-size:16px;margin-top:24px}.yp-empty-msg{font-size:16px}.yp-flow dd{white-space:nowrap}#sheetBody .yp-empty-msg{margin-top:0}
+#yp-pending .yp-row-meta,#yp-history .yp-row-meta,#yp-pending .yp-row-price,#yp-history .yp-row-price{font:500 13px Inter,system-ui,sans-serif;color:#3d4a63}
+#yp-pending .hwb,#yp-history .hwb,#yp-soon .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
+#yp-history .yp-close,#yp-history-detail .yp-close,#yp-living .yp-close,#yp-away .yp-close,#yp-start-fresh .yp-cancel{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#0a3a8c;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
+#yp-start-fresh .yp-danger{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b42318;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
+html.yp-preview nav button{transition:none}
+#yp-property-menu .card,#yp-section-menu .card{position:absolute;left:0;top:0;width:max-content;min-width:248px;max-width:min(280px,calc(100vw - 16px));text-align:left;overflow:visible}
+#yp-property-menu .yp-menu-item,#yp-section-menu .yp-menu-item{display:flex;align-items:center;justify-content:flex-start;width:100%;min-height:44px;height:44px;margin:0;padding:0 16px;border:0;border-radius:0;background:#fff;color:#3d4a63;font:600 14px Inter,system-ui,sans-serif;text-align:left;cursor:pointer}
+#yp-property-menu .yp-menu-item+.yp-menu-item,#yp-section-menu .yp-menu-item+.yp-menu-item{border-top:1px solid rgba(20,33,61,.08)}
+#yp-property-menu .card,#yp-section-menu .card{padding-bottom:20px}#yp-property-menu .yp-card-head+.yp-menu-item,#yp-section-menu .yp-card-head+.yp-menu-item{margin-top:12px}
+#yp-property-menu .yp-menu-item:active,#yp-section-menu .yp-menu-item:active{background:#fff4ec}
+#yp-property-menu .yp-notch,#yp-section-menu .yp-notch{position:absolute;bottom:-7px;width:14px;height:8px;background:#fff;clip-path:polygon(0 0,100% 0,50% 100%)}
+html.yp-preview .maplibregl-ctrl-bottom-right{bottom:calc(var(--sab) + 76px)!important;left:8px!important;right:auto!important;max-width:calc(100vw - 72px)}
+html.yp-preview .maplibregl-ctrl-attrib{font-size:10px;line-height:1.3;background:rgba(255,255,255,.92);border-radius:8px}
+html.yp-menu-open .maplibregl-ctrl-bottom-right{display:none!important}
+html.yp-preview #yp-fresh-note{position:absolute!important;top:calc(var(--sat) + 6px)!important;left:8px!important;right:8px!important;z-index:80!important;box-sizing:border-box}
+html.yp-preview #toast{z-index:82!important;left:50%!important;right:auto!important;width:max-content;max-width:min(340px,calc(100vw - 24px));transform:translateX(-50%)!important;text-align:center}
+html.yp-preview #toast.show{transform:translateX(-50%)!important}
+#yp-pending .hwx,#yp-history .hwx,#yp-property-menu .hwx,#yp-section-menu .hwx,#yp-soon .hwx{background:none;border:0;color:#5a6780;min-height:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
+#yp-history-detail .yp-flow dt,#yp-living .yp-flow dt{font-weight:400}
+#yp-apply-review .yp-flow dt{flex:none;white-space:nowrap}
+#yp-apply-review .yp-flow .yp-hint{white-space:normal}
+#yp-apply-review .yp-flow dd{min-width:0}
+#yp-apply-review h3{margin:4px 0 0;font:700 16px Inter,system-ui,sans-serif;color:#14213d;text-align:left}
+.yp-card-head{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;margin:0 -22px 12px;padding:6px 8px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);color:#fff;border-radius:24px 24px 0 0}
+.yp-card-head .yp-card-titles{grid-column:1/-1;grid-row:1;min-width:0;text-align:center;padding:0 44px}
+.yp-card-head .yp-kicker{margin:0 0 4px;font:700 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#ff8a33}
+.yp-card-head h2{margin:0;color:#fff;font:700 16px/1.25 Inter,system-ui,sans-serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 19px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
+.yp-card-head .yp-x:focus-visible{outline:3px solid #fff;outline-offset:2px}
+#yp-living .hwh h2,#yp-living .yp-card-head h2{white-space:normal}
+#yp-living .yp-flow div[data-label="Left each week"] dd,#yp-living .yp-flow div[data-label="Left each week"] dt{color:#f26b1d}
+#yp-living .yp-flow div[data-label="You could borrow about"]{margin-top:10px;padding:12px 14px;border:2px solid #f26b1d;border-radius:14px;background:#fff4ec;align-items:center}#yp-living .yp-flow div[data-label="You could borrow about"] dt{font-weight:700;color:#14213d}#yp-living .yp-flow div[data-label="You could borrow about"] dd{font-size:20px;font-weight:800;color:#f26b1d}#yp-living .yp-flow div[data-label="You could borrow about"]+div{border-top:0}#yp-living .yp-flow div[data-label="Game borrowing power"]{margin-top:10px;padding:12px 14px;border:1.5px solid rgba(20,33,61,.18);border-radius:14px;background:#f5f7fb;align-items:center}#yp-living .yp-flow div[data-label="Game borrowing power"] dt{font-weight:700;color:#14213d}#yp-living .yp-flow div[data-label="Game borrowing power"] dd{font-size:18px;font-weight:800;color:#14213d}
+.yp-flow dd a.yp-link{color:#1a5fd6;text-decoration:underline;font-weight:700}
+#sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}</style>
+</head><body>
+<div id="map"></div><div id="yp-home-bg" aria-hidden="true"><img src="assets/home-bg.webp" alt=""></div><div id="osmattr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
 <header><button class="hbtn" id="menubtn" aria-label="Menu" onclick="UI.menu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button><i class="ypico" aria-hidden="true"></i><div class="logo">Your <b>Plot</b></div><div class="stats"><div class="pill coins" id="coins" data-l="Bank" onclick="UI.port()" style="cursor:pointer" title="Money in your bank">$0</div><div class="pill" id="nw" data-l="Assets" onclick="UI.port()" style="cursor:pointer" title="Cash + property values − loans">$0</div><div class="pill" id="date">—</div></div><button class="hbtn" id="bell" aria-label="Notifications" onclick="UI.notifs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span id="badge"></span></button></header>
 <div id="rsearch"><input id="rsq" type="search" placeholder="Search a street or suburb" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" aria-label="Search a street or suburb"><div id="rsres"></div></div><div id="toast"></div><div class="hint" id="hint"></div>
-<button class="fab" id="list3d" title="Listings" aria-label="Listings" onclick="listOpen()" style="bottom:calc(320px + var(--sab));font-size:10px;font-weight:800"><span>List</span></button><button class="fab" id="view3d" title="Top view" aria-label="Top view" onclick="w3(w=>{const t=w.toggleView();this.title=this.ariaLabel=t?'3D view':'Top view';this.querySelector('span').textContent=t?'3D':'Top';})" style="bottom:calc(264px + var(--sab));font-size:11px;font-weight:800"><span>Top</span></button><button class="fab zb" id="zoomin" title="Zoom in" aria-label="Zoom in" onclick="MapView.m.zoomIn()" style="bottom:calc(208px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="fab zb" id="zoomout" title="Zoom out" aria-label="Zoom out" onclick="MapView.m.zoomOut()" style="bottom:calc(152px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button class="fab" id="home" title="Recentre city" aria-label="Recentre city" aria-label="Recentre" style="bottom:calc(96px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
-<nav><button class="on" data-v="map"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg></span>Map</button><button data-v="sale" id="salebtn"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5"/></svg></span>For sale</button><button data-v="mine" id="minebtn"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 3l9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>My properties</button><button data-v="shop"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span>Shop</button><button data-v="profile"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profile</button></nav>
+<button class="fab" id="list3d" title="Listings" aria-label="Listings" onclick="listOpen()" style="bottom:calc(320px + var(--sab));font-size:10px;font-weight:800"><span>List</span></button><button class="fab zb" id="zoomin" title="Zoom in" aria-label="Zoom in" onclick="MapView.m.zoomIn()" style="bottom:calc(208px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button class="fab zb" id="zoomout" title="Zoom out" aria-label="Zoom out" onclick="MapView.m.zoomOut()" style="bottom:calc(152px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button class="fab" id="home" title="Recentre" aria-label="Recentre on the search area" style="bottom:calc(96px + var(--sab))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+<nav><button data-v="mine" id="minebtn" aria-label="Property"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 3l9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>Property</button><button data-v="sale" id="salebtn" aria-label="Finances"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg></span>Finances</button><button data-v="map" aria-label="Listings"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/></svg></span>Listings</button><button data-v="shop" aria-label="Leaderboard"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3a3 3 0 0 1-3 4M7 5H4a3 3 0 0 0 3 4"/></svg></span>Leaderboard</button><button data-v="profile" aria-label="Settings"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Settings</button></nav>
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
