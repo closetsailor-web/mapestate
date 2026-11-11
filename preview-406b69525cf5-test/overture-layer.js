@@ -123,11 +123,14 @@
     document.getElementById('yp-building')?.remove();
     ignoreMapClicksUntil = performance.now() + 700;
   }
-  function openPopup(feature){
-    const props = feature && feature.properties || {};
+  function selectFeature(feature){
     selected = feature && feature.properties && feature.properties.adopted ? feature : null;
     const source = map() && map().getSource('ypb-selected');
     if (source) source.setData({type: 'FeatureCollection', features: selected ? [selected] : []});
+  }
+  function openPopup(feature){
+    const props = feature && feature.properties || {};
+    selectFeature(feature);
     document.getElementById('yp-building')?.remove();
     const panel = document.createElement('div');
     panel.id = 'yp-building';
@@ -172,6 +175,7 @@
     panel.appendChild(card);
     document.body.appendChild(panel);
   }
+  window.__ygSelect = selectFeature;
   window.__ygOpen = openPopup;
   function onClick(event){
     const m = map();
