@@ -2436,7 +2436,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
       ${it('sliders','Settings','Dark mode, motion',"UI.settings()")}${it('help','Help','How it works · Replay tutorial',"UI.help()")}${it('alert','Start over / new player','Wipes this game and shows the welcome screens',"startOver()")}
       <div class="sub" style="padding:14px 12px 0">${GEN[G.cur].osm?'Bundaberg coast & water data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL).':''} Game ${gdate(G.week)}.</div>`;
     d.querySelector('.pane').insertAdjacentHTML('beforeend',`<div class="buildid" id="buildid_menu" style="padding:10px 12px 18px;font-size:11px;color:#5a6780">Test build ${TEST_BUILD_ID}</div>`);d.classList.add('open');},
-  lenders(){this.open(`<h2>Borrowing Power</h2>${UI.bankBox(true)}<button class="btn sec" onclick="UI.el.classList.remove('open');document.body.classList.remove('sheetopen')">Close</button>`);this.el.style.zIndex=60;},
+  lenders(){this.open(`<h2>Game Borrowing Power</h2>${UI.bankBox(true)}<button class="btn sec" onclick="UI.el.classList.remove('open');document.body.classList.remove('sheetopen')">Close</button>`);this.el.style.zIndex=60;},
   profile(){this.money();},
   sale(){findForSale();},
   settings(){const dark=document.body.classList.contains('dark');this.open(`<h2>${ic('sliders')} Settings</h2>
@@ -3623,6 +3623,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=gbud-7cc3ba8"></script>
+<script src="map-preview.js?v=gbor-781de2f"></script>
 <script src="overture-layer.js"></script>
 </body></html>
