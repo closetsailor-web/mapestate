@@ -546,16 +546,11 @@ function ypOpenPendingOffers(){
  });
  const hist=document.createElement('button');
  hist.type='button';
- hist.className='hwx';
+ hist.className='btn buy';
  hist.id='yp-open-history';
  hist.textContent='Property History';
  hist.addEventListener('click',()=>{panel.remove();ypOpenPropertyHistory();});
- const back=document.createElement('button');
- back.type='button';
- back.className='hwx';
- back.textContent='Back';
- back.addEventListener('click',shut);
- card.append(hist,back);
+ card.append(hist);
  panel.appendChild(card);
  document.body.appendChild(panel);
 }
