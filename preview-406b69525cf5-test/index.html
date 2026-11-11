@@ -915,8 +915,6 @@ body{-webkit-font-smoothing:antialiased}
 .sheet label{font-size:13px;color:var(--mute);font-weight:600}
 .sub{font-size:13.5px}
 .sheet table td{padding:6px 0;vertical-align:top}.sheet table td:last-child{white-space:nowrap;padding-left:12px;font-variant-numeric:tabular-nums}
-.brow{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:16px}.brow:last-of-type{border-bottom:0}
-.brow span{flex:1;min-width:0;color:var(--txt)}.brow b{white-space:nowrap;font-variant-numeric:tabular-nums}
 .banswer{margin-top:12px;padding:16px;border-radius:14px;box-shadow:inset 0 0 0 2px #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}
 #borrowdetail summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--mute)}
 .seg{display:flex;gap:4px;padding:4px;background:var(--card2);border-radius:14px;margin:8px 0}.seg button{flex:1;min-height:40px;border:0;border-radius:11px;background:transparent;font:600 15px Inter,system-ui,sans-serif;color:var(--mute);cursor:pointer;transition:background .2s,color .2s}.seg button.on{background:var(--card);color:var(--txt);box-shadow:0 1px 4px rgba(11,37,69,.12)}
@@ -1188,7 +1186,7 @@ html.yp-preview #yp-fresh-note{position:absolute!important;top:calc(var(--sat) +
 html.yp-preview #toast{z-index:82!important;left:50%!important;right:auto!important;width:max-content;max-width:min(340px,calc(100vw - 24px));transform:translateX(-50%)!important;text-align:center}
 html.yp-preview #toast.show{transform:translateX(-50%)!important}
 #yp-pending .hwx,#yp-history .hwx,#yp-property-menu .hwx,#yp-section-menu .hwx,#yp-soon .hwx{background:none;border:0;color:#5a6780;min-height:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
-#yp-history-detail .yp-flow dt,#yp-living .yp-flow dt{font-weight:400}
+#yp-history-detail .yp-flow dt,#yp-living .yp-flow dt,#bankbox .yp-flow dt{font-weight:400}
 #yp-apply-review .yp-flow dt{flex:none;white-space:nowrap}
 #yp-apply-review .yp-flow .yp-hint{white-space:normal}
 #yp-apply-review .yp-flow dd{min-width:0}
@@ -2457,7 +2455,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
       <button class="btn sec" onclick="startDev('${id}','shop',bizsel.value,${L})">Build shop & run my own business</button>
       <small>Costs: BMT 2026 cost table, ATO small business benchmarks, real ${P.label} council DA fees. Finished values are market estimates; a development can lose money where rents are low.</small></div>`;},
   bankBox(withCash){const b=bank(),r=(k,v,st)=>`<tr><td>${k}</td><td style="text-align:right;${st||''}">${v}</td></tr>`,best=LENDERS.map(L=>[L,maxPrice(L)]).sort((x,y)=>y[1]-x[1])[0],pct=x=>(x*100).toFixed(2)+'%';
-    return `<div class="fin" id="bankbox"><div id="borrowtop">${withCash?`<div class="brow"><span>Savings</span><b>${fmt(G.cash)}</b></div><div class="bhead" style="margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase">Monthly Breakdown</div>`:''}${borrowSimple(b,'bb')}</div>
+    return `<div class="fin" id="bankbox"><div id="borrowtop">${withCash?`<dl class="yp-flow"><div><dt>Savings</dt><dd>${fmt(G.cash)}</dd></div></dl><div class="bhead" style="margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase">Monthly Breakdown</div>`:''}${borrowSimple(b,'bb')}</div>
     <details id="borrowdetail"><summary><b>ⓘ How the bank works this out</b></summary>
     <div class="sub" style="margin:6px 0">The bank checks two things. Can you afford the repayments? And is the loan too big for your pay? It uses the smaller answer.</div>
     <table style="width:100%;font-size:12.5px;border-collapse:collapse">
@@ -2813,8 +2811,8 @@ function collapseLong(root){if(window.NOCOLLAPSE)return;root.querySelectorAll('s
   el.dataset.full=el.innerHTML;el.innerHTML=esc(first)+' <a href="#" class="lm" aria-label="Learn more" style="text-decoration:none;font-weight:700">ⓘ</a>';});}
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.lm');if(!a)return;e.preventDefault();const el=a.parentElement;if(el&&el.dataset.full!=null){el.innerHTML=el.dataset.full;delete el.dataset.full;el.dataset.opened=1;}});
 /* v24 simple borrowing summary (age-13 reading level). Presentation only: numbers come straight from bank(). */
-function borrowSimple(b,pre){const inM=b.net/12,outM=b.hem+(b.existing||0)/*existing already includes rent paid and other debts*/,left=b.surplus,rep=b.power>0?b.power/annuity(CFG.rateIP,BANK.termY*12):0,L=(t,v,c)=>`<div class="brow"><span>${t}</span><b style="${c||''}">${v}</b></div>`;
-  return `${L('Income',fmt(inM))}${L('Expenses',fmt(outM))}${L('Left over',fmt(left),left<0?'color:#c0672b':'color:#1a478a')}
+function borrowSimple(b,pre){const inM=b.net/12,outM=b.hem+(b.existing||0)/*existing already includes rent paid and other debts*/,left=b.surplus,rep=b.power>0?b.power/annuity(CFG.rateIP,BANK.termY*12):0,L=(t,v,c)=>`<div><dt>${t}</dt><dd style="${c||''}">${v}</dd></div>`;
+  return `<dl class="yp-flow">${L('Income',fmt(inM))}${L('Expenses',fmt(outM))}${L('Left over',fmt(left),left<0?'color:#c0672b':'color:#1a478a')}</dl>
   <div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(b.power)}</b><div class="bsub">Repayments would be about <b id="${pre}_rep">${fmt(rep)}</b> a month</div></div>`;}
 /* v24 expenses editor: one screen, used from the tutorial, My income and Profile */
 let expDraft=null,expFrom=null;
