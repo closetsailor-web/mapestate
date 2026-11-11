@@ -140,15 +140,26 @@
     card.className = 'card yp-listing';
     const head = document.createElement('div');
     head.className = 'hwh';
-    const kicker = document.createElement('p');
-    kicker.className = 'yp-kicker';
-    kicker.textContent = props.adopted ? 'Game property' : 'Not saleable';
     const title = document.createElement('h2');
     title.id = 'yp-building-title';
-    title.textContent = props.adopted ? (props.gameId || 'Selected building') : 'No game id';
-    head.append(kicker, title);
+    if (props.adopted) {
+      if (typeof ypPropertyIdLabel === 'function') {
+        title.appendChild(ypPropertyIdLabel(props.gameId));
+      } else {
+        const code = typeof ypPublicCode === 'function' ? ypPublicCode(props.gameId) : 'No code';
+        title.textContent = 'Property ID: ' + (String(code).startsWith('ypb-') ? 'No code' : code);
+        if (props.gameId) title.dataset.ypCode = props.gameId;
+      }
+    } else {
+      const kicker = document.createElement('p');
+      kicker.className = 'yp-kicker';
+      kicker.textContent = 'Not saleable';
+      title.textContent = 'No game id';
+      head.appendChild(kicker);
+    }
+    head.appendChild(title);
     card.appendChild(head);
-    if (props.adopted && props.eligible === true && Number.isInteger(props.estimate)) {
+    if (typeof ypCardEligible === 'function' ? ypCardEligible(props) : (props.adopted && props.eligible === true && Number.isInteger(props.estimate))) {
       const price = document.createElement('p');
       price.className = 'yp-price';
       const amt = document.createElement('span');
@@ -163,7 +174,7 @@
     } else {
       line(card, 'yp-place', 'No game estimate');
     }
-    line(card, 'yp-place', props.adopted ? 'No owner is recorded. This is not for rent and not for sale.' : 'This overlap is held out. It cannot be listed.');
+    line(card, 'yp-place', props.adopted ? (ypCardEligible(props) ? 'No owner is recorded. This property is for sale at the game estimate. Buying is coming soon.' : 'No owner is recorded. This is not for rent.') : 'This overlap is held out. It cannot be listed.');
     line(card, 'yp-status', 'A game price is not a real valuation. Only a player who owns a home can list a rental or a room share.');
     const back = document.createElement('button');
     back.type = 'button';
