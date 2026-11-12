@@ -81,7 +81,7 @@
       window.__ygView = {features: parts.adopted.features.length, chunks: hits.length, ms: 0, cached: true};
       return;
     }
-    const collections = await Promise.all(hits.map(chunk => fetch('data/chunks/' + chunk.id + '.json').then(response => response.json())));
+    const collections = await Promise.all(hits.map(chunk => fetch('data/chunks/' + chunk.id + '.json?v=prices1').then(response => response.json())));
     if (here !== token || !map()) return;
     const features = collections.flatMap(collection => collection.features || []);
     parts = {
@@ -133,6 +133,7 @@
     selectFeature(feature);
     document.getElementById('yp-building')?.remove();
     if (typeof ypOpenSaleDetail === 'function' && ypCardEligible(props) && (!ypOwnedFootprints().has(props.gameId) || ypBuyFor(props.gameId))) { ypOpenSaleDetail(feature); return; }
+    if (props.adopted && !ypCardEligible(props)) return;
     const panel = document.createElement('div');
     panel.id = 'yp-building';
     panel.setAttribute('role', 'dialog');
@@ -175,7 +176,7 @@
     } else {
       line(card, 'yp-place', 'No game estimate');
     }
-    line(card, 'yp-place', props.adopted ? (ypCardEligible(props) ? 'A game player owns this property.' : 'No owner is recorded. This is not for rent.') : 'This overlap is held out. It cannot be listed.');
+    line(card, 'yp-place', props.adopted ? 'A game player owns this property.' : 'This overlap is held out. It cannot be listed.');
     line(card, 'yp-status', 'A game price is not a real valuation. Only a player who owns a home can list a rental or a room share.');
     const back = document.createElement('button');
     back.type = 'button';
