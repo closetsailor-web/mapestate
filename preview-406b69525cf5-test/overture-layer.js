@@ -132,6 +132,7 @@
     const props = feature && feature.properties || {};
     selectFeature(feature);
     document.getElementById('yp-building')?.remove();
+    if (typeof ypOpenSaleDetail === 'function' && ypCardEligible(props) && (!ypOwnedFootprints().has(props.gameId) || ypBuyFor(props.gameId))) { ypOpenSaleDetail(feature); return; }
     const panel = document.createElement('div');
     panel.id = 'yp-building';
     panel.setAttribute('role', 'dialog');
@@ -174,7 +175,7 @@
     } else {
       line(card, 'yp-place', 'No game estimate');
     }
-    line(card, 'yp-place', props.adopted ? (ypCardEligible(props) ? 'No owner is recorded. This property is for sale at the game estimate. Buying is coming soon.' : 'No owner is recorded. This is not for rent.') : 'This overlap is held out. It cannot be listed.');
+    line(card, 'yp-place', props.adopted ? (ypCardEligible(props) ? 'A game player owns this property.' : 'No owner is recorded. This is not for rent.') : 'This overlap is held out. It cannot be listed.');
     line(card, 'yp-status', 'A game price is not a real valuation. Only a player who owns a home can list a rental or a room share.');
     const back = document.createElement('button');
     back.type = 'button';
@@ -190,7 +191,7 @@
   window.__ygOpen = openPopup;
   function onClick(event){
     const m = map();
-    if (!m || performance.now() < ignoreMapClicksUntil || document.getElementById('yp-building')) return;
+    if (!m || performance.now() < ignoreMapClicksUntil || document.getElementById('yp-building') || document.getElementById('yp-sale-detail')) return;
     if (typeof ypListingHit === 'function' && ypListingHit(event)) return;
     if (m.getLayer('yp-rental-cluster')) {
       try {
