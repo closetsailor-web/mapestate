@@ -2871,7 +2871,7 @@ CITIES.forEach(c=>GEN[c.id].subs.forEach(s=>{if(s.unlock>0&&players()>=s.unlock)
 if(GEN.c1&&GEN.c1.parcels){SIM='<div class="simnote">🗺️ Coralwood is a fictional 3D town. Its suburbs, streets and lots are made up. Lots are numbered by the game (Lot N). Owners, sales and prices are simulated from published Queensland city and regional medians. Coins and properties have no cash value and can\'t be withdrawn.</div>';NOTE='<div style="opacity:.85;font-size:12px;margin:6px 0">🗺️ Coralwood: a fictional 3D town. Lots are numbered by the game. Owners and prices are simulated from published Queensland medians.</div>';}
 function hwBand(){const c=document.querySelector('#hwov .hwc');if(!c||c.querySelector('.hwh'))return;const h=c.querySelector('h3'),d=c.querySelector('.hwd');if(!h)return;const w=document.createElement('div');w.className='hwh';c.insertBefore(w,d||h);if(d)w.appendChild(d);w.appendChild(h);}
 new MutationObserver(hwBand).observe(document.body,{childList:true,subtree:true});
-MapView.init();MapView.load(GEN[G.cur]);rsInit();if(!G.started)onboard(1);tutResume();homeGate(1);
+/*TEST ONLY: one-off $500k so Troy can test the buying flow */if(G.started&&!localStorage.getItem('fe.testcash.v1')){G.cash+=500000;localStorage.setItem('fe.testcash.v1','1');save();}MapView.init();MapView.load(GEN[G.cur]);rsInit();if(!G.started)onboard(1);tutResume();homeGate(1);
 function ypReadPreviewStock(){try{const o=JSON.parse(localStorage.getItem('yp.previewStock.v1')||'null');return o&&Array.isArray(o.rentals)?o:{version:1,rentals:[]};}catch(e){return {version:1,rentals:[]};}}
 function ypActiveTenancy(){return ypReadPreviewStock().rentals.find(r=>r&&r.status==='active'&&r.bondCharged)||null;}
 function ypRestorePlaceName(){if(!G||G.placeName)return;try{const o=JSON.parse(localStorage.getItem('yp.listCentre.v1')||'null');const label=o&&((o.centre&&o.centre.label)||(o.place&&o.place.label));if(label)G.placeName=label;}catch(e){}}
@@ -3737,6 +3737,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=buytalk1"></script>
+<script src="map-preview.js?v=buytalk2"></script>
 <script src="overture-layer.js?v=buy1"></script>
 </body></html>
