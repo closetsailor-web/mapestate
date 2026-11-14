@@ -787,7 +787,7 @@ function ypMoneyParts(B,kind){const f=ypMoneyFmt;B=B||{};let gross,pay,tax,take,
  if(kind==='real'){const i=(typeof INC==='function'&&INC())||{};gross=typeof ownGross==='function'?ownGross(i):0;const taxY=(typeof taxNet==='function'?taxNet(gross):0)+(typeof medicare==='function'?medicare(gross):0);pay=gross/52;tax=taxY/52;take=pay-tax;liv=(+i.exp||0)*12/52;debt=(+i.debt||0)*12/52;livHint='Your own expenses, '+f(i.exp||0)+' a month';}
  else{gross=typeof GAME_SALARY!=='undefined'?GAME_SALARY:100000;if(apply){pay=B.pay;tax=B.tax;take=B.take;liv=B.liv;debt=B.debt;}else{pay=0;tax=0;take=0;liv=0;debt=0;}livHint='The same for everyone, '+f(typeof GAME_EXP_MO!=='undefined'?GAME_EXP_MO:(B.liv?B.liv*52/12:0))+' a month';}
  const income=[],expenses=[];
- const salHint=(!apply&&kind==='game')?('Weekly, after tax. Starts when you choose where to live. '+f(gross)+' a year before tax'):('Weekly, after tax. '+f(gross)+' a year before tax ('+f(pay)+' before tax, tax '+f(tax)+')');
+ const salHint=(!apply&&kind==='game')?'Weekly, after tax. Starts when you choose where to live':'Weekly, after tax';
  income.push({label:'Your Salary',hint:salHint,amount:take});
  const rentIn=Object.values(B.props||{}).filter(p=>(p.rentIn>0||p.biz>0));
  if(rentIn.length){income.push({heading:'Rent received'});rentIn.forEach(p=>{income.push({subhead:true,propertyId:p.id,place:ypPropPlace(p.id)});if(p.rentIn)income.push({label:'Rent received',hint:'After management fees',amount:p.rentIn});if(p.biz)income.push({label:'Shop profit',hint:'Average, it changes week to week',amount:p.biz});});}
