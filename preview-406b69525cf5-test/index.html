@@ -2863,15 +2863,13 @@ function stRender(step){stStep=step;const d=document.getElementById('status');if
   const l=d.querySelector('#lh_fam label');if(l)l.className='sr';d.scrollTop=0;if(step==='pick'&&!G.hwSeen&&!window.__MT_NO_AUTOSTATUS&&!window.__MT_NO_STINFO&&!document.getElementById('hwov'))setTimeout(()=>{if(!G.hwSeen&&document.getElementById('status')&&!document.getElementById('hwov'))hwShow(0)},350);}
 /* v41 "How it works" pop-up on the Start your Simulation screen: 3 short cards (start money, what a home costs, save first). Numbers come from the game. */
 let hwCache=null;
-function hwNums(){if(hwCache&&hwCache.w===G.cur)return hwCache;try{const g=GEN[G.cur];let h=Infinity,v0=Infinity,hid=null;g.lots.forEach(l=>{if(l.type==='house'||l.type==='vacant'){const v=value(l.id);if(l.type==='house'){if(v<h){h=v;hid=l.id;}}else if(v<v0)v0=v;}});if(!isFinite(h))h=385000;if(!isFinite(v0))v0=159000;const qh=quote(h,.95,null,hid),ql=quote(v0,LAND_LVR);hwCache={w:G.cur,house:h,houseFees:qh.cash-qh.ins,houseIns:qh.ins,houseCash:qh.cash,land:v0,landCash:ql.cash};}catch(e){hwCache={w:G.cur,house:385000,houseFees:46285,houseIns:0,houseCash:46285,land:159000,landCash:46000};}return hwCache;}
+function hwNums(){if(hwCache&&hwCache.w===G.cur)return hwCache;try{const g=GEN[G.cur];let h=Infinity,hid=null;g.lots.forEach(l=>{if(l.type==='house'){const v=value(l.id);if(v<h){h=v;hid=l.id;}}});if(!isFinite(h))h=385000;const qh=quote(h,.95,null,hid);hwCache={w:G.cur,house:h,houseFees:qh.cash-qh.ins,houseIns:qh.ins,houseCash:qh.cash};}catch(e){hwCache={w:G.cur,house:385000,houseFees:46285,houseIns:0,houseCash:46285};}return hwCache;}
 function hwShow(i){i=i||0;let o=document.getElementById('hwov');if(!o){o=document.createElement('div');o.id='hwov';o.setAttribute('role','dialog');o.setAttribute('aria-label','How it works');document.body.appendChild(o);}o.classList.add('hwrun');
   const n=hwNums(),start=CFG.startCash,R=(t,v,hi)=>`<div class="hwr${hi?' hi':''}"><span>${t}</span><b>${fmt(v)}</b></div>`,more=c=>Math.max(0,c-start);
-   const buy=(t,pr,cash)=>`<h3>${t}</h3>${R('Cheapest price',pr)}${R('Deposit and fees',cash)}${R('You still need',more(cash),1)}`;
    const buyHouse=()=>`<h3>Buying a House</h3>${R('Cheapest price',n.house)}${R('Deposit and fees',n.houseFees)}${R('Property insurance',n.houseIns)}${R('Total upfront',n.houseCash)}${R('You still need',more(n.houseCash),1)}`;
    const C=[
     `<h3>Everyone starts with the same</h3><div class="hwbig">${fmt(start)}</div><p>This is your savings, in coins.</p><p>${ypClockSentence()} Your money changes week by week, just as it would in real life.</p>`,
     buyHouse(),
-   buy('Buying a Block of Land',n.land,n.landCash),
    `<h3>Save up first?</h3><p>Looks like you may have to start saving towards your first home deposit. If any are available, room share or boarding is usually the best way to save.</p><p class="hw-follow">Once you have family or friends in the game, you may choose to live with them for free.</p>`];
   const last=i>=C.length-1;
   o.innerHTML=`<div class="hwc"><div class="hwd">${C.map((_,k)=>`<i class="${k===i?'on':''}"></i>`).join('')}</div>${C[i]}<button class="hwb${last?' hw-got':''}" id="hw_next" onclick="${last?'hwClose()':`hwShow(${i+1})`}">${last?'Got it':'Next'}</button>${last?(i>0?`<div class="hwrow"><button class="hwx" id="hw_back" onclick="hwShow(${i-1})">Back</button></div>`:''):`<div class="hwrow">${i>0?`<button class="hwx" id="hw_back" onclick="hwShow(${i-1})">Back</button>`:''}<button class="hwx" onclick="hwClose()">Skip</button></div>`}</div>`;}
@@ -3826,6 +3824,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates22"></script>
+<script src="map-preview.js?v=dates23"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
