@@ -876,7 +876,7 @@ body.sheetopen #osmattr,body.sheetopen .fab{opacity:0;pointer-events:none}
 #status .sub{color:var(--mute);text-align:center;margin:0 0 18px;font-size:15px;line-height:1.45}
 #status .prog{display:flex;align-items:center;gap:12px;margin:0 auto 14px;font-size:13px;font-weight:700;color:var(--blue)}#status .prog .bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}#status .prog .bar i{display:block;height:100%;background:var(--cta);border-radius:3px}
 #status .scard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:14px 16px;margin:0 auto 12px;font:inherit;color:#14213d;cursor:pointer;box-shadow:0 4px 14px rgba(11,37,69,.06)}
-#status .scard.on{border:2px solid var(--blue);box-shadow:0 6px 18px rgba(10,58,140,.16)}
+#status .scard.on{border:2px solid var(--blue);box-shadow:0 6px 18px rgba(10,58,140,.16)}#status .scard.soon,#status .scard[disabled]{opacity:.55;cursor:default;background:var(--field);box-shadow:none;color:#5a6780}#status .scard.soon .sico{background:#e3e8f0;color:#5a6780}#status .stx small.stsoon{font-size:12px;font-weight:700}
 #status .sico{width:44px;height:44px;border-radius:14px;background:#eaf1fc;color:var(--blue);display:grid;place-items:center;flex:none}#status .sico svg{width:24px;height:24px}#status .scard.on .sico{background:var(--blue);color:#fff}
 #status .stx b{display:block;font-size:17px}#status .stx small{display:block;color:var(--mute);font-size:14px;margin-top:2px}
 #status .btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:54px;border-radius:999px;border:0;font-weight:700;font-size:17px;cursor:pointer;margin-top:8px}
@@ -2856,7 +2856,7 @@ function stRender(step){stStep=step;const d=document.getElementById('status');if
   const two=step!=='pick'||stSel==='rent';
   const prog=`<div class="prog"><span>${step==='pick'?'Step 1 of 2':'Step 2 of 2'}</span><div class="bar"><i style="width:${step==='pick'?50:100}%"></i></div></div>`;
   let body='';
-  if(step==='pick')body=`<h2>Start your Simulation</h2><p class="sub">This is for your character in the game.</p>${ST_OPTS.map(([k,t,sub])=>`<button type="button" class="scard${stSel===k?' on':''}" id="st_${k}" aria-pressed="${stSel===k}" onclick="stSel='${k}';stRender('pick')">${stIco(k==='room'?'family':k)}<span class="stx"><b>${t}</b><small>${sub}</small></span></button>`).join('')}<button class="btn primary" id="st_go" ${stSel?'':'disabled'} onclick="statusPick(stSel)">Continue</button><button type="button" class="hwlink" id="st_how" onclick="hwShow(0)">How does this work?</button>`;
+  if(step==='pick')body=`<h2>Start your Simulation</h2><p class="sub">This is for your character in the game.</p>${ST_OPTS.map(([k,t,sub])=>k==='room'?`<button type="button" class="scard soon" id="st_${k}" disabled aria-disabled="true">${stIco('family')}<span class="stx"><b>${t}</b><small>${sub}</small><small class="stsoon">Coming soon</small></span></button>`:`<button type="button" class="scard${stSel===k?' on':''}" id="st_${k}" aria-pressed="${stSel===k}" onclick="stSel='${k}';stRender('pick')">${stIco(k)}<span class="stx"><b>${t}</b><small>${sub}</small></span></button>`).join('')}<button class="btn primary" id="st_go" ${stSel==='buy'||stSel==='rent'?'':'disabled'} onclick="statusPick(stSel)">Continue</button><button type="button" class="hwlink" id="st_how" onclick="hwShow(0)">How does this work?</button>`;
   else if(step==='rent')body=`<h2>Pick a lease length</h2><p class="sub">You'll choose the house next.</p>${[3,6,12].map(m=>`<button type="button" class="scard${stSel===m?' on':''}" id="st_lease${m}" aria-pressed="${stSel===m}" onclick="stSel=${m};stRender('rent')">${stIco('lease')}<span class="stx"><b>${m} months</b></span></button>`).join('')}<button class="btn primary" id="st_go" ${stSel?'':'disabled'} onclick="statusLease(stSel)">Continue</button>`;
   else body=`<h2>Board in the game</h2><p class="sub">Enter what you would pay each week to share a home. No lease.</p>${famBoardField()}<button class="btn primary" id="st_go" onclick="famBoardRead();statusDone('family')">Continue</button>`;
   d.innerHTML=`<div class="shero"><svg class="illo" viewBox="0 0 400 220" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">${flowIllo(true)}</svg><div class="topbar">${back}<span class="brand"><i class="bico" aria-hidden="true"></i><span>Your <b>Plot</b></span></span></div><h1>${H}</h1></div><div class="ssheet">${prog}${body}</div>`;
@@ -2881,7 +2881,7 @@ function hwDone(k){const o=document.getElementById('hwov');if(o)o.remove();if(wi
 function hwChoose(k){const o=document.createElement('div');o.id='hwov';o.setAttribute('role','dialog');o.setAttribute('aria-label','Choose where to live');document.body.appendChild(o);if(k==='rent'){o.innerHTML=`<div class="hwc"><h3>Choose your Rental</h3><p>If you apply for a property owned by another player, they decide if you’re successful or not.</p><button class="hwb" id="hw_next" onclick="hwChooseDone()">Got it</button></div>`;return;}const w=k==='family'?'Pick a room in Listings › Room share.':'Choose a house or unit on the map.';o.innerHTML=`<div class="hwc"><h3>Now choose where you wish to live</h3><p>${w} You can also search a street.</p><p>The game clock starts once you choose.</p><button class="hwb" id="hw_next" onclick="hwChooseDone()">Got it</button></div>`;}
 function hwChooseDone(){const o=document.getElementById('hwov');if(o)o.remove();homeGate();window.UNSHIFT&&UNSHIFT();}
 function hwClose(){const o=document.getElementById('hwov');if(o)o.remove();G.hwSeen=1;save();window.UNSHIFT&&UNSHIFT();}
-function statusPick(k){if(!ST_OPTS.some(o=>o[0]===k))return;G.statusPend=k;if(k==='rent'){stSel=G.statusLease||12;return stRender('rent');}statusDone(k);}
+function statusPick(k){if(k==='room'||!ST_OPTS.some(o=>o[0]===k))return;G.statusPend=k;if(k==='rent'){stSel=G.statusLease||12;return stRender('rent');}statusDone(k);}
 function statusLease(m){G.statusLease=LEASE_WKS[m]?m:12;statusDone('rent');}
 function flowIllo(small){
  let g='<defs><linearGradient id="riv" x1="0" x2="1"><stop offset="0" stop-color="#5fa8ff" stop-opacity=".55"/><stop offset="1" stop-color="#9cc8ff" stop-opacity=".25"/></linearGradient></defs><g stroke="#fff" stroke-opacity=".09" stroke-width="1.5">';
@@ -3824,6 +3824,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates23"></script>
+<script src="map-preview.js?v=dates24"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
