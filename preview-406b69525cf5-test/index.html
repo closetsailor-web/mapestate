@@ -1118,6 +1118,20 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 .yp-plink{display:inline-flex;align-items:center;min-height:44px;margin:-12px 0;padding:0 2px;color:#1a5fd6;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(26,95,214,.2)}.yp-plink::after{content:'\203A';margin-left:3px;text-decoration:none;font-weight:800}.hwh .yp-plink,.yp-card-head .yp-plink{color:#fff}.yp-row-id{display:block;font-size:13px}#yp-sale-showmap{color:#1a5fd6}#yp-sale-progress{color:#0b2545}#yp-sale-progress .yp-resume-link{display:inline-flex;align-items:center;min-height:44px;margin:-12px 0;color:#1a5fd6;font-weight:700;text-decoration:underline}#yp-sale-progress .yp-resume-link::after{content:"\203A";margin-left:3px}.yp-detail-row .yp-row-what,.yp-detail-row .yp-row-next{display:block;font-size:13px;line-height:1.35;color:#3d4a63;font-weight:500;margin:2px 0}.yp-detail-row .yp-row-next{color:#0b2545;font-weight:650}
 #yp-living .yp-flow-head,#bankbox .yp-flow-head{grid-column:1/-1;margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase}#yp-living .yp-flow .yp-row-id,#bankbox .yp-flow .yp-row-id{display:block}
 .yp-rent-row .yp-plink,.yp-own-row .yp-plink{margin:0;vertical-align:middle}/* list rows: the link gets its own 44px line so a tap on the status line below still opens the row */
+.yp-own-list{display:flex;flex-direction:column;gap:10px;margin:4px 0 16px}
+.yp-own-card{display:block;width:100%;box-sizing:border-box;margin:0;padding:14px 16px;border:0;border-radius:16px;background:var(--card2,#f6f8fb);color:#14213d;text-align:left;font:inherit;cursor:pointer;box-shadow:none}
+.yp-own-card:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px}
+.yp-own-sub{margin:0 0 4px;font:700 17px/1.3 Inter,system-ui,sans-serif;color:#14213d;white-space:normal;overflow:visible;text-overflow:unset;overflow-wrap:anywhere}
+.yp-own-id{margin:0 0 4px;font:600 13px/1.35 Inter,system-ui,sans-serif;color:#3d4a63}
+.yp-own-id .yp-property-id,.yp-own-id .yp-plink{font:600 13px/1.35 Inter,system-ui,sans-serif;min-height:0;margin:0}
+.yp-own-meta{margin:0 0 10px;font:500 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
+.yp-own-meta .yp-own-type{margin-right:8px}
+.yp-own-figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 8px;padding:0;text-align:left}
+.yp-own-fig{margin:0;min-width:0}
+.yp-own-fig dt{margin:0;font:600 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#6b7a90}
+.yp-own-fig dd{margin:3px 0 0;font:800 15px/1.2 Inter,system-ui,sans-serif;color:#14213d;overflow-wrap:anywhere}
+.yp-own-repay{margin:0;font:500 13px/1.35 Inter,system-ui,sans-serif;color:#3d4a63}
+
 #yp-history-detail,#yp-living,#yp-payout{z-index:54}
 #yp-where .card,#yp-prop .card,#yp-rent-list .card,#yp-rent-detail .card,#yp-sale-detail .card,#yp-apply-review .card,#yp-history-detail .card,#yp-living .card,#yp-payout .card,#yp-away .card,#yp-pending .card,#yp-history .card,#yp-soon .card,#yp-start-fresh .card,#yp-property-menu .card,#yp-section-menu .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 24px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);max-height:calc(100dvh - 256px);overflow:auto;margin:0}
 #yp-where p:not(.yp-kicker),#yp-where-status,#yp-prop p:not(.yp-kicker),#yp-rent-list p:not(.yp-kicker),#yp-rent-detail p:not(.yp-kicker):not(.yp-approval),#yp-sale-detail p:not(.yp-kicker):not(.yp-approval),#yp-apply-review p:not(.yp-kicker):not(.yp-approval),#yp-history-detail p:not(.yp-kicker):not(.yp-approval),#yp-living p:not(.yp-kicker):not(.yp-approval),#yp-payout p:not(.yp-kicker):not(.yp-approval),#yp-away p:not(.yp-kicker):not(.yp-approval),#yp-start-fresh p:not(.yp-kicker):not(.yp-approval){margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
@@ -1678,6 +1692,8 @@ const uname=()=>G.username||'player';
 const pname=id=>{const l=lot(id),g=GEN[cityOf(id)];return l?l.addr+', '+g.subs[l.si].name:id;};
 function log(t,amt){G.hist.unshift({w:G.week,t,amt});G.hist.length=Math.min(G.hist.length,200);}
 const gdate=w=>ypRealDateLabel(ypWallAt(w*CFG.weekMs));
+function ypGameWeekLabel(w){if(!Number.isFinite(+w)||+w<0)return '';return 'Week '+(w|0);}
+function ypWeekFromGameMs(ms){if(!Number.isFinite(+ms))return NaN;if(typeof ypClockAt==='function')return ypClockAt(+ms).week;return Math.floor(+ms/(CFG.weekMs||1));}
 /* Card, history and notification dates use the player's real local clock, not a game calendar. Game time runs 1:1 with real time while the clock is on (one game week = CFG.weekMs real ms, so 1 game year = YP_YEAR_REAL_DAYS real days), so a game instant maps to now plus its distance from the current game time. */
 function ypWallAt(gameMs){if(!Number.isFinite(+gameMs))return NaN;const now=(typeof G!=='undefined'&&G)?(G.week|0)*CFG.weekMs+Math.max(0,+G.acc||0):0;return Date.now()+(+gameMs-now);}
 const YP_DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],YP_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -2571,7 +2587,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     <div class="fin">Nickname (shown to others; use a nickname, not your real name): <input type="text" id="uname" maxlength="16" value="${esc(uname())}"><button class="btn sec" onclick="setUname()">Save username</button></div>
     <button class="btn sec" onclick="UI.privacy()">🔒 Privacy</button><button class="btn sec" onclick="UI.saves()">💾 Save, export &amp; restore</button><button class="btn sec" onclick="resetGame()">Reset game</button>`);},
   mine(){const ps=allProps(),yb=typeof ypBuyRows==='function'?ypBuyRows():[],n=ps.length+yb.length;
-    this.open(`<h2>My Properties${n?` (${n})`:''}</h2>${n?'<h3 style="margin:14px 0 4px">Property I own</h3>':''}<ul class="list">${ps.map(([i,p])=>{const l=lot(i),g=GEN[cityOf(i)];return `<li onclick="goMine('${i}')"><span class="dot" style="background:#f47b20"></span><div class="n"><div>${esc(l.addr.replace(/^Lot [^,]+, /,''))}, ${esc(subName(l,g))}</div><small>${esc(g.city.name)} · ${p.dev&&p.dev.stage==='done'?BUILD[p.dev.kind].label:TYPES[l.type].label} · ${fmtK(value(i))} · ${p.status==='settling'?'settling':cfTxt(cashflow(i,p.repay))}</small></div>›</li>`;}).join('')}${yb.join('')}</ul>${n?'':'<p class="yp-empty-msg">You don\'t own any properties</p>'}${typeof ypOverlapMineHtml==='function'?ypOverlapMineHtml():''}<button class="btn buy" onclick="ypGameUI().close();ypOpenPropertyHistory()">Property History</button>`);},
+    this.open(`<h2>My Properties${n?` (${n})`:''}</h2>${n?'<h3 style="margin:14px 0 4px">Property I own</h3>':''}${yb.length?`<div class="yp-own-list">${yb.join('')}</div>`:''}${ps.length?`<ul class="list">${ps.map(([i,p])=>{const l=lot(i),g=GEN[cityOf(i)];return `<li onclick="goMine('${i}')"><span class="dot" style="background:#f47b20"></span><div class="n"><div>${esc(l.addr.replace(/^Lot [^,]+, /,''))}, ${esc(subName(l,g))}</div><small>${esc(g.city.name)} · ${p.dev&&p.dev.stage==='done'?BUILD[p.dev.kind].label:TYPES[l.type].label} · ${fmtK(value(i))} · ${p.status==='settling'?'settling':cfTxt(cashflow(i,p.repay))}</small></div>›</li>`;}).join('')}</ul>`:''}${n?'':'<p class="yp-empty-msg">You don\'t own any properties</p>'}${typeof ypOverlapMineHtml==='function'?ypOverlapMineHtml():''}<button class="btn buy" onclick="ypGameUI().close();ypOpenPropertyHistory()">Property History</button>`);},
   key(){const sw=(c,o={})=>`<span style="display:inline-block;width:22px;height:14px;border-radius:3px;vertical-align:middle;margin-right:8px;background:${c};border:${o.b||'1px solid rgba(18,36,63,.25)'}"></span>`;
     const it=(c,t,o)=>`<div style="padding:3px 0;font-size:13.5px">${sw(c,o)}${t}</div>`;
     this.open(`<h2>🗺️ Map key</h2><div style="columns:2;column-gap:14px">
@@ -3795,6 +3811,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=afford4"></script>
+<script src="map-preview.js?v=dates1"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
