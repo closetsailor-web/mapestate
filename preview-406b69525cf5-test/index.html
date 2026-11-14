@@ -1275,7 +1275,13 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 .yp-card-head{position:sticky;top:0;z-index:3;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;margin:0 -22px 12px;padding:6px 8px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);color:#fff;border-radius:24px 24px 0 0}
 .yp-card-head .yp-card-titles{grid-column:1/-1;grid-row:1;min-width:0;text-align:center;padding:0 44px}
 .yp-card-head .yp-kicker{margin:0 0 4px;font:700 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#ff8a33}
-#yp-apply-review .yp-card-head{min-height:48px;height:48px;box-sizing:border-box;padding:4px 8px;align-items:center}#yp-apply-review .yp-card-head .yp-kicker{margin:0 0 1px;font:700 10px/1 Inter,system-ui,sans-serif}#yp-apply-review .yp-card-head h2{font:700 15px/1.15 Inter,system-ui,sans-serif}#yp-apply-review .yp-progress li.now{background:#f26b1d}.yp-week-role{margin:0 0 2px;font:700 12px Inter,system-ui,sans-serif;color:#0b2545}
+#yp-apply-review .yp-card-head{min-height:48px;height:48px;box-sizing:border-box;padding:4px 8px;align-items:center;margin-left:-22px;margin-right:-22px;width:calc(100% + 44px);max-width:none}#yp-apply-review .yp-card-head .yp-kicker{margin:0 0 1px;font:700 10px/1 Inter,system-ui,sans-serif}#yp-apply-review .yp-card-head h2{font:700 15px/1.15 Inter,system-ui,sans-serif}#yp-apply-review .yp-progress li.now{background:#f26b1d}.yp-week-role{margin:0 0 2px;font:700 12px Inter,system-ui,sans-serif;color:#0b2545}
+#yp-apply-review .yp-step{overflow-x:hidden;padding-bottom:96px;scroll-padding-bottom:80px;box-sizing:border-box}
+#yp-apply-review .yp-step>.hwb{position:sticky;bottom:0;z-index:2;background:#b8410a;box-shadow:0 -14px 18px #fff,0 -4px 0 #fff}
+#yp-apply-review .yp-flow>div{max-width:100%;min-width:0;box-sizing:border-box}
+#yp-apply-review .yp-flow dt{flex:1 1 0;min-width:0;max-width:62%;white-space:normal}
+#yp-apply-review .yp-flow dd{flex:0 1 auto;min-width:min-content;white-space:normal;overflow-wrap:normal;word-break:normal}
+
 
 .yp-card-head h2{margin:0;color:#fff;font:700 16px/1.25 Inter,system-ui,sans-serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 19px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
@@ -1504,7 +1510,7 @@ const fmtK=n=>(n<0?'-':'')+'$'+(Math.abs(n)>=1e6?(Math.abs(n)/1e6).toFixed(2)+'M
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 const kv=(k,v,st='')=>`<div class="kv"><small>${k}</small><b style="${st}">${v}</b></div>`;
 function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const t=f<0?0:255,p=Math.abs(f);r=Math.round((t-r)*p+r);g=Math.round((t-g)*p+g);b=Math.round((t-b)*p+b);return'#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
-let tt;function toast(m,big){const t=document.getElementById('toast');if(!t)return;t.innerHTML=deemojiStr(esc(m));t.classList.toggle('big',!!big);const h=document.querySelector('header'),hb=h?Math.round(h.getBoundingClientRect().bottom):0;t.style.top=big?'':(hb?hb+8+'px':'');t.onclick=()=>{t.classList.remove('show');clearTimeout(tt);};t.classList.add('show');const extra=Math.max(0,(t.textContent||'').length-40)*60;const ms=Math.min(12000,6000+extra);t.dataset.ms=String(ms);clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),ms);if(typeof ypPlaceTopNotices==='function')ypPlaceTopNotices();}
+let tt;function toast(m,big){if(document.getElementById('yp-apply-review')||document.getElementById('yp-sale-detail')||document.getElementById('yp-rent-detail')||document.getElementById('yp-payout'))return;const t=document.getElementById('toast');if(!t)return;t.innerHTML=deemojiStr(esc(m));t.classList.toggle('big',!!big);const h=document.querySelector('header'),hb=h?Math.round(h.getBoundingClientRect().bottom):0;t.style.top=big?'':(hb?hb+8+'px':'');t.onclick=()=>{t.classList.remove('show');clearTimeout(tt);};t.classList.add('show');const extra=Math.max(0,(t.textContent||'').length-40)*60;const ms=Math.min(12000,6000+extra);t.dataset.ms=String(ms);clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),ms);if(typeof ypPlaceTopNotices==='function')ypPlaceTopNotices();}
 /* ======================= CITY GENERATOR (deterministic from seed) ======================= */
 const STREETS=['Banksia','Melaleuca','Pelican','Jacaranda','Frangipani','Kookaburra','Wombat','Bilby','Echidna','Saltbush','Coolabah','Brolga','Galah','Rosella','Corella','Lorikeet','Mangrove','Tidewater','Driftwood','Seashell','Reef','Dune','Mulga','Spinifex','Quandong','Kurrajong','Tuckeroo','Firewheel','Waratah','Boronia','Billabong','Bowerbird','Currawong','Pardalote','Wren','Finch','Heron','Ibis','Egret','Curlew','Plover','Tern','Cassowary','Dugong','Wallaby','Quokka','Platypus','Bunya','Hoop Pine','Silky Oak','Wattlebird','Honeyeater','Kingfisher','Sunbird','Osprey','Sea Eagle','Turtle','Starfish','Coral','Lagoon','Breaker','Tradewind','Sundew','Lantern','Saltwater','Gumtree'];
 const SUFFIX=['Street','Avenue','Road','Drive','Parade','Crescent','Terrace','Way','Esplanade'];
@@ -3859,6 +3865,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates36"></script>
+<script src="map-preview.js?v=dates37"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
