@@ -2593,7 +2593,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     <div class="fin">Nickname (shown to others; use a nickname, not your real name): <input type="text" id="uname" maxlength="16" value="${esc(uname())}"><button class="btn sec" onclick="setUname()">Save username</button></div>
     <button class="btn sec" onclick="UI.privacy()">🔒 Privacy</button><button class="btn sec" onclick="UI.saves()">💾 Save, export &amp; restore</button><button class="btn sec" onclick="resetGame()">Reset game</button>`);},
   mine(){const ps=allProps(),yb=typeof ypBuyRows==='function'?ypBuyRows():[],n=ps.length+yb.length;
-    this.open(`<h2>My Properties${n?` (${n})`:''}</h2>${n?'<h3 style="margin:14px 0 4px">Property I own</h3>':''}${yb.length?`<div class="yp-own-list">${yb.join('')}</div>`:''}${ps.length?`<ul class="list">${ps.map(([i,p])=>{const l=lot(i),g=GEN[cityOf(i)];return `<li onclick="goMine('${i}')"><span class="dot" style="background:#f47b20"></span><div class="n"><div>${esc(l.addr.replace(/^Lot [^,]+, /,''))}, ${esc(subName(l,g))}</div><small>${esc(g.city.name)} · ${p.dev&&p.dev.stage==='done'?BUILD[p.dev.kind].label:TYPES[l.type].label} · ${fmtK(value(i))} · ${p.status==='settling'?'settling':cfTxt(cashflow(i,p.repay))}</small></div>›</li>`;}).join('')}</ul>`:''}${n?'':'<p class="yp-empty-msg">You don\'t own any properties</p>'}${typeof ypOverlapMineHtml==='function'?ypOverlapMineHtml():''}<button class="btn buy" onclick="ypGameUI().close();ypOpenPropertyHistory()">Property History</button>`);},
+    this.open(`<h2>My Properties${n?` (${n})`:''}</h2>${n?'<h3 style="margin:14px 0 4px">Property I own</h3>':''}${yb.length?`<div class="yp-own-list">${yb.join('')}</div>`:''}${ps.length?`<ul class="list">${ps.map(([i,p])=>{const l=lot(i),g=GEN[cityOf(i)];return `<li onclick="goMine('${i}')"><span class="dot" style="background:#f47b20"></span><div class="n"><div>${esc(l.addr.replace(/^Lot [^,]+, /,''))}, ${esc(subName(l,g))}</div><small>${esc(g.city.name)} · ${p.dev&&p.dev.stage==='done'?BUILD[p.dev.kind].label:TYPES[l.type].label} · ${fmtK(value(i))} · ${p.status==='settling'?'settling':cfTxt(cashflow(i,p.repay))}</small></div>›</li>`;}).join('')}</ul>`:''}${n?'':'<p class="yp-empty-msg">You don\'t own any properties</p>'}<button class="btn buy" onclick="ypGameUI().close();ypOpenPropertyHistory()">Property History</button>`);},
   key(){const sw=(c,o={})=>`<span style="display:inline-block;width:22px;height:14px;border-radius:3px;vertical-align:middle;margin-right:8px;background:${c};border:${o.b||'1px solid rgba(18,36,63,.25)'}"></span>`;
     const it=(c,t,o)=>`<div style="padding:3px 0;font-size:13.5px">${sw(c,o)}${t}</div>`;
     this.open(`<h2>🗺️ Map key</h2><div style="columns:2;column-gap:14px">
@@ -3817,6 +3817,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates3"></script>
+<script src="map-preview.js?v=dates4"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
