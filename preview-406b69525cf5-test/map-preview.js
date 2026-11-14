@@ -786,7 +786,7 @@ function ypPropPlace(id){if(!id)return '';if(typeof ypHistorySuburb==='function'
 function ypWeekToMonth(n){return n*52/12;}
 function ypMoneyParts(B,kind){const f=ypMoneyFmt;B=B||{};let gross,pay,tax,take,liv,debt,livHint,apply=!!B.applyCash;
  if(kind==='real'){const i=(typeof INC==='function'&&INC())||{};gross=typeof ownGross==='function'?ownGross(i):0;const taxY=(typeof taxNet==='function'?taxNet(gross):0)+(typeof medicare==='function'?medicare(gross):0);pay=gross/52;tax=taxY/52;take=pay-tax;liv=(+i.exp||0)*12/52;debt=(+i.debt||0)*12/52;livHint='Your own expenses, '+f(i.exp||0)+' a month';}
- else{gross=typeof GAME_SALARY!=='undefined'?GAME_SALARY:100000;if(apply){pay=B.pay;tax=B.tax;take=B.take;liv=B.liv;debt=B.debt;}else{pay=0;tax=0;take=0;liv=0;debt=0;}livHint='The same for everyone, '+f(typeof GAME_EXP_MO!=='undefined'?GAME_EXP_MO:(B.liv?B.liv*52/12:0))+' a month';}
+ else{gross=typeof GAME_SALARY!=='undefined'?GAME_SALARY:100000;if(apply){pay=B.pay;tax=B.tax;take=B.take;liv=B.liv;debt=B.debt;}else{pay=0;tax=0;take=0;liv=0;debt=0;}livHint='Each week, the same for everyone';}
  const income=[],expenses=[];
  const salK='$'+(Math.round(gross/100)/10).toLocaleString('en-AU')+'k salary, weekly after tax';const salHint=(!apply&&kind==='game')?salK+'. Starts when you choose where to live':salK;
  income.push({heading:'Work'});
