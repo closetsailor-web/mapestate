@@ -644,7 +644,7 @@ function ypShowAwayCard(weeks,cashDelta,ledger){const n=weeks|0;if(!(n>0)||!Numb
 function ypCardHeader(opts){opts=opts||{};const head=document.createElement('header');head.className='yp-card-head';const titles=document.createElement('div');titles.className='yp-card-titles';if(opts.kicker){const eye=document.createElement('p');eye.className='yp-kicker';eye.textContent=opts.kicker;titles.appendChild(eye);}const h=document.createElement('h2');if(opts.titleId)h.id=opts.titleId;if(opts.codeFor)h.appendChild(ypPropertyIdLabel(opts.codeFor,{target:opts.codeTarget,onClick:opts.codeClick}));else h.textContent=opts.title||'';titles.appendChild(h);const btn=document.createElement('button');btn.type='button';btn.className='yp-x';if(opts.id)btn.id=opts.id;btn.setAttribute('aria-label','Close');btn.textContent='\u2715';btn.addEventListener('click',event=>{if(event){event.preventDefault();event.stopPropagation();}if(opts.onClose)opts.onClose(event);});head.append(titles,btn);return head;}
 function ypHeaderDismiss(head,onClose,id){if(!head||head.querySelector('.yp-x'))return;const kicker=head.querySelector('.yp-kicker');const titleEl=head.querySelector('h2,h3');const codeEl=head.querySelector('[data-yp-code]');const fresh=ypCardHeader({title:titleEl?titleEl.textContent:(head.textContent||''),kicker:kicker?kicker.textContent:'',codeFor:codeEl&&codeEl.dataset.ypCode||'',onClose,id,titleId:titleEl&&titleEl.id});head.className=fresh.className;head.replaceChildren(...fresh.childNodes);}
 let ypSoloLock=0;
-function ypDialogNodes(){const ids=['yp-history','yp-history-detail','yp-living','yp-apply-review','yp-rent-detail','yp-sale-detail','yp-rent-list','yp-pending','yp-soon','yp-where','yp-prop','yp-property-menu','yp-section-menu','listings','hwov','yp-away','yp-start-fresh','yp-payout','yp-where-live'];const nodes=[];ids.forEach(id=>{const el=document.getElementById(id);if(el)nodes.push(el);});const sheet=document.getElementById('sheet');if(sheet&&sheet.classList.contains('open'))nodes.push(sheet);const drawer=document.getElementById('drawer');if(drawer&&drawer.classList.contains('open'))nodes.push(drawer);return nodes;}
+function ypDialogNodes(){const ids=['yp-history','yp-history-detail','yp-living','yp-apply-review','yp-rent-detail','yp-sale-detail','yp-rent-list','yp-pending','yp-soon','yp-where','yp-prop','yp-property-menu','yp-section-menu','listings','hwov','yp-away','yp-start-fresh','yp-payout','yp-where-live','yp-clock-start'];const nodes=[];ids.forEach(id=>{const el=document.getElementById(id);if(el)nodes.push(el);});const sheet=document.getElementById('sheet');if(sheet&&sheet.classList.contains('open'))nodes.push(sheet);const drawer=document.getElementById('drawer');if(drawer&&drawer.classList.contains('open'))nodes.push(drawer);return nodes;}
 function ypHideDialog(el){if(!el)return;if(el.id==='sheet'){const ui=ypGameUI();if(ui&&ui.close)ui.close();return;}if(el.id==='drawer'){const ui=ypGameUI();if(ui&&ui.menu)ui.menu(false);return;}if(el.id==='listings'&&typeof listClose==='function'){listClose();return;}if(el.id==='yp-property-menu'||el.id==='yp-section-menu')document.documentElement.classList.remove('yp-menu-open');if(el.id==='yp-rent-detail')clearInterval(ypAppTimer);if(el.parentNode)el.remove();}
 function ypExclusive(keepId){if(ypSoloLock)return;ypSoloLock=1;try{ypDialogNodes().forEach(el=>{if(el.id!==keepId)ypHideDialog(el);});}finally{ypSoloLock=0;}}
 function ypOpenDialogs(){return ypDialogNodes().filter(el=>{if(el.hidden)return false;const s=getComputedStyle(el);if(s.display==='none'||s.visibility==='hidden')return false;const r=el.getBoundingClientRect();return r.width>2&&r.height>2;}).map(el=>el.id);}
@@ -721,7 +721,8 @@ function ypMountRecordCard(panel, opts){
  h.textContent=opts.title||'History';
  if(opts.kicker) head.append(kicker,h); else head.append(h);
  card.appendChild(head);
- card.appendChild(ypFlow(opts.rows||[]));
+ if(opts.copy){const copy=document.createElement('p');if(opts.copyId)copy.id=opts.copyId;copy.textContent=opts.copy;card.appendChild(copy);}
+ if(!opts.copy||(opts.rows&&opts.rows.length))card.appendChild(ypFlow(opts.rows||[]));
  const shut=event=>{if(event){event.preventDefault();event.stopPropagation();}panel.remove();if(opts.onClose)opts.onClose();};
  ypHeaderDismiss(head,shut,opts.closeId);
  const close=document.createElement('button');
@@ -733,6 +734,19 @@ function ypMountRecordCard(panel, opts){
  card.appendChild(close);
  panel.appendChild(card);
  return card;
+}
+function ypOpenClockStartCard(){
+ if(document.getElementById('yp-clock-start'))return true;
+ const others=(typeof ypOpenDialogs==='function'?ypOpenDialogs():[]).filter(id=>id&&id!=='yp-clock-start');
+ if(others.length)return false;
+ ypExclusive('yp-clock-start');
+ const panel=document.createElement('div');
+ panel.id='yp-clock-start';
+ panel.setAttribute('role','dialog');
+ panel.setAttribute('aria-labelledby','yp-clock-start-title');
+ ypMountRecordCard(panel,{title:'Your clock',titleId:'yp-clock-start-title',closeId:'yp-clock-start-x',closeBtnId:'yp-clock-start-close',copy:'Your clock starts when you choose a place to live.',copyId:'yp-clock-start-copy'});
+ document.body.appendChild(panel);
+ return true;
 }
 function ypOpenHistoryDetail(ev){
  ypExclusive('yp-history-detail');
@@ -1147,9 +1161,18 @@ window.ypEnterRealMap=ypEnterRealMap;
 window.ypDistanceM=ypDistanceM;
 window.ypDestination=ypDestination;
 window.ypOpenRentalDetail=ypOpenRentalDetail;
+function ypResumeChooseHomeMap(){
+ if(typeof G==='undefined'||!G||!G.started||!G.statusPick||G.homeChosen)return;
+ if(document.getElementById('flow')||document.getElementById('status'))return;
+ if(document.documentElement.classList.contains('yp-map-on'))return;
+ const kind=G.statusPick==='buy'?'sale':G.statusPick==='room'?'room':G.statusPick==='family'?'family':'rent';
+ if(typeof ypOpenListingMap==='function')ypOpenListingMap(kind);
+}
+setTimeout(ypResumeChooseHomeMap,0);
+
 
 /* Bottom nav: a tab is only highlighted while its menu, card or listing map is open */
-function ypOverlayOpen(){if(document.body&&document.body.classList.contains('sheetopen'))return true;const open=['yp-history','yp-history-detail','yp-living','yp-apply-review','yp-rent-detail','yp-sale-detail','yp-rent-list','yp-pending','yp-soon','yp-where','yp-prop','yp-property-menu','yp-section-menu','listings','hwov','yp-away','yp-start-fresh','yp-payout','yp-where-live'].some(i=>{const e=document.getElementById(i);return e&&e.getClientRects().length>0;});return open||!!document.querySelector('.sheet.open');}
+function ypOverlayOpen(){if(document.body&&document.body.classList.contains('sheetopen'))return true;const open=['yp-history','yp-history-detail','yp-living','yp-apply-review','yp-rent-detail','yp-sale-detail','yp-rent-list','yp-pending','yp-soon','yp-where','yp-prop','yp-property-menu','yp-section-menu','listings','hwov','yp-away','yp-start-fresh','yp-payout','yp-where-live','yp-clock-start'].some(i=>{const e=document.getElementById(i);return e&&e.getClientRects().length>0;});return open||!!document.querySelector('.sheet.open');}
 function ypSyncNav(){if(!document.documentElement.classList.contains('yp-home')||ypOverlayOpen())return;document.querySelectorAll('nav button.on').forEach(b=>b.classList.remove('on'));}
 /* Home feed: one running event stream, newest first by game time. Real player listings arrive through ypFeedEvent({kind:'listed', ...}). Sample seed events, seeded days, and sponsored ads are not generated and are purged from yp.homeFeed.v1 on read. */
 const YP_FEED_KEY='yp.homeFeed.v1';
