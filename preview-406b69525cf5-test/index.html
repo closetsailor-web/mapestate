@@ -1898,6 +1898,13 @@ const rentSub=()=>BUNDY_SUBS[Math.max(0,Math.min(BUNDY_SUBS.length-1,(G.rental&&
 const housing=()=>myHome()?'home':(G.housing==='family'?'family':'rent'); // v21: rent | family | home
 const boardWk=()=>Math.max(0,Math.min(1000,+G.board||0));
 const LEASE_WKS={3:13,6:26,12:52};
+function ypLeaseTermMonths(months){months=+months;return LEASE_WKS[months]?months:12;}
+function ypLeaseTermWeeks(months){return LEASE_WKS[ypLeaseTermMonths(months)]||52;}
+function ypLeaseRentStartWeek(signWeek){const w=signWeek!=null&&Number.isFinite(+signWeek)?(+signWeek|0):((typeof G!=='undefined'&&G)?(G.week|0):0);return w+3;}
+function ypLeaseEndWeek(rentStartWeek,months){return (rentStartWeek|0)+ypLeaseTermWeeks(months);}
+function ypChosenLeaseMonths(rental){if(rental&&LEASE_WKS[+rental.leaseMonths])return +rental.leaseMonths;if(typeof G!=='undefined'&&G&&LEASE_WKS[+G.statusLease])return +G.statusLease;return 12;}
+function ypMountLeaseTermOpts(parent,months,onChange){months=ypLeaseTermMonths(months);const row=document.createElement('div');row.className='yp-opts';row.id='yp-lease-terms';[3,6,12].forEach(m=>{const b=document.createElement('button');b.type='button';b.className='yp-opt';b.id='yp-term-'+m;b.textContent=m+' months';b.setAttribute('aria-pressed',String(m===months));b.addEventListener('click',()=>{row.querySelectorAll('.yp-opt').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));if(typeof onChange==='function')onChange(m);});row.appendChild(b);});parent.appendChild(row);return row;}
+
 /* v21 lease: the home you rent. Address is an unowned house lot in the chosen suburb ('Lot N, Street' game numbering, never a real house number). Rent is fixed for the lease; changes apply from the next lease. No break-lease fee (no verified figure used). */
 const canLive=id=>{const l=lot(id),p=propOf(id);return !!l&&(l.type==='house'||l.type==='unit')&&!(p&&(p.dev||p.subd));};
 const lotSub=id=>{const R=realOf(lot(id),GEN[cityOf(id)]);return R?R.k:0;};
@@ -2956,7 +2963,7 @@ function ypReadPreviewStock(){try{const o=JSON.parse(localStorage.getItem('yp.pr
 function ypActiveTenancy(){return ypReadPreviewStock().rentals.find(r=>r&&r.status==='active'&&r.bondCharged)||null;}
 function ypRestorePlaceName(){if(!G||G.placeName)return;try{const o=JSON.parse(localStorage.getItem('yp.listCentre.v1')||'null');const label=o&&((o.centre&&o.centre.label)||(o.place&&o.place.label));if(label)G.placeName=label;}catch(e){}}
 function ypRentalTown(rental){if(!rental)return '';if(typeof ypDisplaySuburb==='function'){const shown=ypDisplaySuburb(rental);if(shown&&shown!=='Unknown suburb')return shown;}const raw=rental.locality||rental.placeLabel||'';let name=String(raw).trim();if(name.includes(','))name=name.split(',')[0].trim();if(name&&!/\d/.test(name))return name;const key=String(rental.suburbKey||(String(rental.id||'').split(':')[1])||'');const word=key.split(' ').filter(Boolean)[0]||'';return word?word.charAt(0).toUpperCase()+word.slice(1):'';}
-function ypBeginConfirmedTenancy(rental){if(!G)return;rental=rental||ypActiveTenancy();if(!rental)return;const place=ypRentalTown(rental);if(place)G.placeName=place;const months=typeof LEASE_WKS!=='undefined'&&LEASE_WKS[G.statusLease]?G.statusLease:12;const weeks=typeof LEASE_WKS!=='undefined'&&LEASE_WKS[months]?LEASE_WKS[months]:52;const starting=!G.homeChosen&&!G.clockOn;G.housing='rent';G.homeChosen=1;G.clockOn=1;if(starting)G.acc=0;const leaseId=rental.footprintId||rental.id;if(!G.lease||G.lease.broken||G.lease.id!==leaseId)G.lease={id:leaseId,addr:place||rental.placeLabel||rental.locality||'Your rental',rent:Math.round(+rental.weeklyRent||0),months,start:G.week|0,end:(G.week|0)+weeks,m2m:0};if(G.tut){G.tut.home=1;G.tut.done=1;}}
+function ypBeginConfirmedTenancy(rental){if(!G)return;rental=rental||ypActiveTenancy();if(!rental)return;const place=ypRentalTown(rental);if(place)G.placeName=place;const months=typeof ypChosenLeaseMonths==='function'?ypChosenLeaseMonths(rental):(LEASE_WKS[rental&&rental.leaseMonths]?+rental.leaseMonths:(LEASE_WKS[G.statusLease]?G.statusLease:12));const signWeek=G.week|0;const rentStart=typeof ypLeaseRentStartWeek==='function'?ypLeaseRentStartWeek(signWeek):signWeek+3;const start=Number.isFinite(+rental.startWeek)&&+rental.startWeek>0?(+rental.startWeek|0):rentStart;const end=typeof ypLeaseEndWeek==='function'?ypLeaseEndWeek(start,months):start+(LEASE_WKS[months]||52);const starting=!G.homeChosen&&!G.clockOn;G.housing='rent';G.homeChosen=1;G.clockOn=1;if(starting)G.acc=0;const leaseId=rental.footprintId||rental.id;if(!G.lease||G.lease.broken||G.lease.id!==leaseId)G.lease={id:leaseId,addr:place||rental.placeLabel||rental.locality||'Your rental',rent:Math.round(+rental.weeklyRent||0),months,start,end,m2m:0};if(G.tut){G.tut.home=1;G.tut.done=1;}}
 function ypResumeTenancyClock(){if(!G||G.homeChosen)return;if(ypActiveTenancy())ypBeginConfirmedTenancy();}
 roomMigrate();ypMigrateSavedClock();ypRestorePlaceName();ypResumeTenancyClock();if(!G.started)G.last=Date.now();{window.__ypCatch={income:0,expense:0};const c0=G.cash,n=advance(Date.now()-G.last);save();hud();if(n>1)window.__ypAway={n,cash:G.cash-c0,income:window.__ypCatch.income,expense:window.__ypCatch.expense};}
 checkReleases();
@@ -3817,6 +3824,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates10"></script>
+<script src="map-preview.js?v=dates11"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
