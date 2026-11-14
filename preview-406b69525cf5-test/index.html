@@ -1184,6 +1184,17 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 #yp-bank-what{margin:8px 0 10px}
 #yp-bank-what .yp-flow-list{margin:0}
 
+.yp-week-result{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0 4px;padding:12px 14px;border-radius:14px;box-sizing:border-box;min-height:44px;text-align:left}
+.yp-week-save{background:#e7f6ec}
+.yp-week-short{background:#fdecee}
+.yp-week-lab{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;flex:1}
+.yp-week-title{font:700 15px/1.25 Inter,system-ui,sans-serif}
+.yp-week-val{font:800 18px/1.15 Inter,system-ui,sans-serif;white-space:nowrap;text-align:right;flex:none}
+.yp-week-save .yp-week-title,.yp-week-save .yp-week-val{color:#0d7a3e}
+.yp-week-short .yp-week-title,.yp-week-short .yp-week-val{color:#c4231a}
+.yp-week-result .yp-hint{display:block;font:500 12px Inter,system-ui,sans-serif;color:#5a6780}
+
+
 
 .yp-flow dt{font:600 14px Inter,system-ui,sans-serif;color:#3d4a63}
 .yp-flow dd{margin:0;font:700 15px Inter,system-ui,sans-serif;color:#14213d;text-align:right}
@@ -1242,7 +1253,6 @@ html.yp-preview #toast.show{transform:translateX(-50%)!important}
 .yp-card-head .yp-x{grid-column:3;grid-row:1;justify-self:end;align-self:center;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#fff;font:700 19px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer}
 .yp-card-head .yp-x:focus-visible{outline:3px solid #fff;outline-offset:2px}
 #yp-living .hwh h2,#yp-living .yp-card-head h2{white-space:normal}
-#yp-living .yp-flow div[data-label="Left each week"] dd,#yp-living .yp-flow div[data-label="Left each week"] dt,#bankbox .yp-flow div[data-label="Left each week"] dd,#bankbox .yp-flow div[data-label="Left each week"] dt{color:#f26b1d}
 #yp-living .yp-flow div[data-label="You could borrow about"]{margin-top:10px;padding:12px 14px;border:2px solid #f26b1d;border-radius:14px;background:#fff4ec;align-items:center}#yp-living .yp-flow div[data-label="You could borrow about"] dt{font-weight:700;color:#14213d}#yp-living .yp-flow div[data-label="You could borrow about"] dd{font-size:20px;font-weight:800;color:#f26b1d}#yp-living .yp-flow div[data-label="You could borrow about"]+div{border-top:0}#yp-living .yp-flow div[data-label="Game borrowing power"]{margin-top:10px;padding:12px 14px;border:1.5px solid rgba(20,33,61,.18);border-radius:14px;background:#f5f7fb;align-items:center}#yp-living .yp-flow div[data-label="Game borrowing power"] dt{font-weight:700;color:#14213d}#yp-living .yp-flow div[data-label="Game borrowing power"] dd{font-size:18px;font-weight:800;color:#14213d}
 a.yp-link{color:#1a5fd6;text-decoration:underline;font-weight:700}
 #sheet > .yp-card-head,#drawer .yp-card-head,#listings > .yp-card-head,#hwov .yp-card-head{margin:0 0 8px}html header .pill#coins,html header .pill#nw,html header .pill#date{min-height:33px;box-sizing:border-box;background:rgba(255,255,255,.14)!important;color:#fff!important;box-shadow:none!important}html header .pill#date{display:inline-flex;align-items:center;justify-content:center;opacity:1!important;font-weight:700}html header .pill#date *{color:#fff!important;opacity:1!important}#yp-feed{display:none;position:fixed;left:0;right:0;top:calc(var(--sat) + 88px);bottom:calc(var(--sab) + 86px);z-index:5;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 10px 12px;box-sizing:border-box;scrollbar-width:none}
@@ -2502,7 +2512,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
         <div style="height:10px;background:#e3e7f0;border-radius:6px;margin:6px 0"><div style="height:10px;width:${pct}%;background:#f47b20;border-radius:6px"></div></div>
         Spent ${fmt(d.spent)} of ${fmt(d.cost+(d.biz?bizSetup(d.biz):0))} · construction loan drawn ${fmt(d.drawn)} / ${fmt(d.loanCap)} (interest-only ${(CFG.rateIO*100).toFixed(2)}%)</div>`;}
     if(d){let h=`<div class="fin">🏢 <b>${BUILD[d.kind].label}</b> · ${d.gfa} m² GFA${d.n?' · '+d.n+' units':''}`;
-      if(d.biz){const B=BIZ[d.biz],tier=B.tiers.find(t=>d.turn<=t[0])||B.tiers[2];h+=`<br>${B.icon} ${B.label}: turnover ~${fmt(d.turn)}/yr · ATO benchmark costs ${Math.round(tier[2]*100)}% (labour ${Math.round(tier[3]*100)}%) · profit ~${fmt(bizProfit(d))}/wk (before your own wage)<br><small>Award reference: ${fmt(B.award)}/wk full-time + ${CFG.superRate*100}% super. Business valued at ${B.mult}× annual profit.</small>`;}
+      if(d.biz){const B=BIZ[d.biz],tier=B.tiers.find(t=>d.turn<=t[0])||B.tiers[2];h+=`<br>${B.icon} ${B.label}: turnover ~${fmt(d.turn)}/yr · tax office benchmark costs ${Math.round(tier[2]*100)}% (labour ${Math.round(tier[3]*100)}%) · profit ~${fmt(bizProfit(d))}/wk (before your own wage)<br><small>Award reference: ${fmt(B.award)}/wk full-time + ${CFG.superRate*100}% super. Business valued at ${B.mult}× annual profit.</small>`;}
       return h+'</div>';}
     const o=devOptions(id),demo=lot(id).type!=='vacant',L=localStorage.getItem('fe.cl')!=='0';
     const est=k=>{const x=o[k];if(k==='units')return x.n*P.unit*relOf(id)*varOf(id)*mkt(id);if(k==='complex')return P.comm*x.gfa*.85/CFG.capRate*mkt(id);return P.comm*x.gfa/CFG.capRate*mkt(id);};
@@ -2513,7 +2523,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
       <ul class="list" style="font-size:13px">${row('units',' · '+o.units.n+' units')}${row('complex')}${row('shop',' · lease to tenant')}</ul>
       <select id="bizsel" style="width:100%;padding:8px">${Object.entries(BIZ).map(([k,b])=>`<option value="${k}">${b.icon} ${b.label} — setup ${fmtK(bizSetup(k))}, turnover ~${fmtK(bizTurn(k))}/yr</option>`).join('')}</select>
       <button class="btn sec" onclick="startDev('${id}','shop',bizsel.value,${L})">Build shop & run my own business</button>
-      <small>Costs: BMT 2026 cost table, ATO small business benchmarks, real ${P.label} council DA fees. Finished values are market estimates; a development can lose money where rents are low.</small></div>`;},
+      <small>Costs: construction cost tables, tax office small business benchmarks, and ${P.label} council DA fees. Finished values are market estimates; a development can lose money where rents are low.</small></div>`;},
   bankBox(withCash){const b=bank(),r=(k,v,st)=>`<tr><td>${k}</td><td style="text-align:right;${st||''}">${v}</td></tr>`,best=LENDERS.map(L=>[L,maxPrice(L)]).sort((x,y)=>y[1]-x[1])[0],pct=x=>(x*100).toFixed(2)+'%';
     return `<div class="fin" id="bankbox"><div id="borrowtop">${withCash?`<dl class="yp-flow"><div><dt>Savings</dt><dd>${fmt(G.cash)}</dd></div></dl><div class="bhead" style="margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase">Monthly Breakdown</div>`:''}${borrowSimple(b,'bb')}</div>
     <details id="borrowdetail"><summary><b>ⓘ How the bank works this out</b></summary>
@@ -2612,7 +2622,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     this.open(`<h2>📍 ${esc(R.n)}</h2><div class="sub">Fictional suburb of Coralwood · ${esc(RG.label)} price level · typical 3-bed house</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0">${box('Typical house price',fmt(R.med),RG.label+' level')}${box('Typical weekly rent','$'+R.rent+'/wk','3-bed house')}${box('Gross rental yield',y.toFixed(2)+'%','rent × 52 ÷ price')}${box('Unit (2-bed)',fmt(Math.round(RG.unit*R.sf/1000)*1000),'$'+Math.round(RG.unitRent*R.sf**.8/5)*5+'/wk')}</div>
     <div class="simnote">📘 <b>Gross yield</b> is a year's rent divided by the price. ${fmt(R.med)} earning $${R.rent}/wk gives about ${y.toFixed(1)}%. It's before costs such as rates, insurance, management and repairs, so the <b>net</b> yield an investor actually keeps is lower. Higher-priced suburbs often have lower yields, with buyers counting on growth instead.</div>
-    <div class="sub" style="font-size:12px">This suburb is fictional. Its price level is game-set: ${RG.label==='City'?'City = Brisbane-like levels (Cotality, SQM, Oct 2026)':'Regional = Bundaberg-like levels (QLD RTA bond data, Jul–Sep 2026)'}. Each lot is priced from this level ±15% plus game factors (size, bedrooms, water, market cycle).</div>
+    <div class="sub" style="font-size:12px">This suburb is fictional. Its price level is game-set: ${RG.label==='City'?'City = Brisbane-like levels (October 2026)':'Regional = Bundaberg-like levels (July–September 2026)'}. Each lot is priced from this level ±15% plus game factors (size, bedrooms, water, market cycle).</div>
     <button class="btn sec" onclick="${back?`UI.plot('${back}')`:'UI.close()'}">‹ Back</button>`);},
   privacy(){this.open(`<h2>🔒 Privacy</h2><div class="sub">${GEN.c1&&GEN.c1.parcels?`<p>Your Plot does <b>not use your location</b>. Coralwood is a <b>fictional 3D town</b>: every suburb, street, lot and owner is made up, so nothing matches a real address. Properties are labelled 'Lot N, Street', where N is the game's own number along that street. Suburb prices and rents are set at City or Regional levels built from published Queensland medians. In-game owners, prices and sales are simulated.</p>`:`<p>Your Plot does <b>not use your location</b>. Only Bundaberg's <b>natural geography</b> is real: the coastline, the Burnett River and lakes/dams, from OpenStreetMap (© OpenStreetMap contributors, ODbL). Real suburb names and published suburb medians are shown; every street, lot and owner is fictional, and suburb areas on the map are approximate. Lots are numbered ('Lot N, Street'), with no street numbers, so nothing matches a real address. No buildings, photos or satellite imagery are used. The other cities are fully fictional.</p>`}<p>Other players only see your <b>username</b>. Don't use your real name.</p><p>Progress is saved only in this browser. No accounts, analytics or tracking.</p></div><button class="btn sec" onclick="UI.help()">‹ Back</button>`);}};
 function setUname(){const v=document.getElementById('uname').value.trim().replace(/[^A-Za-z0-9_.-]/g,'').slice(0,16);if(v.length<3)return toast('3–16 letters, numbers, _ . -'),false;G.username=v;save();toast('Username saved: '+v);}
@@ -2685,7 +2695,7 @@ function onboard(step,legacy){const el=document.getElementById('picker');
   el.innerHTML=`<h1>Step 3 · You're in ${c.name}</h1>${NOTE}<div class="fin" style="color:#14213d;font-size:14px">
     <div class="row">${kv('Cash',fmt(G.cash))}${kv('Income',fmt(SALARY+INC().partner)+'/yr')}</div>
     <div class="row">${kv('Take-home',fmt(salaryNetWk())+'/wk')}${kv('Borrowing power',fmt(b.power),'color:#1a478a')}</div>
-    Take-home pay is after ATO resident tax (2024-25/2025-26 rates) and the Medicare levy. Living costs of ${fmt(livingMo())}/mo (HEM benchmark or your own figure, whichever is higher) are deducted each week.<br><button class="btn sec" id="incbtn" onclick="UI.income()">💼 My income: set your salary</button><br><br>
+    Take-home pay is after tax office resident tax (2024-25/2025-26 rates) and the Medicare levy. Living costs of ${fmt(livingMo())}/mo (HEM benchmark or your own figure, whichever is higher) are deducted each week.<br><button class="btn sec" id="incbtn" onclick="UI.income()">💼 My income: set your salary</button><br><br>
     📍 You start on <b>${esc(st)}</b>, ${esc(g.subs[ls[0].si].name)}: ${ls.length} lots, ${ls.filter(l=>l.type==='vacant').length} of them vacant land${wet?`, ${wet} near the water`:''}. Buy or build here, and the streets next door open up as you go.</div>
     <button class="btn buy" id="gostreet" onclick="startStreet()">Go to ${esc(st)} ›</button>`;el.style.display='block';}
 const numIn=x=>String(x==null?'':x).replace(/[$,\s]/g,'').replace(/^aud/i,''); // v24: accept '72,000', '$72000', ' 72 000 '
@@ -3784,6 +3794,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=cards4"></script>
+<script src="map-preview.js?v=cards5"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
