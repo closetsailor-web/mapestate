@@ -915,7 +915,7 @@ body{-webkit-font-smoothing:antialiased}
 .sheet label{font-size:13px;color:var(--mute);font-weight:600}
 .sub{font-size:13.5px}
 .sheet table td{padding:6px 0;vertical-align:top}.sheet table td:last-child{white-space:nowrap;padding-left:12px;font-variant-numeric:tabular-nums}
-.banswer{margin-top:12px;padding:16px;border-radius:14px;box-shadow:inset 0 0 0 2px #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}
+.banswer{margin-top:12px;padding:16px;border-radius:14px;box-shadow:inset 0 0 0 2px #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}.banswer.banswer-no{box-shadow:inset 0 0 0 1.5px rgba(20,33,61,.18);background:#f5f7fb}.banswer.banswer-no>div:first-child{font:700 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.banswer.banswer-no .bsub{margin-top:6px;color:#5a6780}
 #borrowdetail summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--mute)}
 .seg{display:flex;gap:4px;padding:4px;background:var(--card2);border-radius:14px;margin:8px 0}.seg button{flex:1;min-height:40px;border:0;border-radius:11px;background:transparent;font:600 15px Inter,system-ui,sans-serif;color:var(--mute);cursor:pointer;transition:background .2s,color .2s}.seg button.on{background:var(--card);color:var(--txt);box-shadow:0 1px 4px rgba(11,37,69,.12)}
 .erow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}.erow>span{flex:1;min-width:0;font-size:15px}
@@ -1765,10 +1765,11 @@ const curLvr=()=>0; // legacy arg, ignored
 function lenderCheck(q,L,rentWk=0){const why=[],lc=loanCheck(q.loan,rentWk,0,G.cash-q.payNow);
   const mF=minDep(L,q.id);if(q.dep+0.5<q.price*mF)why.push(mF>L.min?`Deposit ${fmt(q.dep)} is below 20% (${fmt(Math.ceil(q.price*mF))}). Banks usually lend up to 80% on vacant property, so you need at least a 20% deposit.`:`Deposit ${fmt(q.dep)} is below ${L.name}'s minimum of ${L.min*100}% (${fmt(Math.ceil(q.price*L.min))})`);
   if(G.cash<q.cash)why.push(`Not enough cash: you need ${fmt(q.cash)} (deposit + duty + LMI + legals + insurance) and you have ${fmt(G.cash)}`);
-  let fix=null;if(!lc.ok){const pw=lc.b.power;why.push(`Loan needed ${fmt(q.loan)} but your borrowing power is only ${fmt(pw)} (short by ${fmt(q.loan-pw)}). Your existing loans (${fmt(lc.b.debt)}) are tested at ${(lc.b.ar*100).toFixed(2)}%.`);
-    let dep=Math.max(Math.ceil(q.price*minDep(L,q.id)),q.price-pw);for(let k=0;k<30&&!lenderCheck2(quote(q.price,0,dep,q.id),rentWk);k++)dep=Math.min(q.price,dep+Math.max(1000,Math.round((q.price-dep)*.1)));const q2=quote(q.price,0,dep,q.id),c2=lenderCheck2(q2,rentWk);
-    if(c2&&G.cash>=q2.cash)fix={dep,cash:q2.cash,msg:`✅ Fix: put in a bigger deposit of ${fmt(dep)} (total cash ${fmt(q2.cash)}). You have ${fmt(G.cash)}.`};
-    else why.push(`A deposit big enough to fit (${fmt(dep)}, total cash ${fmt(q2.cash)}) is more than your ${fmt(G.cash)} cash. Choose a cheaper property, or build up savings and rent first. With your cash, the most you can buy here is about ${fmtK(maxPrice(L))}.`);}
+  let fix=null;if(!lc.ok){const pw=lc.b.power;
+    if(pw>0){why.push('The bank will lend you up to '+fmt(pw)+', but this loan is '+fmt(q.loan)+'.');
+      let dep=Math.max(Math.ceil(q.price*minDep(L,q.id)),q.price-pw);for(let k=0;k<30&&!lenderCheck2(quote(q.price,0,dep,q.id),rentWk);k++)dep=Math.min(q.price,dep+Math.max(1000,Math.round((q.price-dep)*.1)));const q2=quote(q.price,0,dep,q.id),c2=lenderCheck2(q2,rentWk);
+      if(c2&&G.cash>=q2.cash)fix={dep,cash:q2.cash,msg:'A bigger deposit of '+fmt(dep)+' would be approved (total cash '+fmt(q2.cash)+'). You have '+fmt(G.cash)+'.'};
+      else why.push('A deposit big enough to fit ('+fmt(dep)+', total cash '+fmt(q2.cash)+') is more than your '+fmt(G.cash)+' cash. Choose a cheaper property, or try a home you can buy with cash. With your cash, the most you can buy here is about '+fmtK(maxPrice(L))+'.');}}
   return{ok:!why.length&&lc.ok,why:why.concat(lc.ok?[]:lc.why),b:lc.b,L,fix,q};}
 const lenderCheck2=(q,rentWk)=>loanCheck(q.loan,rentWk,0,G.cash-q.payNow).ok;
 function maxPrice(L){let lo=0,hi=8e6;for(let i=0;i<40;i++){const m=(lo+hi)/2;let ok=false;for(const f of[L.min,.2,.3,.4,.5,.6,.8,1]){if(f<L.min)continue;const q=quote(m,0,Math.ceil(m*f));if(q.cash<=G.cash&&loanCheck(q.loan,0,0,G.cash-q.payNow).ok){ok=true;break;}}if(ok)lo=m;else hi=m;}return Math.floor(lo/1000)*1000;}
@@ -1936,7 +1937,6 @@ function hemMo(g){const T=[[60000,1640],[100000,2010],[150000,2360],[200000,2650
 const BANK={buffer:.03/*APRA serviceability buffer*/,rentShade:.8,bizShade:.6/*EST: lenders shade self-employed income harder*/,dti:6/*APRA DTI ≥6 flagged as high-risk, used as hard cap*/,termY:30};
 /* GAME RULE (not real lending): coins bought in the shop boost borrowing power */
 const SHOP_BOOST={mult:1.5,cap:1e6};
-const CASH_CAP=.5; // GAME RULE: 50% of current cash balance adds to borrowing power
 function shopBought(){if(G.shopBought==null)G.shopBought=G.hist.filter(h=>h.t.includes('coin pack')).reduce((a,h)=>a+(h.amt||0),0);return G.shopBought;}
 const shopBoost=()=>Math.min(SHOP_BOOST.mult*shopBought(),SHOP_BOOST.cap);
 const annuity=(rt,n)=>(1-(1+rt/12)**-n)/(rt/12);
@@ -1945,11 +1945,11 @@ function bank(extraRentWk=0,extraBizWk=0,cashBase=G.cash){const ps=allProps();le
   const ar=CFG.rateIP+BANK.buffer,gross=SALARY+INC().partner+BANK.rentShade*(rent+extraRentWk)*52+BANK.bizShade*(biz+extraBizWk)*52,otherInc=gross-SALARY-INC().partner,net=netIncome(SALARY+otherInc)+partnerNet(),hem=Math.max(hemMo(gross),GAME_EXP_MO),extDebt=0;
   const rentMo=myRentWk()*52/12,existing=(debt>0?debt/annuity(ar,BANK.termY*12):0)+extDebt+rentMo,surplus=net/12-hem-existing;
   const svc=Math.max(0,surplus*annuity(ar,BANK.termY*12)),dtiRoom=Math.max(0,BANK.dti*gross-debt);
-  return{salary:SALARY,partner:INC().partner,rent:rent*52,biz:biz*52,tax:taxNet(SALARY+otherInc)+taxNet(INC().partner),medicare:medicare(SALARY+otherInc)+medicare(INC().partner),gross,net,hem,existing,surplus,svc,dtiRoom,debt,ar,rentMo,incomePower:Math.min(svc,dtiRoom),cashCap:CASH_CAP*Math.max(0,cashBase),boost:shopBoost(),power:Math.floor((Math.min(svc,dtiRoom)+CASH_CAP*Math.max(0,cashBase)+shopBoost())/1000)*1000};}
+  return{salary:SALARY,partner:INC().partner,rent:rent*52,biz:biz*52,tax:taxNet(SALARY+otherInc)+taxNet(INC().partner),medicare:medicare(SALARY+otherInc)+medicare(INC().partner),gross,net,hem,existing,surplus,svc,dtiRoom,debt,ar,rentMo,incomePower:Math.min(svc,dtiRoom),boost:shopBoost(),power:Math.floor((Math.min(svc,dtiRoom)+shopBoost())/1000)*1000};}
 function loanCheck(amt,extraRentWk=0,extraBizWk=0,cashBase=G.cash){if(amt<=0)return{ok:true,why:[],b:bank(0,0,cashBase)};const b=bank(extraRentWk,extraBizWk,cashBase),why=[];
-  if(amt>b.power){if(amt>b.svc+b.boost+b.cashCap)why.push(`Serviceability: repayments tested at ${(b.ar*100).toFixed(2)}% (rate + 3% APRA buffer) exceed your surplus income after HEM living costs ${fmt(b.hem)}/mo${b.existing?' and existing loans '+fmt(b.existing)+'/mo':''}`);
-    if(amt>b.dtiRoom+b.boost+b.cashCap)why.push(`Debt-to-income: total debt would exceed ${BANK.dti}× assessed income (${fmt(b.gross)})`);
-    why.push(`Borrowing power ${fmt(b.power)} = income ${fmt(b.incomePower)} + cash capacity ${fmt(b.cashCap)} (50% of cash left after this purchase's upfront payment) + shop boost ${fmt(b.boost)}`);}
+  if(amt>b.power){if(b.power<=0)why.push("The bank can't lend you more right now because you spend more than you earn each week.");
+    else{if(amt>b.svc+b.boost)why.push('The bank will lend you up to '+fmt(b.power)+', but this loan is '+fmt(amt)+'.');
+      if(amt>b.dtiRoom+b.boost)why.push('The bank will not lend more than '+BANK.dti+' times your yearly pay, minus loans you already have.');}}
   return{ok:amt<=b.power,why,b};}
 function switchStart(){closeSheet();G.statusPick=null;delete G.statusPend;save();const d=document.getElementById('status');if(d)d.remove();statusScreen();}
 function declined(c){UI.open(`<h2>🏦 Loan declined${c.L?' — '+c.L.name:''}</h2><table style="width:100%;font-size:13px">${c.q?`<tr><td>Price</td><td style="text-align:right">${fmt(c.q.price)}</td></tr><tr><td>Deposit chosen</td><td style="text-align:right">${fmt(c.q.dep)} (${(c.q.dep/c.q.price*100).toFixed(1)}%)</td></tr><tr><td>Cash needed (deposit + duty + LMI + legals + insurance)</td><td style="text-align:right"><b>${fmt(c.q.cash)}</b></td></tr><tr><td>Cash available</td><td style="text-align:right"><b>${fmt(G.cash)}</b></td></tr><tr><td>Loan asked</td><td style="text-align:right"><b>${fmt(c.q.loan)}</b></td></tr>`:''}<tr><td>Borrowing power</td><td style="text-align:right"><b>${fmt(c.b.power)}</b></td></tr></table><ul class="list" style="font-size:13px">${c.why.map(w=>'<li>❌ '+w+'</li>').join('')}</ul>${c.fix?`<div class="fin">${c.fix.msg}<button class="btn buy" onclick="setDep(sel,${c.fix.dep});buyRefresh()">Use ${fmt(c.fix.dep)} deposit</button></div>`:'<div class="sub">Try a bigger deposit, a cheaper property, or build up rental income first.</div>'}${(!G.homeChosen&&G.statusPick==='buy')?`<div class="fin" id="decl_alt"><b>Can't get this loan?</b> <small>You can start by renting, or boarding in a room share, instead.</small><button class="btn buy" id="decl_switch" onclick="switchStart()">Choose rent or room share</button></div>`:''}<button class="btn sec" onclick="sel&&UI.plot(sel)">‹ Back</button>`);}
@@ -2356,7 +2356,7 @@ function buyShort(id,price){const s=buyStatus(id,price);if(s.ok)return '';
   const dep=s.cashOk?R('✅ Deposit + buying costs',fmt(s.need)+' (you have '+fmt(s.have)+')'):R('❌ Deposit + buying costs',fmt(s.need)+' (you have '+fmt(s.have)+')');
   const lend=s.loanOk?R('✅ The bank will lend you',fmt(s.power)+' (you need '+fmt(s.loan)+')'):R('❌ The bank will lend you',fmt(s.power)+' (you need '+fmt(s.loan)+')');
   const head=!s.cashOk&&!s.loanOk?"You can't buy this yet: you need a bigger deposit and the bank won't lend enough":!s.cashOk?"You don't have enough money for the deposit yet":"The bank won't lend you enough for this home yet";
-  const tip=`<small>${s.loanOk?'':'The bank looks at your pay, your rent and other costs. In this game, the money in your bank and coins you buy also raise what the bank will lend. '}</small>`;
+  const tip=`<small>${s.loanOk?'':'The bank looks at your pay, your rent and other costs. Your savings are for the deposit, not for how much the bank will lend. '}</small>`;
   if(s.help)return `<div class="fin hcard" id="buyshort" data-coins="${s.coins}"><b>${head}</b>${dep}${lend}${R('Coins you need to buy this',fmt(s.coins),1)}${tip}<small>Coins go into your bank. They are not a loan.</small><button class="btn buy" id="buyshort_coins" onclick="coinsFor('${id}')">🪙 Buy coins</button></div>`;
   const L=curLender();let mp=0;try{mp=maxPrice(L);}catch(e){}
   return `<div class="fin hcard" id="buyshort" data-coins="none"><b>This home costs too much for you right now</b>${dep}${lend}<div class="sub" id="buyshort_nocoins">Buying coins won't fix this. Your pay is too low for the bank to lend this much. Try a cheaper home${mp?` (about ${fmtK(mp)} or less)`:''}, or keep renting and save up.</div><button class="btn sec" onclick="UI.close();listOpen('sale')">See cheaper homes</button></div>`;}
@@ -2533,7 +2533,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     ${r('Total pay the bank counts',fmt(b.gross)+' a year','font-weight:700')}${r('Minus tax and Medicare (a health tax)',fmt(b.tax+b.medicare)+' a year')}${r('Money in after tax',fmt(b.net/12)+' a month','font-weight:700')}
     ${r('Living costs: the bank uses a normal amount for your pay, or your own number if it is higher',fmt(b.hem)+' a month')}${b.rentMo?r(housing()==='family'?'Board you pay now':'Rent you pay now',fmt(b.rentMo)+' a month'):''}${b.existing?r(`Loans you already have${INC().debt?' and other debts':''}. The bank pretends the interest is ${pct(b.ar)}, which is 3% more than today, to be safe`,fmt(b.existing)+' a month'):''}
     ${r('Left over each month',fmt(b.surplus)+' a month','font-weight:700'+(b.surplus<0?';color:#c0672b':''))}${r('Check 1: the biggest loan your left-over money could repay over 30 years',fmt(b.svc))}
-    ${r(`Check 2: banks will not lend more than 6 times your yearly pay, minus loans you have (${fmt(b.debt)})`,fmt(b.dtiRoom))}${r('<b>Smaller of the two checks</b>',fmt(b.incomePower))}${r(`Plus half your cash (${fmt(G.cash)}) <span class="tag">GAME RULE</span>`,fmt(b.cashCap))}${r(`Plus shop coin boost <span class="tag">GAME RULE</span>`,fmt(b.boost))}${r('<b>You could borrow about</b>','<b>'+fmt(b.power)+'</b>')}
+    ${r(`Check 2: banks will not lend more than 6 times your yearly pay, minus loans you have (${fmt(b.debt)})`,fmt(b.dtiRoom))}${r('<b>Smaller of the two checks</b>',fmt(b.incomePower))}${b.boost?r('Plus shop coin boost <span class="tag">GAME RULE</span>',fmt(b.boost)):''}${r(b.power>0?'<b>You could borrow about</b>':'<b>The bank can\'t lend you more right now</b>',b.power>0?'<b>'+fmt(b.power)+'</b>':'')}
     ${r('Most you could pay for a place (your cash for deposit and costs, plus the loan), with '+best[0].name,fmt(best[1]))}</table>
     <small>Your cash pays the deposit and buying costs. Buying a place with tenants adds 80% of its rent, so a property's own panel can show a bigger number.</small></details></div>`;},
   finance(id,price){const L=curLender(),q=quoteFor(price,id),cf=cashflow(id,q.repay)+(q.ins/52),lc=lenderCheck(q,L,weeklyRent(id)),mF=minDep(L,id),mn=Math.ceil(price*mF),mx=Math.max(mn,Math.min(price,Math.floor(G.cash-(q.cash-q.dep))));
@@ -2882,8 +2882,9 @@ function collapseLong(root){if(window.NOCOLLAPSE)return;root.querySelectorAll('s
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.lm');if(!a)return;e.preventDefault();const el=a.parentElement;if(el&&el.dataset.full!=null){el.innerHTML=el.dataset.full;delete el.dataset.full;el.dataset.opened=1;}});
 /* v24 simple borrowing summary (age-13 reading level). Presentation only: numbers come straight from bank(). */
 function borrowSimple(b,pre){const inM=b.net/12,outM=b.hem+(b.existing||0)/*existing already includes rent paid and other debts*/,left=b.surplus,rep=b.power>0?b.power/annuity(CFG.rateIP,BANK.termY*12):0,L=(t,v,c)=>`<div><dt>${t}</dt><dd style="${c||''}">${v}</dd></div>`;
+  const box=b.power>0?`<div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(b.power)}</b><div class="bsub">What the bank would lend after its own checks, not your leftover money. Repayments would be about <b id="${pre}_rep">${fmt(rep)}</b> a month</div></div>`:`<div class="banswer banswer-no"><div>The bank can't lend you more right now</div><div class="bsub">You spend more than you earn each week. Cut costs or earn more, for example rent out a property, then check again.</div></div>`;
   return `<dl class="yp-flow">${L('Income',fmt(inM))}${L('Expenses',fmt(outM))}${L('Left over',fmt(left),left<0?'color:#c0672b':'color:#1a478a')}</dl>
-  <div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(b.power)}</b><div class="bsub">Repayments would be about <b id="${pre}_rep">${fmt(rep)}</b> a month</div></div>`;}
+  ${box}`;}
 /* v24 expenses editor: one screen, used from the tutorial, My income and Profile */
 let expDraft=null,expFrom=null;
 const expTypical=()=>{const t=Math.round(hemMo(SALARY+INC().partner)),o=Object.fromEntries(EXP_CATS.map(([k,,p])=>[k,Math.round(t*p)]));o.other+=t-expTotal(o);return o;}; // total equals the existing HEM-style figure exactly
@@ -3794,6 +3795,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=cards6"></script>
+<script src="map-preview.js?v=cards7"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
