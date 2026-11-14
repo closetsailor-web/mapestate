@@ -2714,7 +2714,7 @@ window.flowFinish=function(d){d=d||{};try{const a=document.activeElement;a&&a.bl
   let k=BUNDY_SUBS.findIndex(R=>R.n===d.start);if(k<0&&d.start&&window.FLOW_SUBS.includes(d.start)){/* suburb without its own rent figures: use the nearest covered suburb's */try{const g=GEN[G.cur],s0=g&&g.subs.find(x=>x.name===d.start);if(s0&&s0.blocks){let bd=1e30;g.real.forEach((R,i)=>{if(!R.blocks)return;const dd=(R.x-s0.cx)**2+(R.y-s0.cy)**2;if(dd<bd){bd=dd;k=i;}});}}catch(_){}if(k<0)k=0;}if(k>=0&&d.start){G.rental=Object.assign({},G.rental||{},{k});G.startSub=d.start;}save();
   const w=document.getElementById('flow');if(w)w.remove();statusScreen(()=>onboard(2));if(k>=0)setTimeout(()=>flowFly(d.start),60);};
 function flowFly(n){const g=GEN[G.cur];if(!g)return;const ls=g.lots.filter(l=>g.subs[l.si]&&g.subs[l.si].name===n&&lotOpen(l.id));if(!ls.length)return;const x0=Math.min(...ls.map(l=>l.x)),x1=Math.max(...ls.map(l=>l.x+l.w)),y0=Math.min(...ls.map(l=>l.y)),y1=Math.max(...ls.map(l=>l.y+l.h));w3(w=>w.fit(x0,y0,x1,y1,false));}
-function startOver(){if(!confirm('Start over as a new player? This wipes this game on this device.'))return;Object.keys(localStorage).filter(k=>k.startsWith('fe.')).forEach(k=>localStorage.removeItem(k));location.reload();}
+function startOver(){if(!confirm('Start over as a new player? This wipes this game on this device.'))return;ypStartFresh();}
 function onboard(step,legacy){const el=document.getElementById('picker');
   if(step===1&&!legacy){el.style.display='none';return flowOpen();}
   if(step===1){el.innerHTML=`<h1>🏡 Your Plot</h1><div class="sub" style="color:#dbe6f5;font-size:16px">Buy, rent and build property in Coralwood. Coins only, no cash-out.</div><details style="color:#dbe6f5;font-size:12px;margin:4px 0"><summary>ⓘ About this test build</summary>${NOTE}</details><div class="fin" style="color:#14213d">Your nickname. Use a nickname, not your real name.<input type="text" id="uname" maxlength="16" placeholder="e.g. bargain_hunter" value="${esc(G.username||'')}"><button class="btn buy" onclick="if(setUname()!==false&&G.username)onboard(2)">Continue</button></div>`;el.style.display='block';return;}
@@ -3824,6 +3824,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates13"></script>
+<script src="map-preview.js?v=dates14"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
