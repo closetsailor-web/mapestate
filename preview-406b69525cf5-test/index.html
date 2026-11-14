@@ -1150,7 +1150,32 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 .yp-listing dt,.yp-listing dd{font:600 14px Inter,system-ui,sans-serif;color:#0a3a8c}
 .yp-listing dd{margin:0;font-weight:700}
 .yp-flow{margin:0 0 12px}
-.yp-flow div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid rgba(20,33,61,.08)}
+.yp-flow>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;min-height:44px;align-items:center;box-sizing:border-box;border-top:1px solid rgba(20,33,61,.08)}
+.yp-flow-list{margin:0 0 12px}
+.yp-flow-list>.yp-flow{margin:0}
+.yp-flow-list>.yp-flow-head,.yp-flow-head{grid-column:1/-1;margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase}
+.yp-money-group{border-top:1px solid rgba(20,33,61,.08)}
+.yp-money-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:8px 0;margin:0;border:0;background:transparent;text-align:left;cursor:pointer;color:inherit;font:inherit;border-radius:8px}
+.yp-money-toggle:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px}
+.yp-money-lab{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;flex:1}
+.yp-money-title{font:700 15px/1.25 Inter,system-ui,sans-serif;color:#14213d}
+.yp-money-toggle .yp-hint{display:block;font:500 12px Inter,system-ui,sans-serif;color:#5a6780}
+.yp-money-right{display:flex;align-items:center;gap:6px;flex:none}
+.yp-money-val{font:800 18px/1.15 Inter,system-ui,sans-serif;color:#14213d;white-space:nowrap;text-align:right}
+.yp-money-chev{display:inline-flex;align-items:center;justify-content:center;width:20px;color:#6b7a90;font-size:15px;line-height:1}
+.yp-money-body{padding:0 0 6px}
+.yp-money-body>.yp-flow-list{margin:0}
+.yp-money-body .yp-flow{margin:0;padding:0 0 0 10px;border-left:2px solid #d9e6fb}
+.yp-money-body .yp-flow>div{min-height:44px;align-items:center;box-sizing:border-box}
+.yp-flow>div.yp-subtotal{background:#f5f7fb;margin:0 -8px 0 -10px;padding-left:10px;padding-right:8px;border-radius:8px;border-top:0}
+#yp-living .yp-money-in .yp-money-title,#bankbox .yp-money-in .yp-money-title{color:#1a478a}
+#yp-living .yp-money-out .yp-money-title,#bankbox .yp-money-out .yp-money-title{color:#b8410a}
+#yp-living .yp-money-in .yp-money-val,#bankbox .yp-money-in .yp-money-val{color:#1a478a}
+#yp-living .yp-money-out .yp-money-val,#bankbox .yp-money-out .yp-money-val{color:#b8410a}
+#bankbox .yp-flow-list{margin:0}
+#bankbox .yp-money-group,#bankbox .yp-flow>div{text-align:left}
+#yp-living .yp-money-due .yp-money-val{color:#14213d}
+
 .yp-flow dt{font:600 14px Inter,system-ui,sans-serif;color:#3d4a63}
 .yp-flow dd{margin:0;font:700 15px Inter,system-ui,sans-serif;color:#14213d;text-align:right}
 .yp-flow .yp-hint{display:block;font:500 12px Inter,system-ui,sans-serif;color:#5a6780}
@@ -3750,6 +3775,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=settle1"></script>
+<script src="map-preview.js?v=cards1"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
