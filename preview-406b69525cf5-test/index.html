@@ -2910,9 +2910,10 @@ function collapseLong(root){if(window.NOCOLLAPSE)return;root.querySelectorAll('s
   el.dataset.full=el.innerHTML;el.innerHTML=esc(first)+' <a href="#" class="lm" aria-label="Learn more" style="text-decoration:none;font-weight:700">ⓘ</a>';});}
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.lm');if(!a)return;e.preventDefault();const el=a.parentElement;if(el&&el.dataset.full!=null){el.innerHTML=el.dataset.full;delete el.dataset.full;el.dataset.opened=1;}});
 /* v24 simple borrowing summary (age-13 reading level). Presentation only: numbers come straight from bank(). */
-function borrowSimple(b,pre){const inM=b.net/12,outM=b.hem+(b.existing||0)/*existing already includes rent paid and other debts*/,left=b.surplus,rep=b.power>0?b.power/annuity(CFG.rateIP,BANK.termY*12):0,L=(t,v,c)=>`<div><dt>${t}</dt><dd style="${c||''}">${v}</dd></div>`;
-  const box=b.power>0?`<div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(b.power)}</b><div class="bsub">What the bank would lend after its own checks, not your leftover money. Repayments would be about <b id="${pre}_rep">${fmt(rep)}</b> a month</div></div>`:`<div class="banswer banswer-no"><div>The bank can't lend you more right now</div><div class="bsub">You spend more than you earn each week. Cut costs or earn more, for example rent out a property, then check again.</div></div>`;
-  return `<dl class="yp-flow">${L('Income',fmt(inM))}${L('Expenses',fmt(outM))}${L('Left over',fmt(left),left<0?'color:#c0672b':'color:#1a478a')}</dl>
+function ypBankAfford(b){b=b||{};const income=(+b.net||0)/12,expenses=(+b.hem||0)+(+b.existing||0),left=b.surplus,power=+b.power||0,repay=power>0?power/annuity(CFG.rateIP,BANK.termY*12):0;return {income,expenses,left,power,repay,boost:+b.boost||0};}
+function borrowSimple(b,pre){const a=ypBankAfford(b),L=(t,v,c)=>`<div><dt>${t}</dt><dd style="${c||''}">${v}</dd></div>`;
+  const box=a.power>0?`<div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(a.power)}</b><div class="bsub">What the bank would lend after its own checks, not your leftover money. Repayments would be about <b id="${pre}_rep">${fmt(a.repay)}</b> a month</div></div>`:`<div class="banswer banswer-no"><div>The bank can't lend you more right now</div><div class="bsub">You spend more than you earn each week. Cut costs or earn more, for example rent out a property, then check again.</div></div>`;
+  return `<dl class="yp-flow">${L('Income',fmt(a.income))}${L('Expenses',fmt(a.expenses))}${L('Left over',fmt(a.left),a.left<0?'color:#c0672b':'color:#1a478a')}</dl>
   ${box}`;}
 /* v24 expenses editor: one screen, used from the tutorial, My income and Profile */
 let expDraft=null,expFrom=null;
@@ -3824,6 +3825,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates15"></script>
+<script src="map-preview.js?v=dates16"></script>
 <script src="overture-layer.js?v=forsale1"></script>
 </body></html>
