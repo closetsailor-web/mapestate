@@ -2115,7 +2115,7 @@ function offerVendor(id){const op=openPrice(id),o=Math.round(+document.getElemen
   save();UI.plot(id);toast(`❌ Vendor declined (${Math.round(pr*100)}% chance). Try again next week`);}
 function acceptCounter(id){const c=(G.counter||{})[id];if(!c)return;if(contract(id,c.amt,0,'vendor counter-offer')){delete G.counter[id];save();toast('🤝 Counter-offer accepted at '+fmt(c.amt));}UI.plot(id);}
 /* ======================= PAYMENTS (interface; DEMO) ======================= */
-const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',priceAUD:1.99,coins:25000},{sku:'m',label:'Investor',priceAUD:4.99,coins:75000},{sku:'l',label:'Developer',priceAUD:9.99,coins:175000},{sku:'xl',label:'Tycoon',priceAUD:19.99,coins:400000}];},
+const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',priceAUD:1.99,coins:25000},{sku:'m',label:'Investor',priceAUD:4.99,coins:75000},{sku:'l',label:'Developer',priceAUD:9.99,coins:175000},{sku:'xl',label:'Tycoon',priceAUD:19.99,coins:500000}];},
   purchase(){return new Promise(r=>setTimeout(()=>r({ok:true,demo:true}),300));}};
 const Payments=DemoPayments; /* swap for Stripe / Apple IAP / Google Play Billing with the same API; verify receipts server-side */
 async function buyCoins(sku){const p=Payments.listProducts().find(x=>x.sku===sku);if(!p)return;if(Payments.demo&&!confirm(`DEMO PURCHASE — no real money will be charged.\n\nCredit ${p.coins.toLocaleString()} coins (A$${p.priceAUD})?`))return;
@@ -3897,6 +3897,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates60"></script>
-<script src="overture-layer.js?v=dates60"></script>
+<script src="map-preview.js?v=dates61"></script>
+<script src="overture-layer.js?v=dates61"></script>
 </body></html>
