@@ -695,7 +695,7 @@ function ypRetryFinance(id,choice){const clock=ypReadClock();const rec=ypBuyFor(
 
 function ypWithExtraCash(extra,fn){const c=+G.cash||0;G.cash=c+(+extra||0);try{return fn();}finally{G.cash=c;}}
 function ypAllCashOk(price,rec){return ypWithExtraCash(0,()=>{const d=ypDepMax(price);if(!(d>0))return false;return ypDepLoanOk(price,d,rec);});}
-function ypCoinsNeeded(price,rec){const pass=extra=>ypWithExtraCash(extra,()=>{const d=ypDepMax(price);if(!(d>0))return false;return ypDepLoanOk(price,d,rec);});if(pass(0))return 0;let hi=10000;while(!pass(hi)){hi*=2;if(hi>5e7)return Infinity;}let lo=hi===10000?0:hi/2;while(hi-lo>1000){const m=Math.round((lo+hi)/2);if(pass(m))hi=m;else lo=m;}return Math.ceil(hi/10000)*10000;}
+function ypCoinsNeeded(price,rec){const q=quote(price,0,ypDepFor(rec,price),null);const short=q.cash-ypFreeCash();if(!(short>0))return 0;if(!isFinite(short))return Infinity;return Math.ceil(short/10000)*10000;}
 function ypCoinPacks(){return (typeof Payments!=='undefined'&&Payments.listProducts)?Payments.listProducts().slice():[];}
 function ypAud(n){return (Math.round(Number(n)*100)/100).toFixed(2);}
 function ypBestFit(need){need=+need||0;if(!(need>0)||!isFinite(need))return null;const packs=ypCoinPacks().slice().sort((a,b)=>a.coins-b.coins);if(!packs.length)return null;const pack=packs.find(p=>p.coins>=need)||packs[packs.length-1];const coins=+pack.coins,priceAUD=+pack.priceAUD;const item={sku:pack.sku,label:pack.label,qty:1,coins,priceAUD};return {need,sku:pack.sku,coins,priceAUD,cents:Math.round(Number(priceAUD)*100),items:[item],label:ypBestFitLabel({need,coins,priceAUD,items:[item]})};}
