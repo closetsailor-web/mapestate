@@ -2120,9 +2120,6 @@ const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',pri
 const Payments=DemoPayments; /* swap for Stripe / Apple IAP / Google Play Billing with the same API; verify receipts server-side */
 async function buyCoins(sku){const p=Payments.listProducts().find(x=>x.sku===sku);if(!p)return;if(Payments.demo&&!confirm(`DEMO PURCHASE — no real money will be charged.\n\nCredit ${p.coins.toLocaleString()} coins (A$${p.priceAUD})?`))return;
   const r=await Payments.purchase(sku);if(!r.ok)return toast('Purchase failed');const c0=G.cash;G.cash+=p.coins;log(`DEMO coin pack "${p.label}"`,p.coins);save();hud();toast('Demo purchase, coins credited, nothing charged');if(!coinReturn(p,c0)){if(typeof ypOpenCoinShop==='function')ypOpenCoinShop({from:'menu'});}}
-async function buyCoinCombo(items){items=(items||[]).filter(Boolean);if(!items.length)return;const rows=items.map(it=>{const p=Payments.listProducts().find(x=>x.sku===it.sku);return p?Object.assign({},p,{qty:Math.max(1,+it.qty||1)}):null;}).filter(Boolean);if(!rows.length)return;const coins=rows.reduce((a,p)=>a+p.coins*p.qty,0);const cents=rows.reduce((a,p)=>a+Math.round(Number(p.priceAUD)*100)*p.qty,0);const priceAUD=cents/100;const p={label:'Best fit',coins,priceAUD,combo:rows};if(Payments.demo&&!confirm(`DEMO PURCHASE — no real money will be charged.\n\nCredit ${coins.toLocaleString()} coins (A$${priceAUD.toFixed(2)})?`))return;
-  const r=await Payments.purchase(rows[0].sku);if(!r.ok)return toast('Purchase failed');const c0=G.cash;G.cash+=coins;log(`DEMO coin pack "${p.label}"`,coins);save();hud();toast('Demo purchase, coins credited, nothing charged');if(!coinReturn(p,c0)){if(typeof ypOpenCoinShop==='function')ypOpenCoinShop({from:'menu'});}}
-
 /* ======================= MAP VIEW (Leaflet CRS.Simple, illustrated) ======================= */
 const MapView={m:null,base:null,bld:null,lbl:null,st:null,own:null,drawn:new Map(),
   init(){this.m=L.map('map',{crs:L.CRS.Simple,minZoom:-3.5,maxZoom:2,zoomSnap:.25,zoomDelta:.5,preferCanvas:true,attributionControl:false,zoomControl:false});
@@ -3900,6 +3897,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates59"></script>
-<script src="overture-layer.js?v=dates59"></script>
+<script src="map-preview.js?v=dates60"></script>
+<script src="overture-layer.js?v=dates60"></script>
 </body></html>
