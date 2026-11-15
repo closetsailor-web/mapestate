@@ -136,6 +136,7 @@
       event.stopPropagation();
     }
     document.getElementById('yp-building')?.remove();
+    selectFeature(null);
     ignoreMapClicksUntil = performance.now() + 700;
   }
   let selMarker = null;
