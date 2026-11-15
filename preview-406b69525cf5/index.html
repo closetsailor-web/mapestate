@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates69";
+window.YP_BUILD="dates72";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1414,19 +1414,24 @@ html.yp-home #yp-feed:not([hidden]){display:block}
 #yp-sale-detail .yp-step-body::-webkit-scrollbar,#yp-coin-shop .yp-step-body::-webkit-scrollbar{display:none;width:0;height:0}
 #yp-sale-detail .yp-step-foot,#yp-coin-shop .yp-step-foot{flex:none;background:#fff;padding-top:8px;position:relative;z-index:2}
 #yp-sale-detail .yp-card-head,#yp-coin-shop .yp-card-head{min-height:48px;height:48px;box-sizing:border-box}
-.yp-coin-need{margin:8px 0 4px;text-align:left}
-.yp-coin-need-lab{margin:0 0 2px;font:800 14px Inter,system-ui,sans-serif;color:#0b2545}
-.yp-coin-packs{list-style:none;margin:8px 0 0;padding:0}
-.yp-coin-pack{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #e6e9ef}
-.yp-coin-pack .yp-coin-name{flex:1;font:700 15px/1.25 Inter,system-ui,sans-serif;color:#0b2545;text-align:left}
-.yp-coin-pack .yp-coin-name small{display:block;font:500 12.5px Inter,system-ui,sans-serif;color:#5a6780}
-.yp-coin-buy{flex:none;width:auto;min-width:88px;min-height:44px;padding:10px 14px;margin:0;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 15px Inter,system-ui,sans-serif;cursor:pointer}
-.yp-hint{margin:0 0 8px;font:500 12.5px/1.4 Inter,system-ui,sans-serif;color:#3d4a63;text-align:left}
+.yp-coin-need{margin:4px 0 2px;text-align:left}
+#yp-apply-review p.yp-coin-need-lab:not(.yp-kicker):not(.yp-approval),.yp-coin-need-lab{margin:0 0 4px;font:800 14.5px/1.3 Inter,system-ui,sans-serif;letter-spacing:-0.03em;white-space:nowrap;color:#0b2545;text-align:left}#yp-apply-review p.yp-coin-need-lab:not(.yp-kicker):not(.yp-approval) .yp-coin-need-amt,.yp-coin-need-lab .yp-coin-need-amt{color:#b8410a;font-weight:800}
+.yp-coin-packs{list-style:none;margin:4px 0 0;padding:0}
+.yp-coin-pack{display:flex;align-items:center;gap:8px;padding:3px 0;border-top:1px solid #e6e9ef;min-height:44px}
+.yp-coin-pack .yp-coin-name{flex:1;display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px;font:700 14px/1.2 Inter,system-ui,sans-serif;color:#0b2545;text-align:left}
+.yp-coin-pack .yp-coin-name small{display:inline;font:600 11.5px Inter,system-ui,sans-serif;color:#b8410a}
+.yp-coin-buy{flex:none;width:auto;min-width:84px;min-height:44px;padding:8px 12px;margin:0;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 14px Inter,system-ui,sans-serif;cursor:pointer}
+.yp-coin-buy:disabled{opacity:.45}
+.yp-hint{margin:0 0 6px;font:500 12px/1.3 Inter,system-ui,sans-serif;color:#3d4a63;text-align:left}
+#yp-apply-review[data-step=coins] .yp-hint,#yp-coin-shop .yp-hint{margin:0 0 4px}
+#yp-apply-review[data-step=coins] #yp-coin-shop-note,#yp-coin-shop #yp-coin-shop-note{margin:0 0 4px;font-size:12px;line-height:1.3}
+.yp-inherit-foot{margin-top:auto;padding:10px 4px 2px;color:#3d4a63;font:500 12.5px/1.4 Inter,system-ui,sans-serif;text-align:center}
+.yp-inherit-foot p{margin:0 0 8px}
+.yp-inherit-foot p:last-child{margin-bottom:0}
+#yp-apply-review[data-step=coins] .yp-step-body,#yp-coin-shop .yp-step-body{display:flex;flex-direction:column}
+#yp-apply-review[data-step=coins] .yp-step-body{flex:1 1 auto;min-height:0;padding-bottom:8px}
 
-.yp-best-fit{margin:10px 0 8px;padding:12px 14px;border:2px solid #ff6a00;border-radius:16px;background:#fff1e6;text-align:left}
-.yp-best-fit-lab{margin:0 0 4px;font:800 12px/1.2 Inter,system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:#b8410a}
-.yp-best-fit-copy{margin:0 0 10px;font:700 15px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
-.yp-best-fit-btn,#yp-best-fit{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin:0;border:0;border-radius:999px;background:#ff6a00;color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer}
+
 
 #yp-apply-review.yp-steps .yp-step,#yp-apply-review .yp-step{display:flex;flex-direction:column;overflow:hidden;scrollbar-width:none}
 #yp-apply-review .yp-step::-webkit-scrollbar{display:none;width:0;height:0}
@@ -2184,7 +2189,7 @@ function offerVendor(id){const op=openPrice(id),o=Math.round(+document.getElemen
   save();UI.plot(id);toast(`❌ Vendor declined (${Math.round(pr*100)}% chance). Try again next week`);}
 function acceptCounter(id){const c=(G.counter||{})[id];if(!c)return;if(contract(id,c.amt,0,'vendor counter-offer')){delete G.counter[id];save();toast('🤝 Counter-offer accepted at '+fmt(c.amt));}UI.plot(id);}
 /* ======================= PAYMENTS (interface; DEMO) ======================= */
-const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',priceAUD:1.99,coins:25000},{sku:'m',label:'Investor',priceAUD:4.99,coins:75000},{sku:'l',label:'Developer',priceAUD:9.99,coins:175000},{sku:'xl',label:'Tycoon',priceAUD:19.99,coins:500000}];},
+const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',priceAUD:1.99,coins:25000},{sku:'m',label:'Investor',priceAUD:4.99,coins:75000},{sku:'l',label:'Developer',priceAUD:9.99,coins:175000},{sku:'xl',label:'Tycoon',priceAUD:19.99,coins:500000},{sku:'xxl',label:'Magnate',priceAUD:29.99,coins:1000000}];},
   purchase(){return new Promise(r=>setTimeout(()=>r({ok:true,demo:true}),300));}};
 const Payments=DemoPayments; /* swap for Stripe / Apple IAP / Google Play Billing with the same API; verify receipts server-side */
 async function buyCoins(sku){const p=Payments.listProducts().find(x=>x.sku===sku);if(!p)return;if(Payments.demo&&!confirm(`DEMO PURCHASE. No real money will be charged.\n\nRelease ${typeof ypMoneyText==='function'?ypMoneyText(p.coins):('$' + Number(p.coins).toLocaleString('en-AU'))} into your bank, fee A$${p.priceAUD}?`))return;
@@ -3963,6 +3968,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates69"></script>
-<script src="overture-layer.js?v=dates69"></script>
+<script src="map-preview.js?v=dates72"></script>
+<script src="overture-layer.js?v=dates72"></script>
 </body></html>
