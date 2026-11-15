@@ -2,6 +2,76 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <script>
+/* Single source of truth: version.json {"v":"..."}.
+   Do not edit YP_BUILD or the script ?v= queries by hand.
+   After changing version.json, run: python3 sync-version.py
+   from this folder. That writes the same id into YP_BUILD and the
+   map-preview.js / overture-layer.js ?v= queries so phones load the new files.
+   Live also needs its own version.json (same id) when you copy this folder across. */
+window.YP_BUILD="dates67";
+(function(){
+  var KEY="yp.boot.reloaded";
+  function visible(){return document.visibilityState!=="hidden";}
+  function already(v){
+    try{return sessionStorage.getItem(KEY)===v;}catch(e){return false;}
+  }
+  function mark(v){
+    try{sessionStorage.setItem(KEY,v);}catch(e){}
+  }
+  function say(){
+    try{
+      var t=document.getElementById("yp-boot-upd");
+      if(!t){
+        t=document.createElement("div");
+        t.id="yp-boot-upd";
+        t.setAttribute("role","status");
+        t.textContent="Updating...";
+        t.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;background:#0b2545;color:#fff;font:700 13px/1.2 Inter,system-ui,sans-serif;padding:8px 14px;border-radius:999px;pointer-events:none;";
+        (document.body||document.documentElement).appendChild(t);
+      }
+    }catch(e){}
+  }
+  function go(v){
+    if(already(v))return;
+    mark(v);
+    say();
+    try{
+      var u=new URL(location.href);
+      u.searchParams.set("v",v);
+      u.searchParams.set("nc",Math.random().toString(36).slice(2));
+      location.replace(u.toString());
+    }catch(e){
+      location.replace(location.pathname+"?v="+encodeURIComponent(v)+"&nc="+Math.random().toString(36).slice(2));
+    }
+  }
+  function check(){
+    if(!visible())return;
+    var running=window.YP_BUILD;
+    if(!running)return;
+    var url;
+    try{
+      url=new URL("version.json",location.href);
+      url.searchParams.set("nc",Math.random().toString(36).slice(2));
+      url=url.toString();
+    }catch(e){
+      url="version.json?nc="+Math.random().toString(36).slice(2);
+    }
+    fetch(url,{cache:"no-store"}).then(function(r){
+      if(!r.ok)throw new Error("version");
+      return r.json();
+    }).then(function(j){
+      var v=j&&j.v;
+      if(!v||v===running)return;
+      go(String(v));
+    }).catch(function(){});
+  }
+  window.ypCheckBuild=check;
+  check();
+  document.addEventListener("visibilitychange",check);
+  window.addEventListener("pageshow",check);
+})();
+</script>
+<script>
 /* Isolated saves for this unlisted preview. Keys stay under yppreview-406b69525cf5. and never share the live site or /test/. */
 (function () {
   var BASE = 'yppreview-406b69525cf5.';
@@ -3893,6 +3963,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates66"></script>
-<script src="overture-layer.js?v=dates66"></script>
+<script src="map-preview.js?v=dates67"></script>
+<script src="overture-layer.js?v=dates67"></script>
 </body></html>
