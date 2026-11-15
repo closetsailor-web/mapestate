@@ -4,7 +4,13 @@
 (function(){
   window.__ygHandlesMapClick = true;
   const style = document.createElement('style');
-  style.textContent = '#yp-building{position:fixed;inset:0;z-index:46;display:flex;align-items:center;justify-content:center;padding:20px 20px calc(108px + var(--sab));background:rgba(11,37,69,.62);font-family:Inter,system-ui,sans-serif;color:#14213d}#yp-building .card{background:#fff;border-radius:24px;width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden}#yp-building .hwh{margin:0;padding:18px 22px 14px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);text-align:left}#yp-building .yp-kicker{margin:0 0 6px;color:rgba(255,255,255,.9);font:600 13px Inter,system-ui,sans-serif}#yp-building h2{margin:0;color:#fff;font:700 22px/1.25 Inter,system-ui,sans-serif;word-break:break-all}#yp-building .yp-price{margin:16px 22px 6px}#yp-building .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;color:#0b2545}#yp-building .yp-per{margin-left:8px;font:700 16px Inter,system-ui,sans-serif;color:#5a6780}#yp-building .yp-place{margin:0 22px 8px;font:600 15px/1.35 Inter,system-ui,sans-serif}#yp-building .yp-status{margin:8px 22px 0;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}#yp-building .hwx{display:flex;align-items:center;justify-content:center;min-height:48px;width:calc(100% - 44px);margin:12px 22px 18px;border:0;border-radius:999px;background:#e6ebf2;color:#14213d;font:700 16px Inter,system-ui,sans-serif;cursor:pointer}';
+  style.textContent = '#yp-building{position:fixed;inset:0;z-index:46;display:flex;align-items:center;justify-content:center;padding:20px 20px calc(108px + var(--sab));background:rgba(11,37,69,.62);font-family:Inter,system-ui,sans-serif;color:#14213d}#yp-building .card{background:#fff;border-radius:24px;width:100%;max-width:440px;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden}#yp-building .hwh{margin:0;padding:18px 22px 14px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);text-align:left}#yp-building .yp-kicker{margin:0 0 6px;color:rgba(255,255,255,.9);font:600 13px Inter,system-ui,sans-serif}#yp-building h2{margin:0;color:#fff;font:700 22px/1.25 Inter,system-ui,sans-serif;word-break:break-all}#yp-building .yp-price{margin:16px 22px 6px}#yp-building .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;color:#0b2545}#yp-building .yp-per{margin-left:8px;font:700 16px Inter,system-ui,sans-serif;color:#5a6780}#yp-building .yp-place{margin:0 22px 8px;font:600 15px/1.35 Inter,system-ui,sans-serif}#yp-building .yp-status{margin:8px 22px 0;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}#yp-building .hwx{display:flex;align-items:center;justify-content:center;min-height:48px;width:calc(100% - 44px);margin:12px 22px 18px;border:0;border-radius:999px;background:#e6ebf2;color:#14213d;font:700 16px Inter,system-ui,sans-serif;cursor:pointer}'
+    +'#map{overflow:hidden}'
+    +'.yp-sel-mark{width:28px;height:40px;pointer-events:none!important;overflow:visible;z-index:2}'
+    +'.yp-sel-mark .yp-sel-pulse{position:absolute;left:50%;bottom:1px;width:16px;height:16px;margin:0 0 -8px -8px;border-radius:50%;background:rgba(255,106,0,.4);pointer-events:none;animation:ypSelPulse 1.6s ease-out infinite}'
+    +'.yp-sel-mark .yp-sel-pin{position:absolute;left:50%;bottom:0;width:24px;height:36px;margin:0 0 0 -12px;display:block;filter:drop-shadow(0 2px 3px rgba(11,37,69,.45));pointer-events:none}'
+    +'@keyframes ypSelPulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.1);opacity:0}}'
+    +'@media (prefers-reduced-motion:reduce){.yp-sel-mark .yp-sel-pulse{animation:none;opacity:.75;transform:scale(1.6)}}';
   document.head.appendChild(style);
   const money = new Intl.NumberFormat('en-AU', {style: 'currency', currency: 'AUD', maximumFractionDigits: 0});
   let manifest = null;
@@ -52,11 +58,20 @@
       {id: 'ypb-quarantine-fill', type: 'fill', source: 'ypb-quarantine', paint: {'fill-color': '#8b95a8', 'fill-opacity': 0.45}},
       {id: 'ypb-fill', type: 'fill', source: 'ypb-buildings', paint: {'fill-color': ['match', ['get', 'tone'], 'home', '#e07a2f', 'trade', '#1f7a6b', 'other', '#c4a35a', 'none', '#d5dbe3', '#d5dbe3'], 'fill-opacity': 0.78}},
       {id: 'ypb-line', type: 'line', source: 'ypb-buildings', paint: {'line-color': '#7a3410', 'line-width': 1.4}},
-      {id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.5}},
-      {id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#0b2545', 'line-width': 3}}
+      {id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.55}},
+      {id: 'ypb-selected-halo', type: 'line', source: 'ypb-selected', paint: {'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.95}},
+      {id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#ff6a00', 'line-width': 4}}
     ];
     if (m.getSource('ypb-boundary')) layers.push({id: 'ypb-boundary', type: 'line', source: 'ypb-boundary', paint: {'line-color': '#0b2545', 'line-width': 1.5}});
-    for (const layer of layers) if (!m.getLayer(layer.id)) m.addLayer(layer);
+    for (const layer of layers) {
+      if (!m.getLayer(layer.id)) m.addLayer(layer);
+      else if (layer.paint) {
+        for (const key of Object.keys(layer.paint)) {
+          try { m.setPaintProperty(layer.id, key, layer.paint[key]); } catch (e) {}
+        }
+      }
+    }
+    syncSelMarker();
     return !!m.getLayer('ypb-fill');
   }
   async function loadVisible(){
@@ -123,10 +138,96 @@
     document.getElementById('yp-building')?.remove();
     ignoreMapClicksUntil = performance.now() + 700;
   }
+  let selMarker = null;
+  function ringCentroid(ring){
+    if (!ring || ring.length < 3) return null;
+    let x = 0, y = 0, area = 0;
+    for (let i = 0; i < ring.length - 1; i++) {
+      const x0 = +ring[i][0], y0 = +ring[i][1], x1 = +ring[i + 1][0], y1 = +ring[i + 1][1];
+      const cross = x0 * y1 - x1 * y0;
+      area += cross;
+      x += (x0 + x1) * cross;
+      y += (y0 + y1) * cross;
+    }
+    if (!area) {
+      let sx = 0, sy = 0, n = 0;
+      for (const p of ring) if (p && p.length >= 2) { sx += +p[0]; sy += +p[1]; n++; }
+      return n ? [sx / n, sy / n] : null;
+    }
+    area *= 0.5;
+    return [x / (6 * area), y / (6 * area)];
+  }
+  function selPoint(feature){
+    const g = feature && feature.geometry;
+    if (!g) return null;
+    if (typeof ypFootprintPoint === 'function') {
+      const ring = (typeof ypOuterRings === 'function' ? ypOuterRings(g) : [])[0];
+      const pt = ring && ypFootprintPoint(ring);
+      if (pt && Number.isFinite(+pt.lon) && Number.isFinite(+pt.lat)) return [+pt.lon, +pt.lat];
+    }
+    if (g.type === 'Point' && Array.isArray(g.coordinates)) return [+g.coordinates[0], +g.coordinates[1]];
+    const ring = g.type === 'Polygon' ? (g.coordinates && g.coordinates[0])
+      : g.type === 'MultiPolygon' ? (g.coordinates && g.coordinates[0] && g.coordinates[0][0])
+      : null;
+    const c = ringCentroid(ring);
+    if (c && Number.isFinite(c[0]) && Number.isFinite(c[1])) return c;
+    return null;
+  }
+  function makeSelMarkEl(){
+    const el = document.createElement('div');
+    el.className = 'yp-sel-mark';
+    el.setAttribute('aria-hidden', 'true');
+    const pulse = document.createElement('span');
+    pulse.className = 'yp-sel-pulse';
+    const pin = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    pin.setAttribute('class', 'yp-sel-pin');
+    pin.setAttribute('viewBox', '0 0 24 36');
+    pin.setAttribute('width', '24');
+    pin.setAttribute('height', '36');
+    pin.setAttribute('aria-hidden', 'true');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M12 1.2C6.15 1.2 1.4 6 1.4 11.9c0 8.2 10.6 22.5 10.6 22.5s10.6-14.3 10.6-22.5C22.6 6 17.85 1.2 12 1.2z');
+    path.setAttribute('fill', '#ff6a00');
+    path.setAttribute('stroke', '#fff');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('stroke-linejoin', 'round');
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', '12');
+    dot.setAttribute('cy', '12');
+    dot.setAttribute('r', '4');
+    dot.setAttribute('fill', '#fff');
+    pin.append(path, dot);
+    el.append(pulse, pin);
+    return el;
+  }
+  function syncSelMarker(){
+    const m = map();
+    const pt = selected && selPoint(selected);
+    if (!m || !pt || typeof maplibregl === 'undefined' || typeof maplibregl.Marker !== 'function') {
+      if (selMarker) { selMarker.remove(); selMarker = null; }
+      return;
+    }
+    if (selMarker) {
+      const cur = selMarker.getLngLat && selMarker.getLngLat();
+      const el = selMarker.getElement && selMarker.getElement();
+      if (cur && el && el.isConnected && Math.abs(cur.lng - pt[0]) < 1e-9 && Math.abs(cur.lat - pt[1]) < 1e-9) return;
+      selMarker.remove();
+      selMarker = null;
+    }
+    document.querySelectorAll('.yp-sel-mark').forEach(node => node.remove());
+    const el = makeSelMarkEl();
+    selMarker = new maplibregl.Marker({
+      element: el,
+      anchor: 'bottom',
+      pitchAlignment: 'viewport',
+      rotationAlignment: 'viewport'
+    }).setLngLat(pt).addTo(m);
+  }
   function selectFeature(feature){
     selected = feature && feature.properties && feature.properties.adopted ? feature : null;
     const source = map() && map().getSource('ypb-selected');
     if (source) source.setData({type: 'FeatureCollection', features: selected ? [selected] : []});
+    syncSelMarker();
   }
   function openPopup(feature){
     const props = feature && feature.properties || {};
