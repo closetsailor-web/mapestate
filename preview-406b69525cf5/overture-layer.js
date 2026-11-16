@@ -89,11 +89,13 @@
     const hits = manifest.chunks.filter(chunk => !(chunk.bbox[2] < west || chunk.bbox[0] > east || chunk.bbox[3] < south || chunk.bbox[1] > north));
     if (hits.length > 24) {
       window.__ygView = {features: 0, chunks: hits.length, wide: true, ms: Math.round(performance.now() - started)};
+      syncSelMarker();
       return;
     }
     const key = hits.map(chunk => chunk.id).sort().join(',');
     if (key === loadedKey && m.getSource('ypb-buildings')) {
       window.__ygView = {features: parts.adopted.features.length, chunks: hits.length, ms: 0, cached: true};
+      syncSelMarker();
       return;
     }
     const collections = await Promise.all(hits.map(chunk => fetch('data/chunks/' + chunk.id + '.json?v=prices1').then(response => response.json())));
