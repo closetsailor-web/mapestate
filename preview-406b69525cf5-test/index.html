@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates75";
+window.YP_BUILD="dates76";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1461,7 +1461,7 @@ const YP_YEAR_REAL_DAYS=1; /* game speed: real days per game year (was 7.8). Eve
 const YP_WEEK_MS=Math.round(YP_YEAR_REAL_DAYS/YP_WEEKS_PER_YEAR*24*60*60*1000);
 const YP_TEST_WEEK_MS=30*1000;
 function ypResolveWeekMs(){let mode='real';try{const q=new URLSearchParams(location.search).get('speed');if(q==='test'||q==='real')mode=q;else if(localStorage.getItem('yp.clockSpeed')==='test')mode='test';if(q==='test'||q==='real')localStorage.setItem('yp.clockSpeed',mode);}catch(e){}return mode==='test'?YP_TEST_WEEK_MS:YP_WEEK_MS;}
-function ypClockSentence(){return CFG.weekMs===YP_TEST_WEEK_MS?'Test clock: one game week takes 30 seconds.':'1 game year passes every '+(YP_YEAR_REAL_DAYS===1?'real day':YP_YEAR_REAL_DAYS+' real days')+'.';}
+function ypClockSentence(){return CFG.weekMs===YP_TEST_WEEK_MS?'Test clock: one game week takes 30 seconds.':'One game year passes every '+(YP_YEAR_REAL_DAYS===1?'real day':YP_YEAR_REAL_DAYS+' real days')+'.';}
 function ypTestClockOn(){return CFG.weekMs===YP_TEST_WEEK_MS;}
 function ypScaleGameMs(ms,from,to){if(!Number.isFinite(+ms)||!(from>0)||!(to>0)||from===to)return +ms;const week=Math.floor(+ms/from),into=+ms-week*from;return week*to+into*to/from;}
 function ypShiftClock(from,to){if(!(from>0)||!(to>0)||from===to)return;if(G&&G.acc>0)G.acc=Math.min(to-1,Math.round(G.acc*to/from));CFG.weekMs=to;if(G)G.clockMs=to;if(typeof ypRescaleClockRecords==='function')ypRescaleClockRecords(from,to);}
@@ -3969,6 +3969,6 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates75"></script>
-<script src="overture-layer.js?v=dates75"></script>
+<script src="map-preview.js?v=dates76"></script>
+<script src="overture-layer.js?v=dates76"></script>
 </body></html>
