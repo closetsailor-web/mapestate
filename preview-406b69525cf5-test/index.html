@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates76";
+window.YP_BUILD="dates77";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1950,7 +1950,7 @@ function netWorth(){if(typeof ypSyncLoanBalances==='function')try{ypSyncLoanBala
 /* ======================= WEEKLY SIM ======================= */
 function ypNoteCatch(part,amount){const bag=window.__ypCatch;const n=+amount;if(!bag||!Number.isFinite(n)||!n)return;bag[part]=(+bag[part]||0)+n;}
 function weekTick(){G.week++;const w=G.week;
-  try{if(typeof ypChargeBuyWeek==='function')ypChargeBuyWeek();}catch(e){}
+  try{if(typeof ypChargeBuyWeek==='function')ypChargeBuyWeek();}catch(e){}try{if(typeof ypTickMarket==='function')ypTickMarket();}catch(e){}
   if(w%4===0){const top=allProps().find(([i,p])=>p.status==='leased');if(G._rent>0)notify('rent',`Rent received (last 4 wks): ${fmt(G._rent)} after management fees`,top&&top[0],true);if(G._rep>0||G._hold>0)notify('repay',`Paid (last 4 wks): loan repayments ${fmt(G._rep||0)}; rates, water, insurance and maintenance ${fmt(G._hold||0)}`,top&&top[0],true);G._rent=G._rep=G._hold=0;}if(G.started){if(G.payPend&&w>=G.payPend.wk){G.pay={g:G.payPend.g,p:G.payPend.p};delete G.payPend;notify('info','💼 Your new pay has started: '+fmt(G.pay.g+G.pay.p)+'/yr');}
   if(housing()==='rent'&&G.homeChosen){const L=ensureLease();if(!L.m2m&&w>=L.end){L.m2m=1;notify('info',`🔑 Your ${L.months}-month lease at ${L.addr} has ended. It now continues month to month at the same rent (${fmt(L.rent)}/wk).`);}}
   const applyCash=!!(G.homeChosen||G.clockOn),m=(x=>applyCash?x:{...x,saved:0})(weekMoney());G.cash+=m.saved;if(applyCash){ypNoteCatch('income',m.take);ypNoteCatch('expense',m.rent+m.liv+m.debt);}if(G.started&&G.homeChosen)tip('week','Saved this week: '+fmt(m.saved)+'. Profile shows the breakdown.');G.lastWeek=m;G.savedTotal=(G.savedTotal||0)+m.saved;if(w%4===0)log(`💼 Last 4 weeks: you earned ${fmt(m.earn*4)}, tax ${fmt(m.tax*4)}, rent ${fmt(m.rent*4)}, living costs ${fmt(m.liv*4)}${m.debt?', other debts '+fmt(m.debt*4):''}`,Math.round(m.saved*4));
@@ -2110,7 +2110,7 @@ function rentalAddr(k){const g=GEN.c1,n=BUNDY_SUBS[k].n;if(!g||!g.lots)return 'L
 function newLease(k,months){months=LEASE_WKS[months]?+months:12;const id=rentalLot(k);G.lease={id,k,addr:id?homeAddr(id):rentalAddr(k),rent:id?weeklyRent(id):BUNDY_SUBS[k].rent,months,start:G.week,end:G.week+LEASE_WKS[months],m2m:0};return G.lease;}
 function ensureLease(){const k=(G.rental&&G.rental.k)|0;if(!G.lease)newLease(k,(G.lease&&G.lease.months)||12);return G.lease;}
 const myRentWk=()=>{const h=housing();if(h==='home')return (typeof ypOverlapRentWk==='function'?ypOverlapRentWk():0);return !G.homeChosen?(G.clockOn?NOHOME_BOARD:0):h==='family'?boardWk():ensureLease().rent;}; // rent, or room-share board / overlap rent after moving in
-function weekMoney(){const P=PAY(),gross=P.g+P.p,tax=taxNet(P.g)+medicare(P.g)+taxNet(P.p)+medicare(P.p),earn=gross/52,t=tax/52,rent=myRentWk(),liv=livingMo()*12/52,debt=0;let pin=0,mort=0,pc=0;for(const[id,p]of allProps()){if(p.status==='settling')continue;const d=p.dev;if(!(d&&d.stage!=='done')){pin+=weeklyRent(id)*(1-mgmt(id));if(d&&d.biz&&d.stage==='done')pin+=bizProfit(d);}if(p.loan>0)mort+=p.io?p.loan*CFG.rateIO/52:Math.min(p.repay,p.loan);pc+=holdWk(id)+(p.prot?protFee(p.prot):0);}pin+=roomIncome();
+function weekMoney(){const P=PAY(),gross=P.g+P.p,tax=taxNet(P.g)+medicare(P.g)+taxNet(P.p)+medicare(P.p),earn=gross/52,t=tax/52,rent=myRentWk(),liv=livingMo()*12/52,debt=0;let pin=0,mort=0,pc=0;for(const[id,p]of allProps()){if(p.status==='settling')continue;const d=p.dev;if(!(d&&d.stage!=='done')){pin+=weeklyRent(id)*(1-mgmt(id));if(d&&d.biz&&d.stage==='done')pin+=bizProfit(d);}if(p.loan>0)mort+=p.io?p.loan*CFG.rateIO/52:Math.min(p.repay,p.loan);pc+=holdWk(id)+(p.prot?protFee(p.prot):0);}pin+=roomIncome();try{if(typeof ypMarketIncomeWk==='function')pin+=ypMarketIncomeWk();}catch(e){}
   const take=earn-t,saved=take-rent-liv-debt;return{earn,tax:t,take,rent,liv,debt,saved,pin,mort,pcost:pc,net:saved+pin-mort-pc};}
 const GAME_EXP_WK=400,GAME_EXP_MO=GAME_EXP_WK*52/12; // everyone's game living costs: HEM benchmark for $100k; the expenses they enter are kept as real-life data
 const livingMo=()=>GAME_EXP_MO; // lenders use the higher of declared expenses and HEM
@@ -3969,6 +3969,7 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates76"></script>
-<script src="overture-layer.js?v=dates76"></script>
+<script src="map-preview.js?v=dates77"></script>
+<script src="player-market.js?v=dates77"></script>
+<script src="overture-layer.js?v=dates77"></script>
 </body></html>
