@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates84";
+window.YP_BUILD="dates85";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1374,9 +1374,10 @@ html.yp-home #yp-feed:not([hidden]){display:block}
 .yp-week-rows dt{margin:0;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#5a6780}
 .yp-week-rows dd{margin:0;font:700 15px/1.4 Inter,system-ui,sans-serif;color:#14213d;text-align:right}
 #yp-week-bills{color:#ff8a33}
-.yp-week-offers{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.yp-week-offer .yp-property-id{display:flex;align-items:baseline;justify-content:flex-end;flex-wrap:wrap;gap:6px;font:inherit;color:inherit}
-.yp-week-offer .yp-plink{min-height:0;margin:0;padding:0;font:inherit}
+.yp-week-offers{display:flex;align-items:center;justify-content:flex-end;white-space:nowrap}
+.yp-week-pending-lab,.yp-week-pending-btn{cursor:pointer}
+.yp-week-pending-btn{appearance:none;-webkit-appearance:none;margin:0;padding:0;border:0;background:transparent;font:700 15px/1.4 Inter,system-ui,sans-serif;color:#0a3a8c;text-align:right;white-space:nowrap;cursor:pointer}
+.yp-week-pending-btn:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
 .yp-offer-kind{font:500 11px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
 #yp-pending .yp-offer-kind{margin:0 6px 0 0}
 .yp-offer-copy{margin:8px 0 16px;font:500 16px/1.45 Inter,system-ui,sans-serif;color:#14213d}
@@ -1460,7 +1461,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 #yp-sale-detail .yp-flow>div.yp-subtotal,#yp-rent-detail .yp-flow>div.yp-subtotal{background:#eef2f8;margin:4px 0 0;padding:7px 10px;border-radius:10px;border-top:0;min-height:36px}
 #yp-sale-detail .yp-flow>div.yp-subtotal dt,#yp-sale-detail .yp-flow>div.yp-subtotal dd,#yp-rent-detail .yp-flow>div.yp-subtotal dt,#yp-rent-detail .yp-flow>div.yp-subtotal dd{font-weight:800;color:#0b2545}
 #yp-sale-detail .yp-step-foot .hwb,#yp-rent-detail .yp-step-foot .hwb,#yp-sale-detail .yp-btn-primary,#yp-rent-detail .yp-btn-primary{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;height:48px;box-sizing:border-box;margin-top:8px;border:0;border-radius:999px;background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;padding:0 16px}
-#yp-sale-detail .yp-step-foot .hwx,#yp-rent-detail .yp-step-foot .hwx{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;height:48px;box-sizing:border-box;margin-top:8px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;padding:0 16px}#yp-physical .yp-card-head,#yp-liquid .yp-card-head{min-height:48px;height:48px;box-sizing:border-box}#yp-physical .yp-asset-body,#yp-physical h3,#yp-liquid .yp-flow{text-align:left}#yp-physical h3{color:#14213d;font:700 16px/1.3 Inter,system-ui,sans-serif}#yp-physical .yp-asset-group{margin:4px 0 8px;color:#ff8a33;font:800 18px/1.3 Inter,system-ui,sans-serif}#yp-physical .yp-asset-property{margin:0 0 16px}#yp-physical #yp-vehicles-empty{margin-top:4px;text-align:left;color:#5a6780}#yp-liquid .card{padding:0 16px 14px}
+#yp-sale-detail .yp-step-foot .hwx,#yp-rent-detail .yp-step-foot .hwx{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;height:48px;box-sizing:border-box;margin-top:8px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;padding:0 16px}#yp-physical .yp-card-head,#yp-liquid .yp-card-head,#yp-pending .yp-card-head{min-height:48px;height:48px;box-sizing:border-box}#yp-physical .yp-asset-body,#yp-physical h3,#yp-liquid .yp-flow{text-align:left}#yp-physical h3{color:#14213d;font:700 16px/1.3 Inter,system-ui,sans-serif}#yp-physical .yp-asset-group{margin:4px 0 8px;color:#ff8a33;font:800 18px/1.3 Inter,system-ui,sans-serif}#yp-physical .yp-asset-property{margin:0 0 16px}#yp-physical #yp-vehicles-empty{margin-top:4px;text-align:left;color:#5a6780}#yp-liquid .card,#yp-pending .card{padding:0 16px 14px;text-align:left}#yp-pending .card{display:flex;flex-direction:column;overflow:hidden;max-height:calc(100dvh - 256px)}
 #yp-liquid .yp-asset-body,#yp-liquid .yp-flow,#yp-liquid .yp-net-head{text-align:left}
 #yp-liquid .yp-net-head{margin:0 0 6px;color:#ff8a33;font:800 16px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none}
 #yp-liquid .yp-asset-body .yp-flow-list{margin:0}
@@ -1477,6 +1478,24 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 #yp-liquid .yp-net-bottom dt,#yp-liquid .yp-net-bottom .yp-flow>div.yp-subtotal dt{color:#fff;font:800 13.5px/1.2 Inter,system-ui,sans-serif;flex:1 1 auto;min-width:0;max-width:64%;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px}
 #yp-liquid .yp-net-bottom dd,#yp-liquid .yp-net-bottom .yp-flow>div.yp-subtotal dd{color:#fff;font:800 24px/1.1 Inter,system-ui,sans-serif;text-align:right;font-variant-numeric:tabular-nums;flex:0 0 auto}
 #yp-liquid .yp-net-bottom .yp-hint{display:inline;margin:0;font:500 10.5px/1.2 Inter,system-ui,sans-serif;color:rgba(255,255,255,.82);letter-spacing:0;text-transform:none;font-weight:500}
+#yp-pending .yp-asset-body,#yp-pending .yp-net-head,#yp-pending .yp-pending-sec{text-align:left}#yp-pending .yp-asset-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+#yp-pending .yp-net-panel{margin:0 0 8px;padding:10px 12px 10px;border-radius:16px;background:#f6f8fb;border:1px solid rgba(20,33,61,.08);box-shadow:0 6px 16px rgba(11,37,69,.05)}
+#yp-pending .yp-pending-toggle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:0;padding:2px 0;border:0;background:transparent;cursor:pointer;color:#ff8a33;text-align:left}
+#yp-pending .yp-pending-toggle:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:8px}
+#yp-pending .yp-pending-head{margin:0;color:#ff8a33;font:800 16px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;list-style:none}
+#yp-pending .yp-pending-head::before,#yp-pending .yp-pending-head::after{content:none}
+#yp-pending .yp-pending-caret{flex:none;width:8px;height:8px;margin:0 2px 0 0;border-right:2px solid #ff8a33;border-bottom:2px solid #ff8a33;transform:rotate(-45deg);transition:transform .15s ease}
+#yp-pending .yp-pending-toggle[aria-expanded="true"] .yp-pending-caret{transform:rotate(45deg)}
+#yp-pending .yp-pending-body{margin:8px 0 0}
+#yp-pending .yp-pending-none{margin:4px 0 2px;padding:0;font:500 14px/1.4 Inter,system-ui,sans-serif;color:#5a6780;text-align:left}
+#yp-pending .yp-pending-row{display:flex;flex-direction:column;align-items:stretch;gap:1px;width:100%;box-sizing:border-box;margin:0 0 6px;padding:8px 10px;border:0;border-radius:12px;background:#fff;box-shadow:0 1px 0 rgba(20,33,61,.06);color:#14213d;font:600 13.5px/1.3 Inter,system-ui,sans-serif;text-align:left;cursor:pointer}
+#yp-pending .yp-pending-row:last-child{margin-bottom:0}
+#yp-pending .yp-pending-row:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px}
+#yp-pending .yp-pending-pid{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font:750 13.5px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
+#yp-pending .yp-pending-pid .yp-property-id{display:inline-flex;align-items:baseline;font:inherit;color:inherit}
+#yp-pending .yp-pending-sub{font:500 13px/1.3 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-pending .yp-pending-row>div{min-width:0}
+
 .yp-coin-need{margin:4px 0 2px;text-align:left}
 #yp-apply-review p.yp-coin-need-lab:not(.yp-kicker):not(.yp-approval),.yp-coin-need-lab{margin:0 0 4px;font:800 14.5px/1.3 Inter,system-ui,sans-serif;letter-spacing:-0.03em;white-space:nowrap;color:#0b2545;text-align:left}#yp-apply-review p.yp-coin-need-lab:not(.yp-kicker):not(.yp-approval) .yp-coin-need-amt,.yp-coin-need-lab .yp-coin-need-amt{color:#b8410a;font-weight:800}
 .yp-coin-packs{list-style:none;margin:4px 0 0;padding:0}
@@ -4024,7 +4043,7 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates84"></script>
-<script src="player-market.js?v=dates84"></script>
-<script src="overture-layer.js?v=dates84"></script>
+<script src="map-preview.js?v=dates85"></script>
+<script src="player-market.js?v=dates85"></script>
+<script src="overture-layer.js?v=dates85"></script>
 </body></html>
