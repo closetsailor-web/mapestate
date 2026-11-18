@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates83";
+window.YP_BUILD="dates84";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -2020,7 +2020,7 @@ function weekTick(){G.week++;const w=G.week;
   try{if(typeof ypChargeBuyWeek==='function')ypChargeBuyWeek();}catch(e){}try{if(typeof ypTickMarket==='function')ypTickMarket();}catch(e){}
   if(w%4===0){const top=allProps().find(([i,p])=>p.status==='leased');if(G._rent>0)notify('rent',`Rent received (last 4 wks): ${fmt(G._rent)} after management fees`,top&&top[0],true);if(G._rep>0||G._hold>0)notify('repay',`Paid (last 4 wks): loan repayments ${fmt(G._rep||0)}; rates, water, insurance and maintenance ${fmt(G._hold||0)}`,top&&top[0],true);G._rent=G._rep=G._hold=0;}if(G.started){if(G.payPend&&w>=G.payPend.wk){G.pay={g:G.payPend.g,p:G.payPend.p};delete G.payPend;notify('info','💼 Your new pay has started: '+fmt(G.pay.g+G.pay.p)+'/yr');}
   if(housing()==='rent'&&G.homeChosen){const L=ensureLease();if(!L.m2m&&w>=L.end){L.m2m=1;notify('info',`🔑 Your ${L.months}-month lease at ${L.addr} has ended. It now continues Week By Week at the same rent (${fmt(L.rent)}/wk).`);}}
-  const applyCash=!!(G.homeChosen||G.clockOn),m=(x=>applyCash?x:{...x,saved:0})(weekMoney());G.cash+=m.saved;if(applyCash){ypNoteCatch('income',m.take);ypNoteCatch('expense',m.rent+m.liv+m.debt);}if(G.started&&G.homeChosen)tip('week','Saved this week: '+fmt(m.saved)+'. Profile shows the breakdown.');G.lastWeek=m;G.savedTotal=(G.savedTotal||0)+m.saved;if(w%4===0)log(`💼 Last 4 weeks: you earned ${fmt(m.earn*4)}, tax ${fmt(m.tax*4)}, rent ${fmt(m.rent*4)}, living costs ${fmt(m.liv*4)}${m.debt?', other debts '+fmt(m.debt*4):''}`,Math.round(m.saved*4));
+  const applyCash=!!(G.homeChosen||G.clockOn),m=(x=>applyCash?x:{...x,saved:0})(weekMoney());const takeWk=Math.round(+m.take||0),rentWk=Math.round(+m.rent||0),livWk=Math.round(+m.liv||0),debtWk=Math.round(+m.debt||0),savedWk=applyCash?(takeWk-rentWk-livWk-debtWk):0;G.cash+=savedWk;if(applyCash){ypNoteCatch('income',takeWk);ypNoteCatch('expense',rentWk+livWk+debtWk);}if(G.started&&G.homeChosen)tip('week','Saved this week: '+fmt(m.saved)+'. Profile shows the breakdown.');G.lastWeek=m;G.savedTotal=(G.savedTotal||0)+m.saved;if(w%4===0)log(`💼 Last 4 weeks: you earned ${fmt(m.earn*4)}, tax ${fmt(m.tax*4)}, rent ${fmt(m.rent*4)}, living costs ${fmt(m.liv*4)}${m.debt?', other debts '+fmt(m.debt*4):''}`,Math.round(m.saved*4));
   if(m.saved<0&&w%4===0)notify('info',`⚠️ You're spending more than you earn: ${fmt(-m.saved)} a week going backwards. Cheaper rent or a smaller budget would help.`);}
   if(w%26===0)for(const[cid,c]of Object.entries(CS)){const own=Object.keys(c.props);const base=own.length?own[Math.floor(Math.random()*own.length)]:GEN[cid].lots.find(l=>segOf(l)===c.start)?.id;if(base)openNeighbours(base);}
   for(const[id,p]of allProps()){const cp=CS[cityOf(id)].props;
@@ -4024,7 +4024,7 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates83"></script>
-<script src="player-market.js?v=dates83"></script>
-<script src="overture-layer.js?v=dates83"></script>
+<script src="map-preview.js?v=dates84"></script>
+<script src="player-market.js?v=dates84"></script>
+<script src="overture-layer.js?v=dates84"></script>
 </body></html>
