@@ -6,7 +6,7 @@ Usage (from this folder):
 
 Reads version.json {"v":"datesXX"} and updates index.html:
   - window.YP_BUILD
-  - map-preview.js, player-market.js and overture-layer.js ?v= queries
+  - map-preview.js, player-market.js, car-yard.js and overture-layer.js ?v= queries
 
 When pushing live, copy version.json into the live folder as well, then
 run this script there (or copy the already-synced index.html and
@@ -44,8 +44,13 @@ html2, n4 = re.subn(
     r"\1" + v,
     html2,
 )
-if n1 != 1 or n2 < 1 or n3 < 1 or n4 < 1:
-    sys.exit(f"could not update index.html (YP_BUILD={n1}, map={n2}, overture={n3}, market={n4})")
+html2, n5 = re.subn(
+    r"(car-yard\.js\?v=)[A-Za-z0-9._-]+",
+    r"\1" + v,
+    html2,
+)
+if n1 != 1 or n2 < 1 or n3 < 1 or n4 < 1 or n5 < 1:
+    sys.exit(f"could not update index.html (YP_BUILD={n1}, map={n2}, overture={n3}, market={n4}, caryard={n5})")
 if html2 != html:
     html_path.write_text(html2)
 print(f"synced {v} into index.html")
