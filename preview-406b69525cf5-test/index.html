@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates89";
+window.YP_BUILD="dates90";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1208,6 +1208,21 @@ body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-inde
 .yp-own-fig dt{margin:0;font:600 13.5px/1.25 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;color:#3d4a63;text-align:left}
 .yp-own-fig dd{margin:0;font:700 14.5px/1.25 Inter,system-ui,sans-serif;color:#14213d;text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .yp-own-repay{margin:4px 0 0;font:500 13px/1.35 Inter,system-ui,sans-serif;color:#3d4a63;text-align:left}
+.yp-own-lives{margin:8px 0 6px;padding:10px 12px 8px;border-radius:16px;background:#fff;border:1px solid rgba(20,33,61,.08);box-shadow:0 6px 16px rgba(11,37,69,.05);text-align:left}
+.yp-own-lives-head{margin:0 0 8px;color:#ff8a33;font:800 16px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;text-align:left}
+.yp-own-person{margin:0}
+.yp-own-person + .yp-own-person{margin-top:8px;padding-top:8px;border-top:1px solid rgba(20,33,61,.08)}
+.yp-own-person-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px;margin:0 0 2px}
+.yp-own-person-name{flex:1;min-width:0;margin:0;font:800 15px/1.25 Inter,system-ui,sans-serif;color:#14213d;text-align:left;overflow-wrap:anywhere}
+.yp-own-person-pill{flex:none;display:inline-flex;align-items:center;justify-content:center;margin:0;padding:3px 9px;border-radius:999px;border:1px solid rgba(10,58,140,.22);background:#e8eef7;color:#0a3a8c;font:700 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:0;text-transform:none;white-space:nowrap}
+.yp-own-lives .yp-own-figs{margin:0}
+.yp-own-lives .yp-own-fig:first-child{border-top:1px solid rgba(20,33,61,.08)}
+.yp-own-end{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box;margin:8px 0 0;min-height:40px;padding:0 14px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 14px Inter,system-ui,sans-serif;cursor:pointer}
+.yp-own-end:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px}
+.yp-own-end-note{margin:8px 0 0;font:500 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780;text-align:left}
+.yp-own-lives + .yp-own-repay{margin-top:10px}
+#yp-end-arrangement .yp-card-head{height:48px;min-height:48px}
+#yp-end-arrangement .yp-end-copy{margin:0 0 8px;font:500 15px/1.4 Inter,system-ui,sans-serif;color:#14213d;text-align:left}
 #sheetBody .yp-own-sheet{text-align:left}
 
 #yp-history-detail,#yp-living,#yp-payout,#yp-where-live,#yp-clock-start{z-index:54}
@@ -4048,8 +4063,8 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates89"></script>
-<script src="player-market.js?v=dates89"></script>
-<script src="car-yard.js?v=dates89"></script>
-<script src="overture-layer.js?v=dates89"></script>
+<script src="map-preview.js?v=dates90"></script>
+<script src="player-market.js?v=dates90"></script>
+<script src="car-yard.js?v=dates90"></script>
+<script src="overture-layer.js?v=dates90"></script>
 </body></html>
