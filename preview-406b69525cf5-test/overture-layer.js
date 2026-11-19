@@ -58,9 +58,9 @@
       {id: 'ypb-quarantine-fill', type: 'fill', source: 'ypb-quarantine', paint: {'fill-color': '#8b95a8', 'fill-opacity': 0.45}},
       {id: 'ypb-fill', type: 'fill', source: 'ypb-buildings', paint: {'fill-color': ['match', ['get', 'tone'], 'home', '#e07a2f', 'trade', '#1f7a6b', 'other', '#c4a35a', 'none', '#d5dbe3', '#d5dbe3'], 'fill-opacity': 0.78}},
       {id: 'ypb-line', type: 'line', source: 'ypb-buildings', paint: {'line-color': '#7a3410', 'line-width': 1.4}},
-      {id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.55}},
-      {id: 'ypb-selected-halo', type: 'line', source: 'ypb-selected', paint: {'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.95}},
-      {id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#ff6a00', 'line-width': 4}}
+      {id: 'ypb-selected-fill', type: 'fill', source: 'ypb-selected', paint: {'fill-color': '#1a6fff', 'fill-opacity': 0.5}},
+      {id: 'ypb-selected-halo', type: 'line', source: 'ypb-selected', paint: {'line-color': '#ffffff', 'line-width': 0, 'line-opacity': 0}},
+      {id: 'ypb-selected-line', type: 'line', source: 'ypb-selected', paint: {'line-color': '#0b2545', 'line-width': 3}}
     ];
     if (m.getSource('ypb-boundary')) layers.push({id: 'ypb-boundary', type: 'line', source: 'ypb-boundary', paint: {'line-color': '#0b2545', 'line-width': 1.5}});
     for (const layer of layers) {
@@ -203,8 +203,34 @@
     el.append(pulse, pin);
     return el;
   }
+  function isLinkedFeature(feature){
+    const id = feature && feature.properties && (feature.properties.gameId || feature.properties.id);
+    try { if (typeof ypIsLinkedHome === 'function') return !!ypIsLinkedHome(id); } catch (e) {}
+    return false;
+  }
+  function applySelPaint(linked){
+    const m = map();
+    if (!m) return;
+    const fill = linked ? {'fill-color':'#1a6fff','fill-opacity':0.55} : {'fill-color':'#1a6fff','fill-opacity':0.5};
+    const halo = linked ? {'line-color':'#ffffff','line-width':8,'line-opacity':0.95} : {'line-color':'#ffffff','line-width':0,'line-opacity':0};
+    const line = linked ? {'line-color':'#ff6a00','line-width':4} : {'line-color':'#0b2545','line-width':3};
+    const set = (layer, props) => {
+      if (!m.getLayer(layer)) return;
+      for (const [k,v] of Object.entries(props)) { try { m.setPaintProperty(layer, k, v); } catch (e) {} }
+    };
+    set('ypb-selected-fill', fill);
+    set('ypb-selected-halo', halo);
+    set('ypb-selected-line', line);
+  }
   function syncSelMarker(){
     const m = map();
+    const linked = !!(selected && isLinkedFeature(selected));
+    applySelPaint(linked);
+    if (!linked) {
+      if (selMarker) { selMarker.remove(); selMarker = null; }
+      document.querySelectorAll('.yp-sel-mark').forEach(node => node.remove());
+      return;
+    }
     const pt = selected && selPoint(selected);
     if (!m || !pt || typeof maplibregl === 'undefined' || typeof maplibregl.Marker !== 'function') {
       if (selMarker) { selMarker.remove(); selMarker = null; }
@@ -236,7 +262,10 @@
     const props = feature && feature.properties || {};
     selectFeature(feature);
     document.getElementById('yp-building')?.remove();
-    if (typeof ypOpenSaleDetail === 'function' && ypCardEligible(props) && (!ypOwnedFootprints().has(props.gameId) || ypBuyFor(props.gameId))) { ypOpenSaleDetail(feature); return; }
+    if (typeof ypOpenSaleDetail === 'function' && ypCardEligible(props) && (!ypOwnedFootprints().has(props.gameId) || ypBuyFor(props.gameId))) {
+      try { ypOpenSaleDetail(feature); return; }
+      catch (e) { console.warn('ypOpenSaleDetail', e); }
+    }
     if (props.adopted && !ypCardEligible(props)) return;
     const panel = document.createElement('div');
     panel.id = 'yp-building';
