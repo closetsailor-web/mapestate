@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates85";
+window.YP_BUILD="dates87";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1896,10 +1896,10 @@ function cityOpen(c){return players()>=c.unlockPlayers||(CFG.nwGate&&c.unlockNW&
 /* ======================= SAVE (global + per city) ======================= */
 let G,CS={};
 const SCHEMA=7;
-const G_DEFAULTS=()=>({notifs:[],v:1,schema:SCHEMA,cash:CFG.startCash,week:0,acc:0,last:Date.now(),hist:[],username:'',offers:[],tried:{},cur:'c1',visited:['c1'],seenRel:{},counter:{}});
+const G_DEFAULTS=()=>({notifs:[],v:1,schema:SCHEMA,cash:CFG.startCash,week:0,acc:0,last:Date.now(),hist:[],username:'',offers:[],tried:{},cur:'c1',visited:['c1'],seenRel:{},counter:{},vehicles:[],carYardSeen:0});
 function newestLegacy(re){let best=null,bn=-1;for(const k of Object.keys(localStorage)){const m=k.match(re);if(m&&+m[1]>bn){bn=+m[1];best=k;}}return best;}
 function readJSON(k){try{return k?JSON.parse(localStorage.getItem(k)):null;}catch(e){return null;}}
-function migrateG(s){const g=Object.assign(G_DEFAULTS(),s||{});g.schema=SCHEMA;['hist','offers','visited','notifs'].forEach(k=>{if(!Array.isArray(g[k]))g[k]=G_DEFAULTS()[k];});
+function migrateG(s){const g=Object.assign(G_DEFAULTS(),s||{});g.schema=SCHEMA;['hist','offers','visited','notifs','vehicles'].forEach(k=>{if(!Array.isArray(g[k]))g[k]=G_DEFAULTS()[k];});
   if(!g.addrV){g.hist.forEach(h=>h.t=lotAddrText(h.t));g.notifs.forEach(n=>n.msg=lotAddrText(n.msg));g.addrV=1;}
   if(!g.started&&(g.username||g.hist.length))g.started=1;if(!g.tut)g.tut=g.started?{step:99,done:1}:{step:0,done:0};if(g.homeChosen==null)g.homeChosen=g.started&&g.tut.done?1:0;if(!g.tips)g.tips={seen:{},off:0};if(!g.visited.includes(g.cur))g.visited.push(g.cur);return g;}
 const ADDR_RE=/\b(\d{1,4}) ((?:[A-Z][A-Za-z]+ ){1,3}(?:Street|Avenue|Road|Drive|Parade|Crescent|Terrace|Way|Esplanade|Lane|Close|Court|Place))\b/g;
@@ -2032,11 +2032,11 @@ function ypWeekMsCandidates(){const out=[];const add=n=>{if(n>0&&out.indexOf(n)<
 function ypDeriveSettleWeek(b,week){week=week!=null?week:(typeof G!=='undefined'&&G?G.week|0:0);if(!b)return NaN;const owned=b.status==='owned';const ok=w=>Number.isFinite(+w)&&+w>=0&&(!owned||(+w|0)<=week);if(ok(+b.settleWeek))return +b.settleWeek|0;const fromMs=ms=>{if(!Number.isFinite(+ms))return NaN;if(typeof ypWeekFromGameMs==='function'){const w=ypWeekFromGameMs(+ms);if(ok(w))return w|0;}const cands=ypWeekMsCandidates();for(let i=0;i<cands.length;i++){const w=Math.floor(+ms/cands[i]);if(ok(w))return w|0;}return NaN;};let w=fromMs(b.settleGameMs);if(ok(w))return w;if(owned&&b.id&&typeof ypReadHistory==='function'){try{const evs=(ypReadHistory().events||[]).filter(e=>e&&e.propertyId===b.id);for(const kind of ['settled','movedIn','contract']){const ev=[...evs].reverse().find(e=>e.kind===kind);if(!ev||!Number.isFinite(+ev.gameMs))continue;const ew=fromMs(ev.gameMs);if(ok(ew))return kind==='contract'?Math.min(week,(ew|0)+Math.round(((typeof YP_SETTLE_DAYS==='number')?YP_SETTLE_DAYS:30)/7)):ew;}}catch(e){}}return NaN;}
 function ypHeaderLoanOwing(b){if(typeof ypLoanOwing==='function')return ypLoanOwing(b);if(!b)return 0;if(b.status==='contract')return Math.max(0,+b.loan||+b.loanStart||0);if(b.status!=='owned')return Math.max(0,+b.loan||0);if(Number.isFinite(+b.loanPaidToWeek))return Math.max(0,+b.loan||0);const start=Number.isFinite(+b.loanStart)&&+b.loanStart>0?+b.loanStart:Math.max(0,+b.loan||0);const sched=+b.repay>0?+b.repay:(typeof repayWk==='function'?repayWk(start,typeof CFG!=='undefined'?CFG.rateIP:0.0672):0);const rate=(typeof CFG!=='undefined'&&CFG&&Number.isFinite(+CFG.rateIP))?+CFG.rateIP:0.0672;const settle=typeof ypDeriveSettleWeek==='function'?ypDeriveSettleWeek(b):NaN;const weeks=Number.isFinite(settle)?Math.max(0,(typeof G!=='undefined'&&G?G.week|0:0)-settle):0;let bal=Math.max(0,start);for(let i=0;i<weeks&&bal>0;i++){const interest=bal*rate/52;const due=Math.min(sched>0?sched:bal+interest,bal+interest);bal=Math.max(0,bal+interest-due);}return bal;}
 function ypHeaderBuyEquity(){if(typeof ypBuyEquity==='function')return ypBuyEquity();try{const o=JSON.parse(localStorage.getItem('yp.previewBuys.v1')||'null');let t=0;Object.values((o&&o.buys)||{}).forEach(b=>{if(!b)return;if(b.status==='contract')t+=(+b.payNow||0);else if(b.status==='owned')t+=(+b.estimate||0)-ypHeaderLoanOwing(b);});return t;}catch(e){return 0;}}
-function netWorth(){if(typeof ypSyncLoanBalances==='function')try{ypSyncLoanBalances();}catch(e){}let nw=G.cash+ypHeaderBuyEquity();for(const[id,p]of allProps())nw+=p.status==='settling'?p.dep:value(id)-p.loan;return nw;}
+function netWorth(){if(typeof ypSyncLoanBalances==='function')try{ypSyncLoanBalances();}catch(e){}let nw=G.cash+ypHeaderBuyEquity();for(const[id,p]of allProps())nw+=p.status==='settling'?p.dep:value(id)-p.loan;if(typeof ypVehicleAssetsTotal==='function')nw+=ypVehicleAssetsTotal();if(typeof ypCarLoanBalance==='function')nw-=ypCarLoanBalance();return nw;}
 /* ======================= WEEKLY SIM ======================= */
 function ypNoteCatch(part,amount){const bag=window.__ypCatch;const n=+amount;if(!bag||!Number.isFinite(n)||!n)return;bag[part]=(+bag[part]||0)+n;}
 function weekTick(){G.week++;const w=G.week;
-  try{if(typeof ypChargeBuyWeek==='function')ypChargeBuyWeek();}catch(e){}try{if(typeof ypTickMarket==='function')ypTickMarket();}catch(e){}
+  try{if(typeof ypChargeBuyWeek==='function')ypChargeBuyWeek();}catch(e){}try{if(typeof ypChargeCarLoans==='function')ypChargeCarLoans();}catch(e){}try{if(typeof ypTickMarket==='function')ypTickMarket();}catch(e){}
   if(w%4===0){const top=allProps().find(([i,p])=>p.status==='leased');if(G._rent>0)notify('rent',`Rent received (last 4 wks): ${fmt(G._rent)} after management fees`,top&&top[0],true);if(G._rep>0||G._hold>0)notify('repay',`Paid (last 4 wks): loan repayments ${fmt(G._rep||0)}; rates, water, insurance and maintenance ${fmt(G._hold||0)}`,top&&top[0],true);G._rent=G._rep=G._hold=0;}if(G.started){if(G.payPend&&w>=G.payPend.wk){G.pay={g:G.payPend.g,p:G.payPend.p};delete G.payPend;notify('info','💼 Your new pay has started: '+fmt(G.pay.g+G.pay.p)+'/yr');}
   if(housing()==='rent'&&G.homeChosen){const L=ensureLease();if(!L.m2m&&w>=L.end){L.m2m=1;notify('info',`🔑 Your ${L.months}-month lease at ${L.addr} has ended. It now continues Week By Week at the same rent (${fmt(L.rent)}/wk).`);}}
   const applyCash=!!(G.homeChosen||G.clockOn),m=(x=>applyCash?x:{...x,saved:0})(weekMoney());const takeWk=Math.round(+m.take||0),rentWk=Math.round(+m.rent||0),livWk=Math.round(+m.liv||0),debtWk=Math.round(+m.debt||0),savedWk=applyCash?(takeWk-rentWk-livWk-debtWk):0;G.cash+=savedWk;if(applyCash){ypNoteCatch('income',takeWk);ypNoteCatch('expense',rentWk+livWk+debtWk);}if(G.started&&G.homeChosen)tip('week','Saved this week: '+fmt(m.saved)+'. Profile shows the breakdown.');G.lastWeek=m;G.savedTotal=(G.savedTotal||0)+m.saved;if(w%4===0)log(`💼 Last 4 weeks: you earned ${fmt(m.earn*4)}, tax ${fmt(m.tax*4)}, rent ${fmt(m.rent*4)}, living costs ${fmt(m.liv*4)}${m.debt?', other debts '+fmt(m.debt*4):''}`,Math.round(m.saved*4));
@@ -4043,7 +4043,8 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates85"></script>
-<script src="player-market.js?v=dates85"></script>
-<script src="overture-layer.js?v=dates85"></script>
+<script src="map-preview.js?v=dates87"></script>
+<script src="player-market.js?v=dates87"></script>
+<script src="car-yard.js?v=dates87"></script>
+<script src="overture-layer.js?v=dates87"></script>
 </body></html>
