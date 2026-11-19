@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates90";
+window.YP_BUILD="dates91";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1260,7 +1260,7 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 .yp-flow>div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;min-height:44px;align-items:center;box-sizing:border-box;border-top:1px solid rgba(20,33,61,.08)}
 .yp-flow-list{margin:0 0 12px}
 .yp-flow-list>.yp-flow{margin:0}
-.yp-flow-list>.yp-flow-head,.yp-flow-head{grid-column:1/-1;margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase}
+.yp-flow-list>.yp-flow-head,.yp-flow-head{grid-column:1/-1;margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase}#yp-living .yp-flow-head{text-transform:none;letter-spacing:0}
 .yp-money-group{border-top:1px solid rgba(20,33,61,.08)}
 .yp-money-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;padding:8px 0;margin:0;border:0;background:transparent;text-align:left;cursor:pointer;color:inherit;font:inherit;border-radius:8px}
 .yp-money-toggle:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px}
@@ -2052,14 +2052,15 @@ function ypHeaderVehicleAssets(){if(typeof ypVehicleAssetsTotal==='function')ret
 function ypHeaderCarLoans(){if(typeof ypCarLoanBalance==='function')return ypCarLoanBalance();try{const list=(typeof G!=='undefined'&&G&&Array.isArray(G.vehicles))?G.vehicles:[];return list.reduce((t,v)=>t+Math.max(0,Math.round(+(v&&v.loan&&v.loan.balance)||0)),0);}catch(e){return 0;}}
 function ypHeaderPropertyAssets(){if(typeof ypNetWorthParts==='function')return Math.round(+ypNetWorthParts().property||0);let property=0;try{const o=JSON.parse(localStorage.getItem('yp.previewBuys.v1')||'null');Object.values((o&&o.buys)||{}).forEach(b=>{if(!b)return;if(b.status==='owned'||b.status==='contract')property+=(+b.estimate||+b.price||+b.agreed||0);});}catch(e){}try{if(typeof allProps==='function')for(const[id,p]of allProps()){if(!p)continue;property+=typeof value==='function'?value(id):0;}}catch(e){}return property;}
 function ypHeaderTotalAssets(){if(typeof ypNetWorthParts==='function')return Math.round(+ypNetWorthParts().totalAssets||0);const cash=(typeof G!=='undefined'&&G)?(+G.cash||0):0;return cash+ypHeaderPropertyAssets()+ypHeaderVehicleAssets();}
-function netWorth(){if(typeof ypSyncLoanBalances==='function')try{ypSyncLoanBalances();}catch(e){}let nw=G.cash+ypHeaderBuyEquity();for(const[id,p]of allProps())nw+=p.status==='settling'?p.dep:value(id)-p.loan;nw+=ypHeaderVehicleAssets();nw-=ypHeaderCarLoans();return nw;}
+function netWorth(){if(typeof ypNetWorthParts==='function')return ypNetWorthParts().net;if(typeof ypSyncLoanBalances==='function')try{ypSyncLoanBalances();}catch(e){}let nw=G.cash+ypHeaderBuyEquity();for(const[id,p]of allProps())nw+=p.status==='settling'?p.dep:value(id)-p.loan;nw+=ypHeaderVehicleAssets();nw-=ypHeaderCarLoans();return nw;}
 /* ======================= WEEKLY SIM ======================= */
 function ypNoteCatch(part,amount){const bag=window.__ypCatch;const n=+amount;if(!bag||!Number.isFinite(n)||!n)return;bag[part]=(+bag[part]||0)+n;}
-function weekTick(){G.week++;const w=G.week;
+function ypOperatingCash(n,part){n=+n||0;if(!n)return;if(typeof window!=='undefined'&&window.__ypWeekBudgetCash)return;if(typeof G!=='undefined'&&G)G.cash=(+G.cash||0)+n;if(part&&typeof ypNoteCatch==='function')ypNoteCatch(part,Math.abs(n));}
+function weekTick(){const ypApplyCash=!!(typeof G!=='undefined'&&G&&(G.homeChosen||G.clockOn));let ypWeekInc=0,ypWeekExp=0,ypWeekLeft=0;if(ypApplyCash&&typeof ypWeekMoneyParts==='function'){try{const P=ypWeekMoneyParts();ypWeekInc=Math.round(+P.incTot||0);ypWeekExp=Math.round(+P.expTot||0);ypWeekLeft=ypWeekInc-ypWeekExp;}catch(e){}}if(typeof window!=='undefined')window.__ypWeekBudgetCash=1;G.week++;const w=G.week;
   try{if(typeof ypChargeBuyWeek==='function')ypChargeBuyWeek();}catch(e){}try{if(typeof ypChargeCarLoans==='function')ypChargeCarLoans();}catch(e){}try{if(typeof ypTickMarket==='function')ypTickMarket();}catch(e){}
   if(w%4===0){const top=allProps().find(([i,p])=>p.status==='leased');if(G._rent>0)notify('rent',`Rent received (last 4 wks): ${fmt(G._rent)} after management fees`,top&&top[0],true);if(G._rep>0||G._hold>0)notify('repay',`Paid (last 4 wks): loan repayments ${fmt(G._rep||0)}; rates, water, insurance and maintenance ${fmt(G._hold||0)}`,top&&top[0],true);G._rent=G._rep=G._hold=0;}if(G.started){if(G.payPend&&w>=G.payPend.wk){G.pay={g:G.payPend.g,p:G.payPend.p};delete G.payPend;notify('info','💼 Your new pay has started: '+fmt(G.pay.g+G.pay.p)+'/yr');}
   if(housing()==='rent'&&G.homeChosen){const L=ensureLease();if(!L.m2m&&w>=L.end){L.m2m=1;notify('info',`🔑 Your ${L.months}-month lease at ${L.addr} has ended. It now continues Week By Week at the same rent (${fmt(L.rent)}/wk).`);}}
-  const applyCash=!!(G.homeChosen||G.clockOn),m=(x=>applyCash?x:{...x,saved:0})(weekMoney());const takeWk=Math.round(+m.take||0),rentWk=Math.round(+m.rent||0),livWk=Math.round(+m.liv||0),debtWk=Math.round(+m.debt||0),savedWk=applyCash?(takeWk-rentWk-livWk-debtWk):0;G.cash+=savedWk;if(applyCash){ypNoteCatch('income',takeWk);ypNoteCatch('expense',rentWk+livWk+debtWk);}if(G.started&&G.homeChosen)tip('week','Saved this week: '+fmt(m.saved)+'. Profile shows the breakdown.');G.lastWeek=m;G.savedTotal=(G.savedTotal||0)+m.saved;if(w%4===0)log(`💼 Last 4 weeks: you earned ${fmt(m.earn*4)}, tax ${fmt(m.tax*4)}, rent ${fmt(m.rent*4)}, living costs ${fmt(m.liv*4)}${m.debt?', other debts '+fmt(m.debt*4):''}`,Math.round(m.saved*4));
+  const applyCash=ypApplyCash,m=(x=>applyCash?x:{...x,saved:0})(typeof weekMoney==='function'?weekMoney():{});if(applyCash){G.cash=(+G.cash||0)+ypWeekLeft;ypNoteCatch('income',ypWeekInc);ypNoteCatch('expense',ypWeekExp);}if(G.started&&G.homeChosen)tip('week','Saved this week: '+fmt(ypWeekLeft)+'. Profile shows the breakdown.');G.lastWeek=Object.assign({},m,{saved:ypWeekLeft,take:ypWeekInc||Math.round(+m.take||0),income:ypWeekInc,exp:ypWeekExp});G.savedTotal=(G.savedTotal||0)+(applyCash?ypWeekLeft:(+m.saved||0));if(w%4===0)log(`💼 Last 4 weeks: you earned ${fmt(m.earn*4)}, tax ${fmt(m.tax*4)}, rent ${fmt(m.rent*4)}, living costs ${fmt(m.liv*4)}${m.debt?', other debts '+fmt(m.debt*4):''}`,Math.round(m.saved*4));
   if(m.saved<0&&w%4===0)notify('info',`⚠️ You're spending more than you earn: ${fmt(-m.saved)} a week going backwards. Cheaper rent or a smaller budget would help.`);}
   if(w%26===0)for(const[cid,c]of Object.entries(CS)){const own=Object.keys(c.props);const base=own.length?own[Math.floor(Math.random()*own.length)]:GEN[cid].lots.find(l=>segOf(l)===c.start)?.id;if(base)openNeighbours(base);}
   for(const[id,p]of allProps()){const cp=CS[cityOf(id)].props;
@@ -2067,10 +2068,10 @@ function weekTick(){G.week++;const w=G.week;
     if(p.subd){subdTick(id,p);if(!cp[id])continue;}
     const v=value(id),d=p.dev;
     if(d&&d.stage!=='done')devTick(id,p,d);
-    else{const rent=weeklyRent(id);if(rent>0){if(p.vacant>0)p.vacant--;else{const got=rent*(1-mgmt(id));G.cash+=got;ypNoteCatch('income',got);G._rent=(G._rent||0)+got;if(Math.random()<.02){p.vacant=1+Math.floor(Math.random()*3);notify('vacancy','🏚️ Tenant leaving, between tenants: '+pname(id),id);}}}
-      if(d&&d.biz){const pr=bizProfit(d)*(.75+Math.random()*.5);G.cash+=pr;ypNoteCatch('income',pr);if(w%13===0)log(`${BIZ[d.biz].icon} ${BIZ[d.biz].label} trading profit (quarter, approx)`,Math.round(pr*13));}}
-    if(p.loan>0){const intr=p.loan*(p.io?CFG.rateIO:CFG.rateIP)/52,rep=p.io?intr:Math.min(p.repay,p.loan+intr);p.loan=Math.max(0,p.loan+intr-rep);G.cash-=rep;G._rep=(G._rep||0)+rep;}
-    G.cash-=holdWk(id);G._hold=(G._hold||0)+holdWk(id);if(p.prot)G.cash-=protFee(p.prot);
+    else{const rent=weeklyRent(id);if(rent>0){if(p.vacant>0)p.vacant--;else{const got=rent*(1-mgmt(id));ypOperatingCash(got,'income');G._rent=(G._rent||0)+got;if(Math.random()<.02){p.vacant=1+Math.floor(Math.random()*3);notify('vacancy','🏚️ Tenant leaving, between tenants: '+pname(id),id);}}}
+      if(d&&d.biz){const pr=bizProfit(d);ypOperatingCash(pr,'income');if(w%13===0)log(`${BIZ[d.biz].icon} ${BIZ[d.biz].label} trading profit (quarter, approx)`,Math.round(pr*13));}}
+    if(p.loan>0){const intr=p.loan*(p.io?CFG.rateIO:CFG.rateIP)/52,rep=p.io?intr:Math.min(p.repay,p.loan+intr);p.loan=Math.max(0,p.loan+intr-rep);ypOperatingCash(-rep,'expense');G._rep=(G._rep||0)+rep;}
+    ypOperatingCash(-holdWk(id),'expense');G._hold=(G._hold||0)+holdWk(id);if(p.prot)ypOperatingCash(-protFee(p.prot),'expense');
     if(lot(id).type!=='vacant'&&!(d&&d.stage!=='done')&&Math.random()<.025){const c=Math.round(v*.005*(.3+Math.random()*1.4)/10)*10,ev=['Hot water system replaced','Storm damage to gutters','Termite treatment','Plumbing call-out','Air-con service','Fence repair','Smoke alarm check'][Math.floor(Math.random()*7)];G.cash-=c;log('🔧 '+ev+' — '+pname(id),-c);toast('🔧 '+ev+': '+fmt(c));}
     if(p.status==='leased'&&!(d&&d.stage!=='done')&&Math.random()<.03){const rv=RIVALS[Math.floor(Math.random()*3)],off=Math.round(v*(.85+Math.random()*.6)/1000)*1000;
       if(off>=protOf(id)){const net=off-p.loan;G.cash+=net;rivalTake(cityOf(id),rv.id,id,0);log(`⚡ ${rv.name} paid your protection price ${fmt(off)} for ${pname(id)}`,net);notify('sold','⚡ '+rv.name+' met your protection price — sold '+pname(id)+' for '+fmt(off),id);delete cp[id];G.offers=G.offers.filter(o=>o.id!==id);redraw(id);continue;}
@@ -2082,7 +2083,7 @@ function weekTick(){G.week++;const w=G.week;
     if(p.postOffer&&w>p.postOffer.exp)delete p.postOffer;}
   G.offers=G.offers.filter(o=>o.exp>=w&&propOf(o.id));
   for(const[cid,c]of Object.entries(CS))rivalWeek(cid,c);
-  if(G.cash<-50000)forcedSale();else if(G.cash<0&&!G.warned){G.warned=1;toast('⚠️ Cash negative — open Portfolio to sell at market value');}if(G.cash>=0)G.warned=0;}
+  if(G.cash<-50000)forcedSale();else if(G.cash<0&&!G.warned){G.warned=1;toast('⚠️ Cash negative — open Portfolio to sell at market value');}if(G.cash>=0)G.warned=0;if(typeof window!=='undefined')window.__ypWeekBudgetCash=0;}
 /* SAMPLE AI rivals: same STARTING_CASH, same rules — 80% LVR loans at the investor rate, net rent after costs */
 function rivalTake(cid,rid,id,loan){const rs=CS[cid].rivals[rid];rs.plots.push(id);rs.loan[id]=loan;}
 function rivalDrop(cid,id){for(const r of RIVALS){const rs=CS[cid].rivals[r.id];if(rs.plots.includes(id)){rs.plots=rs.plots.filter(x=>x!==id);const L=rs.loan[id]||0;delete rs.loan[id];return{rs,L};}}return null;}
@@ -2569,7 +2570,7 @@ const roomP=v=>ROOM_PRICES.includes(+v)?+v:200;
 const myRoom=id=>{G.rooms=G.rooms||{};let r=G.rooms[id];if(!r)r=G.rooms[id]={list:[],reqs:[],invites:[]};
   if(!r.list){const o=r;r.list=[];for(let i=0;i<(o.n|0);i++)r.list.push({price:roomP(o.price),b:(o.boarders||[])[i]||null});delete r.n;delete r.boarders;delete r.price;}return r;};
 const simRooms=()=>(G.simRooms=G.simRooms||[]);
-function roomIncome(){let s=0;for(const id in (G.rooms||{})){const p=propOf(id);if(!p||!p.occ)continue;for(const x of myRoom(id).list)if(x.b)s+=x.price;}return s;}
+function roomIncome(){let s=0;if(typeof ypOwnRoomSharePeople==='function'){for(const id in (G.rooms||{})){(ypOwnRoomSharePeople(id)||[]).forEach(p=>{s+=Math.max(0,Math.round(+p.price||0));});}return s;}for(const id in (G.rooms||{})){const p=propOf(id);if(!p||!p.occ)continue;for(const x of myRoom(id).list)if(x.b)s+=x.price;}return s;}
 function roomRefresh(id){save();hud&&hud();if(id&&sel===id)UI.plot(id);if(document.getElementById('listings'))listRender();}
 function roomBox(id){const p=propOf(id),mx=roomMax(id);if(!p||p.status==='settling'||!canLive(id))return '';
   if(!p.occ)return `<div class="fin hcard" id="roombox"><b>Rent out a room</b><small> You can only rent out rooms in your main home (where you live). This home is rented out whole to tenants.</small></div>`;
@@ -4063,8 +4064,8 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates90"></script>
-<script src="player-market.js?v=dates90"></script>
-<script src="car-yard.js?v=dates90"></script>
-<script src="overture-layer.js?v=dates90"></script>
+<script src="map-preview.js?v=dates91"></script>
+<script src="player-market.js?v=dates91"></script>
+<script src="car-yard.js?v=dates91"></script>
+<script src="overture-layer.js?v=dates91"></script>
 </body></html>

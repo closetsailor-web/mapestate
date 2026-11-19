@@ -206,14 +206,14 @@ function ypChargeCarLoans(){
     const due=balance+interest;
     const pay=Math.min(Math.max(0,Math.round(+L.repayWk||0)),due);
     if(pay>0){
-      G.cash=(+G.cash||0)-pay;
+      if(!(typeof window!=='undefined'&&window.__ypWeekBudgetCash)) G.cash=(+G.cash||0)-pay;
       paid+=pay;
     }
     L.balance=Math.max(0,due-pay);
     if(L.balance===0)L.paidWeek=week;
   });
   G.carLoanChargeWeek=week;
-  if(paid&&typeof ypNoteCatch==='function')ypNoteCatch('expense',paid);
+  if(paid&&!(typeof window!=='undefined'&&window.__ypWeekBudgetCash)&&typeof ypNoteCatch==='function')ypNoteCatch('expense',paid);
   if((paid||true)&&typeof save==='function')save();
   return paid;
 }

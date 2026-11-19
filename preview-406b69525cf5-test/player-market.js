@@ -50,10 +50,10 @@ function ypCanOfferBoard(id){if(ypLiveHomeId()!==id)return false;const rec=ypOwn
 
 function ypMarketRentWk(){const s=ypEnsureMarket();let n=0;Object.values(s.rents||{}).forEach(L=>{if(L&&L.status==='leased'&&L.tenant)n+=Math.max(0,Math.round(+L.rent||0));});return n;}
 function ypMarketBoardWk(){const s=ypEnsureMarket();let n=0;Object.values(s.board||{}).forEach(L=>{(L&&L.boarders||[]).forEach(b=>{if(b&&!b.endedWeek)n+=Math.max(0,Math.round(+b.boardWk||+L.boardWk||0));});});return n;}
-function ypMarketShareWk(){let n=0;try{if(typeof roomIncome==='function')n+=Math.max(0,Math.round(+roomIncome()||0));}catch(e){}return n;}
+function ypMarketShareWk(){let n=0;try{const rooms=(typeof G!=='undefined'&&G&&G.rooms)||{};if(typeof ypOwnRoomSharePeople==='function'){Object.keys(rooms).forEach(id=>{(ypOwnRoomSharePeople(id)||[]).forEach(p=>{n+=Math.max(0,Math.round(+p.price||0));});});if(n>0)return n;}}catch(e){}try{if(typeof roomIncome==='function')n+=Math.max(0,Math.round(+roomIncome()||0));}catch(e){}return n;}
 function ypMarketIncomeWk(){return ypMarketRentWk()+ypMarketBoardWk();}
 
-function ypPayOwner(amount,label,id){amount=Math.max(0,Math.round(+amount||0));if(!(amount>0)||typeof G==='undefined'||!G)return;G.cash=(+G.cash||0)+amount;if(typeof ypNoteCatch==='function')ypNoteCatch('income',amount);if(label)ypMarketNotify(label,id);}
+function ypPayOwner(amount,label,id){amount=Math.max(0,Math.round(+amount||0));if(!(amount>0)||typeof G==='undefined'||!G)return;if(!(typeof window!=='undefined'&&window.__ypWeekBudgetCash)){G.cash=(+G.cash||0)+amount;if(typeof ypNoteCatch==='function')ypNoteCatch('income',amount);}if(label)ypMarketNotify(label,id);}
 
 function ypMarketUnit(key){let h=2166136261;const s=String(key||'');for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return((h>>>0)%1000000)/1000000;}
 function ypBuyerOfferFullRatio(){return 1.08;}
