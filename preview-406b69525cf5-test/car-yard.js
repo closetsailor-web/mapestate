@@ -32,9 +32,9 @@ function ypCarYardStyle(){
   const s=document.createElement('style');
   s.id='yp-car-yard-style';
   s.textContent=`
-#yp-car-yard-intro,#yp-car-yard,#yp-car-detail,#yp-car-bought,#yp-car-pay,#yp-car-finance{position:fixed;left:0;right:0;top:calc(var(--sat, 0px) + 88px);bottom:calc(var(--sab, 0px) + 86px);width:auto;height:auto;max-height:none;z-index:28;display:flex;align-items:stretch;justify-content:stretch;overflow:hidden;overscroll-behavior:none;touch-action:none;padding:0 10px;background:transparent;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d;box-sizing:border-box}
-#yp-car-yard-intro .card,#yp-car-yard .card,.yp-car-running{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#f4f7fb}.yp-car-running p{margin:0;text-align:left}.yp-car-running-total{font:500 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.yp-car-running-total b{font-weight:700}.yp-car-running-parts{margin-top:2px!important;font:400 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
-#yp-car-detail .card,#yp-car-bought .card,#yp-car-pay .card,#yp-car-finance .card{background:#fff;border-radius:24px;width:100%;max-width:none;padding:0 16px 16px;text-align:left;box-shadow:0 10px 24px rgba(11,37,69,.18);max-height:none;height:100%;overflow:hidden;margin:0;display:flex;flex-direction:column;box-sizing:border-box}
+#yp-car-yard-intro,#yp-car-yard,#yp-car-detail,#yp-car-bought,#yp-car-pay,#yp-car-finance{position:fixed;left:0;right:0;top:calc(var(--sat, 0px) + 88px);bottom:calc(var(--sab, 0px) + 86px);width:auto;height:auto;max-height:none;z-index:28;display:flex;align-items:stretch;justify-content:stretch;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:0 10px;background:transparent;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d;box-sizing:border-box}
+.yp-car-running{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#f4f7fb}.yp-car-running p{margin:0;text-align:left}.yp-car-running-total{font:500 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.yp-car-running-total b{font-weight:700}.yp-car-running-parts{margin-top:2px!important;font:400 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-car-yard-intro .card,#yp-car-yard .card,#yp-car-detail .card,#yp-car-bought .card,#yp-car-pay .card,#yp-car-finance .card{background:#fff;border-radius:24px;width:100%;max-width:none;padding:0 16px 16px;text-align:left;box-shadow:0 10px 24px rgba(11,37,69,.18);max-height:none;height:100%;min-height:0;overflow:hidden;margin:0;display:flex;flex-direction:column;box-sizing:border-box}
 #yp-car-yard-intro .yp-card-head,#yp-car-yard .yp-card-head,#yp-car-detail .yp-card-head,#yp-car-bought .yp-card-head,#yp-car-pay .yp-card-head,#yp-car-finance .yp-card-head{min-height:48px;height:48px;box-sizing:border-box;flex:none;margin-left:-16px;margin-right:-16px;width:calc(100% + 32px);max-width:none;margin-bottom:0}
 #yp-car-yard-intro .yp-card-head h2,#yp-car-yard .yp-card-head h2,#yp-car-detail .yp-card-head h2,#yp-car-bought .yp-card-head h2,#yp-car-pay .yp-card-head h2,#yp-car-finance .yp-card-head h2{font:700 16px/1.15 Inter,system-ui,sans-serif}
 #yp-car-intro-body{position:relative;flex:1 1 auto;min-height:0;display:flex;align-items:stretch;justify-content:stretch;background:#0b2545;margin:0 -16px -16px;overflow:hidden}
@@ -234,88 +234,24 @@ function ypOpenCarYard(){ypOpenCarYardIntro();}
 
 function ypOpenCarYardIntro(){
   ypCarYardStyle();
-  let playTimer=0,bubbleTimer=0,shown=false;
-  const ui=ypCarPanel('yp-car-yard-intro','Car Yard',{onClose:()=>{
-    const v=document.getElementById('yp-car-salesman');
-    if(v){try{v.pause();}catch(e){}}
-    if(playTimer)clearTimeout(playTimer);
-    if(bubbleTimer)clearTimeout(bubbleTimer);
-  }});
-  const body=document.createElement('div');
-  body.id='yp-car-intro-body';
-  const video=document.createElement('video');
-  video.id='yp-car-salesman';
-  video.setAttribute('playsinline','');
-  video.setAttribute('webkit-playsinline','');
-  video.setAttribute('preload','auto');
-  video.setAttribute('poster',YP_CAR_POSTER);
-  video.playsInline=true;
-  video.preload='auto';
-  video.controls=false;
-  video.muted=false;
-  video.defaultMuted=false;
-  video.autoplay=true;
-  video.src=YP_CAR_VIDEO;
-  video.setAttribute('src',YP_CAR_VIDEO);
-  const bubble=document.createElement('button');
-  bubble.type='button';
-  bubble.id='yp-car-view-listings';
-  bubble.textContent='View Listings';
-  bubble.setAttribute('aria-label','View Listings');
-  const playBtn=document.createElement('button');
-  playBtn.type='button';
-  playBtn.id='yp-car-tap-play';
-  playBtn.textContent='Tap To Play';
-  const ready=()=>!!(video.ended||(video.currentTime||0)>=YP_CAR_INTRO_AT);
-  const showBubble=()=>{
-    if(shown||!ready())return;
-    shown=true;
-    bubble.classList.add('on');
-    ypMarkCarYardSeen();
-  };
   const goListings=()=>{
-    if(playTimer)clearTimeout(playTimer);
-    if(bubbleTimer)clearTimeout(bubbleTimer);
-    try{video.pause();}catch(e){}
     ypMarkCarYardSeen();
-    ui.shut();
+    if(typeof ypCancelAgentClip==='function')ypCancelAgentClip();
+    const clip=document.getElementById('yp-apply-review');
+    if(clip&&clip.classList.contains('yp-clip'))clip.remove();
+    const bg=document.getElementById('yp-agent-bg');
+    if(bg){try{bg.pause();}catch(e){}}
     ypOpenCarYardListings();
   };
-  bubble.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();goListings();});
-  const armBubble=()=>{
-    if(bubbleTimer)clearTimeout(bubbleTimer);
-    const now=video.currentTime||0;
-    const wait=Math.max(80,Math.round((YP_CAR_INTRO_AT-now)*1000));
-    bubbleTimer=setTimeout(()=>{if(ready())showBubble();else armBubble();},wait);
+  if(typeof YP_AGENT_CLIPS==='object'&&YP_AGENT_CLIPS&&!YP_AGENT_CLIPS.carYard){
+    YP_AGENT_CLIPS.carYard='salesman-v5';
+  }
+  const play=()=>{
+    if(typeof ypClipOnce==='function'){ypClipOnce('carYard',goListings);return;}
+    goListings();
   };
-  video.addEventListener('timeupdate',()=>{if(ready())showBubble();});
-  video.addEventListener('ended',showBubble);
-  video.addEventListener('playing',armBubble);
-  video.addEventListener('loadedmetadata',armBubble);
-  body.append(video,bubble,playBtn);
-  const trySound=()=>{
-    video.muted=false;
-    video.defaultMuted=false;
-    const play=video.play();
-    if(play&&play.then)return play.then(()=>{playBtn.classList.remove('on');}).catch(()=>{
-      video.muted=true;
-      return video.play().then(()=>{playBtn.classList.add('on');}).catch(()=>{playBtn.classList.add('on');});
-    });
-    playBtn.classList.remove('on');
-  };
-  playBtn.addEventListener('click',event=>{
-    event.preventDefault();
-    event.stopPropagation();
-    trySound();
-  });
-  body.addEventListener('click',event=>{
-    if(event.target.closest('#yp-car-view-listings')||event.target.closest('#yp-car-tap-play'))return;
-    if(ypCarYardSeen())goListings();
-  });
-  ui.card.appendChild(body);
-  playTimer=setTimeout(trySound,0);
-  trySound();
-  armBubble();
+  if(typeof ypClipFileReady==='function'){ypClipFileReady('carYard',ok=>{if(ok)play();else goListings();});return;}
+  play();
 }
 
 function ypOpenCarYardListings(){
