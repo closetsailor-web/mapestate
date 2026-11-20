@@ -424,7 +424,7 @@ function ypOpenBills(){
   const lead=document.createElement('p');
   lead.className='yp-bills-lead';
   lead.id='yp-bills-lead';
-  lead.textContent='These are the living costs you entered, plus game bills like car rego and insurance. Due dates are optional. Turn on Remind Me if you want a reminder.';
+  lead.textContent='Game costs like rego, insurance, fuel and your car loan come out every week automatically as part of the game. Due dates and reminders are just for your real-life bills.';
   card.appendChild(lead);
   const list=document.createElement('div');
   list.className='yp-bills-list';
