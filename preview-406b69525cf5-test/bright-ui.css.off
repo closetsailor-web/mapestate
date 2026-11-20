@@ -1,0 +1,101 @@
+/* Bright Day UI colours from dates103 (tag bright-ui-dates103, commit 0468e29).
+   This file is NOT loaded. To switch the colourful UI back on:
+   1. Copy this file next to index.html in preview-406b69525cf5-test/, or keep it here.
+   2. In index.html, just before </head>, add:
+        <style id="yp-theme-bright">
+        /* paste this file's CSS here, or: */
+        </style>
+      simpler: insert  <link rel="stylesheet" href="bright-ui.css.off" id="yp-theme-bright">
+      just before </head>.
+   3. Leave the rest of the game (skies, rental fix) as they are.
+   Or restore the whole dates103 HTML style block from:
+      git show bright-ui-dates103:preview-406b69525cf5-test/index.html
+*/
+/* dates102 Bright Day theme: brighter sky-blue/sea/sunshine look. Selectors use ids, classes and data attributes only. */
+:root{--yb-head:linear-gradient(115deg,#0a6fc2 0%,#0a78bd 50%,#08807a 100%);--yb-green:#15803d;--yb-coral:#c2412d;--yb-teal:#0f766e;--yb-violet:#6d3fd6;--yb-orange-text:#c2410c;--yb-link:#0b6db3}
+html,body{background:linear-gradient(180deg,#bfe6ff 0%,#dff3ff 30%,#f4fbff 62%,#fff8e8 100%) fixed!important}
+/* top bar */
+html body>header:not(.yp-card-head),html header:not(.yp-card-head):not(.hwh){background:var(--yb-head)!important;box-shadow:0 6px 18px rgba(10,111,194,.28)!important}
+html header .logo b,html header:not(.yp-card-head) .logo b{color:#ffe066!important}
+html header .pill{background:rgba(4,40,80,.24)!important;border:1px solid rgba(255,255,255,.3)}
+html #badge{background:#ffd23f!important;color:#3a2600!important}
+#yp-feed{background:transparent!important}
+/* Your Week + feed cards */
+.yp-week-card{border-radius:18px!important;box-shadow:0 8px 22px rgba(11,120,194,.13)!important;border:0!important;position:relative;overflow:hidden}
+.yp-week-card::before{content:"";position:absolute;left:0;right:0;top:0;height:5px;background:linear-gradient(90deg,#22c55e,#14b8a6,#38bdf8,#fbbf24,#fb7185);pointer-events:none}
+.yp-week-title{color:var(--yb-link)!important}
+.yp-listings-card .yp-week-title{color:#6d28d9!important}
+#yp-week-income{color:var(--yb-green)!important}
+#yp-week-expenses{color:var(--yb-coral)!important}
+#yp-week-bills{color:var(--yb-orange-text)!important}
+#yp-week-offers-btn{color:#6d3fd6!important}
+.yp-listings-hint{color:var(--yb-orange-text)!important}
+.yp-activity-card{border-radius:18px!important;overflow:hidden;box-shadow:0 8px 22px rgba(11,120,194,.13)!important;border-top:0!important;border-left:0!important;border-right:0!important}
+.yp-activity--deal{box-shadow:0 0 0 3px #86efac,0 8px 22px rgba(21,128,61,.16)!important;border-bottom:5px solid #22c55e!important}
+.yp-activity--sale{border-bottom:5px solid #ffb02e!important}
+.yp-activity--ai{border-bottom:5px solid #fb7185!important}
+.yp-activity--rent{border-bottom:5px solid #8b5cf6!important}
+.yp-activity--player{border-bottom:5px solid #38bdf8!important}
+.yp-activity-tag{box-shadow:0 2px 6px rgba(0,0,0,.18);font-weight:800!important}
+.yp-activity-tag.yp-tag--home{background:#15803d!important;color:#fff!important}
+.yp-activity-tag.yp-tag--property{background:#0f766e!important;color:#fff!important}
+.yp-activity-tag.yp-tag--rental{background:#0e7490!important;color:#fff!important}
+.yp-activity-tag.yp-tag--sale{background:#ffb02e!important;color:#2b1a00!important}
+.yp-activity-tag.yp-tag--ai{background:#be123c!important;color:#fff!important}
+.yp-activity-tag.yp-tag--rent{background:#7c3aed!important;color:#fff!important}
+.yp-activity-tag.yp-tag--player{background:#0369a1!important;color:#fff!important}
+.yp-ad-card{background:linear-gradient(135deg,#fff7d6,#ffe9f0)!important;border-radius:18px!important}
+.yp-plink{color:var(--yb-link)!important}
+.yp-listing-media,.yp-activity-media{background:#cfeaff!important}
+/* bottom nav: one colour per tab */
+nav{background:rgba(255,255,255,.97)!important;box-shadow:0 -4px 18px rgba(11,120,194,.12)!important}
+nav button[data-v="home"]{color:#0b6db3!important}
+nav button[data-v="mine"]{color:#15803d!important}
+nav button[data-v="sale"]{color:#b45309!important}
+nav button[data-v="map"]{color:#b8371f!important}
+nav button[data-v="shop"]{color:#6d3fd6!important}
+nav button span{color:inherit!important}
+nav button.on[data-v="home"]{background:#dff0ff!important}
+nav button.on[data-v="mine"]{background:#dcfce7!important}
+nav button.on[data-v="sale"]{background:#fef3c7!important}
+nav button.on[data-v="map"]{background:#fff0ec!important}
+nav button.on[data-v="shop"]{background:#ede4ff!important}
+/* popup headers: default sky-to-sea, then a colour per kind of screen */
+html .yp-card-head,html #hwov .hwh{background:var(--yb-head)!important}
+html .yp-card-head .yp-kicker{color:#fff!important}
+html .yp-card-head .yp-plink,html .yp-card-head .yp-property-id,html .yp-card-head a{color:#fff!important}
+/* money screens: Game Budget green, Reality Snap violet, Living Arrangements teal */
+html #yp-living[data-yp-fin="budget"] .yp-card-head{background:linear-gradient(115deg,#0f7a4f 0%,#077a72 100%)!important}
+html #yp-living[data-yp-fin="snap"] .yp-card-head{background:linear-gradient(115deg,#6d3fd6 0%,#4f46e5 100%)!important}
+html #yp-living:not([data-yp-fin]) .yp-card-head{background:linear-gradient(115deg,#0f766e 0%,#0e7490 100%)!important}
+html #yp-physical .yp-card-head,html #yp-liquid .yp-card-head{background:linear-gradient(115deg,#0f7a4f 0%,#077a72 100%)!important}
+/* rentals: violet like the For rent tag */
+html #yp-rent-detail .yp-card-head,html #yp-rent-list .yp-card-head,html #yp-apply-review.yp-rent .yp-card-head,html #yp-list-rent .yp-card-head,html #yp-manage-rent .yp-card-head,html #yp-rent-app .yp-card-head{background:linear-gradient(115deg,#7c3aed 0%,#5b21b6 100%)!important}
+/* offers and selling: warm coral */
+html #yp-pending .yp-card-head,html #yp-seller-counter .yp-card-head,html #yp-seller-offer .yp-card-head,html #yp-buyer-reply .yp-card-head,html #yp-offer-room .yp-card-head,html #yp-list-sale .yp-card-head,html #yp-manage-sale .yp-card-head{background:linear-gradient(115deg,#c2412d 0%,#b45309 100%)!important}
+/* boarding and lease popups: teal */
+html #yp-apply-review.yp-board .yp-card-head,html #yp-board-invite .yp-card-head,html #yp-boarder-view .yp-card-head,html #yp-payout .yp-card-head,html #yp-where-live .yp-card-head,html #yp-end-arrangement .yp-card-head{background:linear-gradient(115deg,#0f766e 0%,#0e7490 100%)!important}
+/* history: indigo; leaderboard: violet */
+html #yp-history .yp-card-head,html #yp-history-detail .yp-card-head{background:linear-gradient(115deg,#4f46e5 0%,#0b6db3 100%)!important}
+html #sheet .yp-card-head{background:linear-gradient(115deg,#6d3fd6 0%,#4f46e5 100%)!important}
+/* car yard: sunshine yellow with dark text */
+html [id^="yp-car"] .yp-card-head{background:linear-gradient(115deg,#ffd23f 0%,#ffb02e 100%)!important;color:#2b1a00!important}
+html [id^="yp-car"] .yp-card-head *,html [id^="yp-car"] .yp-card-head .yp-plink{color:#2b1a00!important}
+html #yp-car-yard .card{background:#fffaf0!important}
+.yp-car-card{border-radius:14px!important;box-shadow:0 4px 12px rgba(180,110,0,.12)!important}
+/* section headings that were light orange on white (too faint): darker orange */
+html .yp-own-lives-head,html .yp-own-head-label,html .yp-own-sheet>h3,html #yp-physical .yp-asset-property>h3,html #yp-physical .yp-asset-group,html #yp-liquid .yp-net-head,html #yp-pending .yp-pending-head,html #yp-pending .yp-pending-toggle,html #yp-sale-detail .yp-flow-subhead,html #yp-rent-detail .yp-flow-subhead{color:var(--yb-orange-text)!important}
+html #yp-pending .yp-pending-caret{border-color:var(--yb-orange-text)!important}
+/* money colours */
+html #yp-living .yp-money-in .yp-money-title,html #yp-living .yp-money-in .yp-money-val{color:var(--yb-green)!important}
+html #yp-living .yp-money-out .yp-money-title,html #yp-living .yp-money-out .yp-money-val{color:var(--yb-coral)!important}
+.yp-week-save{background:linear-gradient(135deg,#dcfce7,#d1fae5)!important}
+.yp-week-save,.yp-week-save *{color:#11663a!important}
+/* buttons: main action green, close sky-to-sea, outline buttons blue */
+html button.hwb:not(#yp-board-accept):not([class*="danger"]),html .yp-btn-primary{background:linear-gradient(115deg,#15803d,#0f766e)!important;color:#fff!important;box-shadow:0 6px 16px rgba(21,128,61,.3)!important}
+html button.hwx{color:#0b6db3!important;border-color:#7cc4f5!important}
+html #yp-rent-withdraw.hwx,html #yp-board-decline.hwx{color:#4b5563!important}
+html button.yp-close{background:linear-gradient(115deg,#0a6fc2,#08807a)!important;color:#fff!important;border-color:transparent!important}
+html #yp-section-menu .yp-menu-item,html #yp-property-menu .yp-menu-item{color:#12263f!important}
+html .yp-detail-row,html .yp-rent-row{background:#e0f2fe!important;color:#075985!important}
+#yp-bank-checks li.done{color:#15803d!important}

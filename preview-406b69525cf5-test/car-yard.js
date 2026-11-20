@@ -9,7 +9,7 @@ function ypCarMoney(amount){if(typeof ypNetMoney==='function')return ypNetMoney(
 function ypCarTitle(car){if(!car)return '';return String(car.year||'')+' '+String(car.brand||'')+' '+String(car.model||'');}
 /* dates98: retry a car photo that fails to load (twice, cache-busted), then show a clean grey placeholder with the car name. */
 function ypCarPlaceholder(title){const t=String(title||'Car').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const svg='<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600"><rect width="800" height="600" fill="#e3e7ee"/><text x="400" y="285" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="60" font-weight="700" fill="#5a6780">'+t+'</text><text x="400" y="355" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="38" fill="#8a94a6">Photo unavailable</text></svg>';return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);}
-function ypCarImg(img,car,src){if(!img)return img;const base=String(src||(car&&car.image)||'');let tries=0;img.dataset.ypCarSrc=base;img.addEventListener('error',function onErr(){if(img.dataset.ypCarFailed)return;if(tries<2&&base){tries++;const n=tries;setTimeout(()=>{img.src=base+(base.indexOf('?')<0?'?':'&')+'r='+n;},400*n);return;}img.dataset.ypCarFailed='1';img.removeEventListener('error',onErr);img.classList.add('yp-car-ph');img.src=ypCarPlaceholder(ypCarTitle(car));});img.src=base;return img;}
+function ypCarImg(img,car,src,prev){if(!img)return img;const base=String(src||(car&&car.image)||'');let tries=0;img.dataset.ypCarSrc=base;const mood=(base&&/assets\/cars\//.test(base)&&car&&car.id&&typeof ypSkyMoodKey==='function')?ypSkyMoodKey('car:'+car.id,prev):'';const shown=(mood&&typeof ypSkySrc==='function')?ypSkySrc(base,mood):base;if(mood)img.dataset.sky=mood;img.addEventListener('error',function onErr(e){if(shown!==base&&!img.dataset.skyFallback){img.dataset.skyFallback='1';if(e&&e.stopImmediatePropagation)e.stopImmediatePropagation();img.src=base;return;}if(img.dataset.ypCarFailed)return;if(tries<2&&base){tries++;const n=tries;setTimeout(()=>{img.src=base+(base.indexOf('?')<0?'?':'&')+'r='+n;},400*n);return;}img.dataset.ypCarFailed='1';img.removeEventListener('error',onErr);img.classList.add('yp-car-ph');img.src=ypCarPlaceholder(ypCarTitle(car));});img.src=shown;return img;}
 function ypCarById(id){id=String(id||'');return YP_CAR_CATALOG.find(c=>c&&c.id===id)||null;}
 function ypCarEnsureState(){if(typeof G==='undefined'||!G)return;if(!Array.isArray(G.vehicles))G.vehicles=[];}
 function ypCarOwned(){ypCarEnsureState();if(typeof G==='undefined'||!G)return [];return (G.vehicles||[]).filter(Boolean);}
@@ -332,13 +332,15 @@ function ypOpenCarYardListings(){
   }else{
     const grid=document.createElement('div');
     grid.id='yp-car-grid';
+    let prevSky='';
     stock.forEach(car=>{
       const card=document.createElement('button');
       card.type='button';
       card.className='yp-car-card';
       card.setAttribute('aria-label',ypCarTitle(car)+', '+ypCarMoney(car.price));
       const img=document.createElement('img');
-      ypCarImg(img,car);
+      ypCarImg(img,car,null,prevSky);
+      prevSky=img.dataset.sky||prevSky;
       img.alt=ypCarTitle(car);
       const meta=document.createElement('div');
       meta.className='yp-car-meta';
@@ -626,11 +628,13 @@ function ypRenderOwnedVehicles(){
   const wrap=document.createElement('div');
   wrap.className='yp-vehicle-list';
   wrap.id='yp-vehicles';
+  let prevSky='';
   cars.forEach(car=>{
     const row=document.createElement('div');
     row.className='yp-vehicle-row';
     const img=document.createElement('img');
-    ypCarImg(img,car);
+    ypCarImg(img,car,null,prevSky);
+    prevSky=img.dataset.sky||prevSky;
     img.alt=ypCarTitle(car);
     const meta=document.createElement('div');
     const name=document.createElement('p');
