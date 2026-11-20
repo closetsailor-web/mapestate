@@ -12,9 +12,12 @@ function ypCarPlaceholder(title){const t=String(title||'Car').replace(/[&<>"']/g
 function ypCarImg(img,car,src,prev){if(!img)return img;const base=String(src||(car&&car.image)||'');let tries=0;img.dataset.ypCarSrc=base;const mood=(base&&/assets\/cars\//.test(base)&&car&&car.id&&typeof ypSkyMoodKey==='function')?ypSkyMoodKey('car:'+car.id,prev):'';const shown=(mood&&typeof ypSkySrc==='function')?ypSkySrc(base,mood):base;if(mood)img.dataset.sky=mood;img.addEventListener('error',function onErr(e){if(shown!==base&&!img.dataset.skyFallback){img.dataset.skyFallback='1';if(e&&e.stopImmediatePropagation)e.stopImmediatePropagation();img.src=base;return;}if(img.dataset.ypCarFailed)return;if(tries<2&&base){tries++;const n=tries;setTimeout(()=>{img.src=base+(base.indexOf('?')<0?'?':'&')+'r='+n;},400*n);return;}img.dataset.ypCarFailed='1';img.removeEventListener('error',onErr);img.classList.add('yp-car-ph');img.src=ypCarPlaceholder(ypCarTitle(car));});img.src=shown;return img;}
 function ypCarById(id){id=String(id||'');return YP_CAR_CATALOG.find(c=>c&&c.id===id)||null;}
 function ypCarEnsureState(){if(typeof G==='undefined'||!G)return;if(!Array.isArray(G.vehicles))G.vehicles=[];}
-function ypCarOwned(){ypCarEnsureState();if(typeof G==='undefined'||!G)return [];return (G.vehicles||[]).filter(Boolean);}
-function ypCarOwnedIds(){return new Set(ypCarOwned().map(v=>String(v.id||'')).filter(Boolean));}
-function ypCarYardStock(){const owned=ypCarOwnedIds();return YP_CAR_CATALOG.filter(c=>c&&!owned.has(c.id));}
+function ypCarIsPending(v){return !!(v&&(v.status==='handover-pending'||v.handedOver===0||v.handedOver==='0'));}
+function ypCarIsHandedOver(v){return !!(v&&!ypCarIsPending(v));}
+function ypCarOwned(){ypCarEnsureState();if(typeof G==='undefined'||!G)return [];return (G.vehicles||[]).filter(ypCarIsHandedOver);}
+function ypCarPendingList(){ypCarEnsureState();if(typeof G==='undefined'||!G)return [];return (G.vehicles||[]).filter(ypCarIsPending);}
+function ypCarOwnedIds(){return new Set((G&&G.vehicles||[]).filter(Boolean).map(v=>String(v.id||'')).filter(Boolean));}
+function ypCarYardStock(){const held=ypCarOwnedIds();return YP_CAR_CATALOG.filter(c=>c&&!held.has(c.id));}
 /* dates100: weekly running costs (QLD). Rego about $900 a year for a 4-cylinder car. Comprehensive insurance about 3% of the car's value a year, at least $10 a week.
    Fuel $50 a week for your main car; you can only drive one car at a time, so each extra car costs $15 a week (occasional use). */
 const YP_CAR_REGO_WK=17,YP_CAR_INS_RATE=0.03,YP_CAR_INS_MIN_WK=10,YP_CAR_FUEL_WK=50,YP_CAR_FUEL_EXTRA_WK=15;
@@ -33,6 +36,7 @@ function ypCarYardStyle(){
   s.id='yp-car-yard-style';
   s.textContent=`
 #yp-car-yard-intro,#yp-car-yard,#yp-car-detail,#yp-car-bought,#yp-car-pay,#yp-car-finance{position:fixed;left:0;right:0;top:calc(var(--sat, 0px) + 88px);bottom:calc(var(--sab, 0px) + 86px);width:auto;height:auto;max-height:none;z-index:28;display:flex;align-items:stretch;justify-content:stretch;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:0 10px;background:transparent;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d;box-sizing:border-box}
+#yp-car-finance-facts{margin:12px 0 0}#yp-car-finance-facts .yp-flow{margin:0 0 10px}#yp-car-finance-price{margin:0 0 8px;font:500 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}#yp-car-finance-price b{font-weight:800;color:#0b2545}
 .yp-car-running{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#f4f7fb}.yp-car-running p{margin:0;text-align:left}.yp-car-running-total{font:500 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.yp-car-running-total b{font-weight:700}.yp-car-running-parts{margin-top:2px!important;font:400 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
 #yp-car-yard-intro .card,#yp-car-yard .card,#yp-car-detail .card,#yp-car-bought .card,#yp-car-pay .card,#yp-car-finance .card{background:#fff;border-radius:24px;width:100%;max-width:none;padding:0 16px 16px;text-align:left;box-shadow:0 10px 24px rgba(11,37,69,.18);max-height:none;height:100%;min-height:0;overflow:hidden;margin:0;display:flex;flex-direction:column;box-sizing:border-box}
 #yp-car-yard-intro .yp-card-head,#yp-car-yard .yp-card-head,#yp-car-detail .yp-card-head,#yp-car-bought .yp-card-head,#yp-car-pay .yp-card-head,#yp-car-finance .yp-card-head{min-height:48px;height:48px;box-sizing:border-box;flex:none;margin-left:-16px;margin-right:-16px;width:calc(100% + 32px);max-width:none;margin-bottom:0}
@@ -162,6 +166,32 @@ function ypCarWeeklyRepay(principal,years,rate){
   if(!(r>0))return Math.round(principal/n);
   return Math.round(principal*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1));
 }
+function ypCarWeeklyInterest(balance,rate){
+  rate=(rate==null)?YP_CAR_RATE:+rate;
+  return Math.round(Math.max(0,Math.round(+balance||0))*rate/52);
+}
+function ypCarLoanDueThisWeek(L){
+  if(!L||!(Math.round(+L.balance||0)>0))return 0;
+  const balance=Math.max(0,Math.round(+L.balance||0));
+  const due=balance+ypCarWeeklyInterest(balance,L.rate);
+  return Math.min(Math.max(0,Math.round(+L.repayWk||0)),due);
+}
+function ypCarAmortize(principal,years,rate){
+  principal=Math.max(0,Math.round(+principal||0));
+  years=Math.round(+years||0);
+  rate=(rate==null)?YP_CAR_RATE:+rate;
+  const repayWk=ypCarWeeklyRepay(principal,years,rate);
+  let balance=principal,paid=0,weeks=0,lastPay=0;
+  const cap=Math.max(1,years*52)+104;
+  for(let i=0;i<cap&&balance>0;i++){
+    const interest=ypCarWeeklyInterest(balance,rate);
+    const due=balance+interest;
+    const pay=Math.min(repayWk,due);
+    balance=Math.max(0,due-pay);
+    paid+=pay;lastPay=pay;weeks++;
+  }
+  return {repayWk,weeks,totalPaid:paid,totalInterest:Math.max(0,paid-principal),lastPay,paidOff:balance===0,balance};
+}
 function ypCarDepositAmount(price,percent){
   price=Math.max(0,Math.round(+price||0));
   const min=Math.max(1,Math.ceil(price*YP_CAR_MIN_DEPOSIT-1e-9));
@@ -178,7 +208,11 @@ function ypCarFinanceQuote(car,percent,years){
   const deposit=ypCarDepositAmount(price,percent);
   const loan=Math.max(0,price-deposit);
   const repayWk=ypCarWeeklyRepay(loan,years);
-  return {ok:true,cashOnly:false,price,percent:Math.round(+percent||0),deposit,loan,years,rate:YP_CAR_RATE,repayWk};
+  const amort=ypCarAmortize(loan,years);
+  const run=ypCarRunningCosts(car,ypCarOwned().length>0);
+  return {ok:true,cashOnly:false,price,percent:Math.round(+percent||0),deposit,loan,years,rate:YP_CAR_RATE,repayWk,
+    weeks:amort.weeks,totalPaid:amort.totalPaid,totalInterest:amort.totalInterest,lastPay:amort.lastPay,
+    fees:0,dealer:price,dueNow:deposit,running:run};
 }
 function ypCarActiveLoans(){
   return ypCarOwned().filter(v=>v&&v.loan&&Math.round(+v.loan.balance||0)>0);
@@ -187,7 +221,7 @@ function ypCarLoanBalance(){
   return ypCarActiveLoans().reduce((sum,v)=>sum+Math.max(0,Math.round(+v.loan.balance||0)),0);
 }
 function ypCarLoanRepayWk(){
-  return ypCarActiveLoans().reduce((sum,v)=>sum+Math.max(0,Math.round(+v.loan.repayWk||0)),0);
+  return ypCarActiveLoans().reduce((sum,v)=>sum+ypCarLoanDueThisWeek(v.loan),0);
 }
 function ypCarWeekLeft(){
   if(typeof ypAffordWeek==='function'){
@@ -196,13 +230,143 @@ function ypCarWeekLeft(){
   }
   return 0;
 }
-function ypCarFinanceFits(repayWk){
+function ypCarBankCash(){return (typeof G!=='undefined'&&G)?Math.max(0,Math.round(+G.cash||0)):0;}
+function ypCarPublicCode(id){
+  if(!id)return '';
+  try{
+    const raw=typeof ypPropertyIdCode==='function'?ypPropertyIdCode(id):(typeof ypPublicCode==='function'?ypPublicCode(id):'');
+    const c=String(raw||'').trim();
+    if(!c||c==='No code'||c==='…'||c.startsWith('ypb-')||/^yp-[0-9a-f]{8}-/i.test(c))return '';
+    return c;
+  }catch(e){return '';}
+}
+function ypCarPlaceLabel(recOrId){
+  const rec=(recOrId&&typeof recOrId==='object')?recOrId:null;
+  const rawId=rec?null:recOrId;
+  const bought=rec||(typeof ypBuyFor==='function'&&rawId?ypBuyFor(rawId):null);
+  const ids=[bought&&bought.id,bought&&bought.footprintId,bought&&bought.gameId,rawId,recOrId&&recOrId.id].filter(Boolean);
+  for(let i=0;i<ids.length;i++){
+    const c=ypCarPublicCode(ids[i]);
+    if(c)return c;
+  }
+  return '';
+}
+function ypCarSettleWeek(rec){
+  if(!rec)return NaN;
+  try{
+    if(typeof ypLoanSettleWeek==='function'){
+      const w=ypLoanSettleWeek(rec);
+      if(Number.isFinite(+w))return +w|0;
+    }
+  }catch(e){}
+  if(Number.isFinite(+rec.settleWeek))return +rec.settleWeek|0;
+  return NaN;
+}
+function ypCarSettleHint(recOrId){
+  const rec=(recOrId&&typeof recOrId==='object')?recOrId:((typeof ypBuyFor==='function'?ypBuyFor(recOrId):null)||{id:recOrId});
+  const code=ypCarPlaceLabel(rec);
+  const week=ypCarSettleWeek(rec);
+  let settle='';
+  if(Number.isFinite(week)){
+    const lab=typeof ypGameWeekLabel==='function'?ypGameWeekLabel(week):('Week '+(week|0));
+    if(lab)settle='Settles '+lab;
+  }
+  if(code&&settle)return code+' · '+settle;
+  return code||settle||'';
+}
+function ypCarPendingItems(){
+  const items=[];
+  const push=(row)=>{if(!row||!(Math.round(+row.amount||0)>0)&&row.dir!=='info')return;row.amount=Math.max(0,Math.round(+row.amount||0));items.push(row);};
+  try{
+    const settling=typeof ypBuySettling==='function'?ypBuySettling():[];
+    settling.forEach(b=>{
+      const amt=Math.max(0,Math.round(+(typeof ypSettleDue==='function'?ypSettleDue(b):b&&b.atSettle)||0));
+      push({kind:'house-settle-out',dir:'out',label:'House settlement to pay',hint:ypCarSettleHint(b),amount:amt});
+    });
+  }catch(e){}
+  try{
+    const s=(typeof ypEnsureMarket==='function'?ypEnsureMarket():null)||(typeof G!=='undefined'&&G&&G.ypMarket)||null;
+    const sales=s&&s.sales?Object.values(s.sales):[];
+    sales.forEach(L=>{
+      if(!L||(L.status!=='agreed'&&L.status!=='accepted'))return;
+      if(L.status==='accepted'&&!(Number.isFinite(+L.keysWeek)||L.agreed))return;
+      const q=typeof ypSellMoney==='function'?ypSellMoney(L.id):null;
+      if(!q)return;
+      const rec=(typeof ypBuyFor==='function'?ypBuyFor(L.id):null)||L;
+      const place=ypCarSettleHint(rec);
+      if(q.toBank>0)push({kind:'house-settle-in',dir:'in',label:'House sale settlement to receive',hint:place,amount:q.toBank});
+      if(q.shortfall>0)push({kind:'house-settle-out',dir:'out',label:'House sale shortfall to pay',hint:place,amount:q.shortfall});
+    });
+  }catch(e){}
+  try{
+    const rentals=((typeof ypReadStock==='function'?ypReadStock():{}).rentals)||[];
+    rentals.forEach(r=>{
+      if(!r)return;
+      if(typeof ypRentalIsStale==='function'&&ypRentalIsStale(r))return;
+      const rent=Math.round(+((typeof ypListingWeeklyRent==='function'?ypListingWeeklyRent(r):r.weeklyRent))||0);
+      const pic=typeof ypRentPicture==='function'?ypRentPicture(rent):{bond:rent*4,advance:rent*2,upfront:rent*6};
+      const place=ypCarPlaceLabel(r.footprintId||r.id);
+      if(r.status==='application-pending'){
+        push({kind:'rent-apply',dir:'info',label:'Pending rental application',hint:(place?place+'. ':'')+'Bond and two weeks rent in advance are not charged unless you are approved and sign',amount:pic.upfront||0});
+      }else if(r.status==='approved'&&!r.bondCharged){
+        push({kind:'rent-sign',dir:'out',label:'Rental move-in to pay if you sign',hint:(place?place+'. ':'')+'Four-week bond and two weeks rent in advance',amount:pic.upfront||0});
+      }else if(r.status==='active'&&r.bondCharged){
+        const bond=Math.round(+(r.bondPaid||r.bond||pic.bond)||0);
+        if(bond>0)push({kind:'rent-bond',dir:'info',label:'Bond held by the bond office',hint:(place?place+'. ':'')+'Already paid, held until you leave',amount:bond});
+        const adv=Math.round(+(r.advancePaid||r.advance||r.advanceAmt||pic.advance)||0);
+        if(adv>0)push({kind:'rent-advance',dir:'info',label:'Rent paid in advance',hint:place,amount:adv});
+      }
+    });
+    const B=typeof ypWeekBudget==='function'?ypWeekBudget():null;
+    if(B&&Math.round(+B.extraRent||0)>0)push({kind:'rent-owed',dir:'out',label:'Rent owed',hint:'Outstanding rent that will leave your bank',amount:+B.extraRent});
+  }catch(e){}
+  try{
+    ypCarPendingList().forEach(v=>{
+      if(v.pay==='finance'&&!v.cashSettled){
+        const dep=Math.round(+((v.quote&&v.quote.deposit)||(v.loan&&v.loan.deposit))||0);
+        push({kind:'car-deposit',dir:'out',label:'Car deposit reserved',hint:ypCarTitle(v),amount:dep});
+      }
+    });
+  }catch(e){}
+  return items;
+}
+function ypCarAvailableFunds(){
+  const cash=ypCarBankCash();
+  const items=ypCarPendingItems();
+  let outgoing=0,incoming=0;
+  items.forEach(it=>{
+    if(it.dir==='out')outgoing+=it.amount;
+    else if(it.dir==='in')incoming+=it.amount;
+  });
+  const spendableNow=cash-outgoing;
+  const available=cash-outgoing+incoming;
+  return {cash,outgoing,incoming,spendableNow,available,items};
+}
+function ypCarLoanRows(){
+  const rows=[];
+  try{
+    const B=typeof ypWeekBudget==='function'?ypWeekBudget():{};
+    (B.loans||[]).forEach(l=>{
+      const amt=Math.max(0,Math.round(+l.rep||0));
+      if(amt>0)rows.push({label:'Home loan repayment',hint:ypCarPlaceLabel(l.id),amount:amt,weekly:true});
+    });
+    if(!(B.loans||[]).length&&Math.round(+B.homeLoans||0)>0)rows.push({label:'Home loan repayment',amount:Math.round(+B.homeLoans||0),weekly:true});
+    if(Math.round(+B.invLoans||0)>0)rows.push({label:'Investment loan repayment',amount:Math.round(+B.invLoans||0),weekly:true});
+  }catch(e){}
+  ypCarActiveLoans().forEach(v=>{
+    const due=ypCarLoanDueThisWeek(v.loan);
+    if(due>0)rows.push({label:'Car loan repayment',hint:ypCarTitle(v),amount:due,weekly:true});
+  });
+  return rows;
+}
+function ypCarFinanceFits(repayWk,extraRun){
   repayWk=Math.max(0,Math.round(+repayWk||0));
+  extraRun=Math.max(0,Math.round(+extraRun||0));
   if(typeof ypAffordWeek==='function'){
-    const a=ypAffordWeek({carRepay:repayWk});
+    const a=ypAffordWeek({carRepay:repayWk,carRun:extraRun});
     return !!(a&&+a.leftMgr>=0);
   }
-  return ypCarWeekLeft()>=repayWk;
+  return ypCarWeekLeft()>=(repayWk+extraRun);
 }
 function ypChargeCarLoans(){
   ypCarEnsureState();
@@ -230,7 +394,15 @@ function ypChargeCarLoans(){
   return paid;
 }
 
-function ypOpenCarYard(){ypOpenCarYardIntro();}
+function ypResumeCarPurchase(){
+  ypCarEnsureState();
+  const pending=ypCarPendingList()[0];
+  if(pending){ypOpenCarHandover(pending);return true;}
+  const due=(typeof G!=='undefined'&&G&&G.vehicles||[]).find(v=>ypCarIsHandedOver(v)&&v.congratsSeen!==1&&v.approveAt);
+  if(due){ypOpenCarCongrats(due);return true;}
+  return false;
+}
+function ypOpenCarYard(){if(ypResumeCarPurchase())return;ypOpenCarYardIntro();}
 
 function ypOpenCarYardIntro(){
   ypCarYardStyle();
@@ -255,6 +427,7 @@ function ypOpenCarYardIntro(){
 }
 
 function ypOpenCarYardListings(){
+  if(ypResumeCarPurchase())return;
   const stock=ypCarYardStock();
   const ui=ypCarPanel('yp-car-yard','Car Yard');
   const body=document.createElement('div');
@@ -359,6 +532,17 @@ function ypOpenCarPay(id){
   price.id='yp-car-pay-price';
   price.innerHTML='<b>'+ypCarMoney(car.price)+'</b>';
   body.append(lead,price,ypCarRunningNote(car,'yp-car-pay'));
+  const funds=ypCarAvailableFunds();
+  const fundNote=document.createElement('div');
+  fundNote.id='yp-car-pay-funds';
+  if(typeof ypFlow==='function'){
+    const rows=[{label:'In the bank now',value:ypCarMoney(funds.cash),hint:'Includes any inheritance already released into your bank. That money is cash on hand, not a loan.'}];
+    if(funds.outgoing>0)rows.push({label:'Pending outgoing',value:ypCarMoney(funds.outgoing),hint:'Reserved for settlements or rentals'});
+    if(funds.incoming>0)rows.push({label:'Pending incoming',value:ypCarMoney(funds.incoming)});
+    rows.push({label:'Spendable now',value:ypCarMoney(funds.spendableNow),id:'yp-car-pay-spendable',hint:'What can leave your bank today, without spending pending settlement money twice'});
+    fundNote.appendChild(ypFlow(rows));
+  }
+  body.appendChild(fundNote);
   if(cashOnly){
     const tag=document.createElement('p');
     tag.className='yp-car-cash-only';
@@ -380,7 +564,7 @@ function ypOpenCarPay(id){
     const result=ypBuyCar(car.id);
     if(!result||!result.ok){showNeed((result&&result.why)||'You do not have enough in the bank to buy this car.');return;}
     ui.shut();
-    ypOpenCarBought(result.car);
+    ypOpenCarHandover(result.car);
   },'yp-car-pay-cash'));
   if(!cashOnly){
     foot.appendChild(ypCarFootButton('Finance','hwb',()=>{ui.shut();ypOpenCarFinance(car.id);},'yp-car-pay-finance'));
@@ -405,6 +589,11 @@ function ypOpenCarFinance(id){
   lead.textContent=ypCarTitle(car);
   body.appendChild(lead);
   const addLabel=(text,id)=>{const h=document.createElement('p');h.className='yp-car-label';if(id)h.id=id;h.textContent=text;body.appendChild(h);return h;};
+  const priceLine=document.createElement('p');
+  priceLine.className='yp-car-copy';
+  priceLine.id='yp-car-finance-price';
+  priceLine.innerHTML='Price <b>'+ypCarMoney(car.price)+'</b>';
+  body.appendChild(priceLine);
   addLabel('Deposit','yp-car-deposit-label');
   const depRow=document.createElement('div');
   depRow.className='yp-car-picks';
@@ -420,6 +609,10 @@ function ypOpenCarFinance(id){
     depBtns.push({pct,btn});
   });
   body.appendChild(depRow);
+  const depAmt=document.createElement('p');
+  depAmt.className='yp-car-value';
+  depAmt.id='yp-car-finance-deposit';
+  body.appendChild(depAmt);
   addLabel('Term','yp-car-term-label');
   const termRow=document.createElement('div');
   termRow.className='yp-car-picks';
@@ -435,45 +628,92 @@ function ypOpenCarFinance(id){
     termBtns.push({term,btn});
   });
   body.appendChild(termRow);
-  addLabel('Rate','yp-car-rate-label');
-  const rate=document.createElement('p');
-  rate.className='yp-car-value';
-  rate.id='yp-car-finance-rate';
-  rate.textContent='9% a year';
-  body.appendChild(rate);
-  addLabel('Amount Borrowed','yp-car-loan-label');
-  const borrowed=document.createElement('p');
-  borrowed.className='yp-car-value';
-  borrowed.id='yp-car-finance-borrowed';
-  body.appendChild(borrowed);
-  addLabel('Weekly Repayment','yp-car-repay-label');
-  const repay=document.createElement('p');
-  repay.className='yp-car-value';
-  repay.id='yp-car-finance-repay';
-  body.appendChild(repay);
+  const facts=document.createElement('div');
+  facts.id='yp-car-finance-facts';
+  body.appendChild(facts);
   const need=document.createElement('p');
   need.id='yp-car-finance-need';
   need.hidden=true;
   body.appendChild(need);
+  const row=(label,value,hint,id)=>{
+    const item={label,value};
+    if(hint)item.hint=hint;
+    if(id)item.id=id;
+    return item;
+  };
   const paint=()=>{
     const q=ypCarFinanceQuote(car,percent,years);
     depBtns.forEach(b=>b.btn.classList.toggle('on',b.pct===percent));
     termBtns.forEach(b=>b.btn.classList.toggle('on',b.term===years));
-    borrowed.textContent=ypCarMoney(q.loan);
-    repay.textContent=ypCarMoney(q.repayWk)+' a week';
+    depAmt.textContent=ypCarMoney(q.deposit)+' ('+q.percent+'% of the price)';
+    const funds=ypCarAvailableFunds();
+    const loans=ypCarLoanRows();
+    const run=q.running||ypCarRunningCosts(car,ypCarOwned().length>0);
+    const leftover=(typeof ypAffordWeek==='function'?ypAffordWeek({carRepay:q.repayWk,carRun:run.total}):null);
+    const factRows=[
+      row('Interest rate','9% a year','Fixed for the life of the loan','yp-car-finance-rate'),
+      row('Term',q.years+' years','('+q.weeks+' weeks)','yp-car-finance-term'),
+      row('Amount borrowed',ypCarMoney(q.loan),'The loan principal','yp-car-finance-borrowed'),
+      row('Weekly repayment',ypCarMoney(q.repayWk)+' a week','At 9% a year','yp-car-finance-repay'),
+      row('Total repayable',ypCarMoney(q.totalPaid),'All weekly repayments over the term','yp-car-finance-total'),
+      row('Total interest',ypCarMoney(q.totalInterest),'Included in the total repayable','yp-car-finance-interest'),
+      row('Fees',ypCarMoney(0),'No extra fees','yp-car-finance-fees'),
+      row('You pay now',ypCarMoney(q.deposit),'The deposit leaves your bank when the car is handed over','yp-car-finance-due'),
+      row('Bank pays the dealer',ypCarMoney(q.loan),'The loan is paid to the dealer at handover','yp-car-finance-dealer'),
+      row('Dealer receives',ypCarMoney(q.price),'Deposit plus the loan, the full price','yp-car-finance-settlement'),
+      row('Running costs',ypCarMoney(run.total)+' a week',ypCarRunningText(run),'yp-car-finance-running')
+    ];
+    factRows.push({heading:'Your funds and pending amounts'});
+    factRows.push(row('In the bank now',ypCarMoney(funds.cash),'Includes any inheritance already released into your bank. That money is cash on hand, not a loan.','yp-car-finance-bank'));
+    if(funds.outgoing>0)factRows.push(row('Pending outgoing',ypCarMoney(funds.outgoing),'Reserved so it cannot be spent twice','yp-car-finance-outgoing'));
+    if(funds.incoming>0)factRows.push(row('Pending incoming',ypCarMoney(funds.incoming),'Money still to be received at settlement','yp-car-finance-incoming'));
+    factRows.push(row('Available for this deposit',ypCarMoney(funds.available),'Bank balance, less pending outgoing, plus pending incoming','yp-car-finance-available'));
+    funds.items.forEach(it=>{
+      factRows.push(row(it.label,ypCarMoney(it.amount),it.hint||''));
+    });
+    if(loans.length){
+      factRows.push({heading:'Existing loan repayments'});
+      loans.forEach(l=>factRows.push(row(l.label,ypCarMoney(l.amount)+' a week',l.hint||'')));
+    }
+    if(leftover){
+      factRows.push({heading:'Weekly affordability'});
+      factRows.push(row('Left each week after this loan and running costs',ypCarMoney(Math.round(+leftover.leftMgr||0)), leftover.leftMgr<0?'This repayment would leave you short each week.':'After rent, living costs, existing loans and this car.','yp-car-finance-left'));
+    }
+    facts.replaceChildren();
+    if(typeof ypFlow==='function')facts.appendChild(ypFlow(factRows));
+    else factRows.forEach(r=>{
+      if(r.heading){const h=document.createElement('p');h.className='yp-car-label';h.textContent=r.heading;facts.appendChild(h);return;}
+      const p=document.createElement('p');p.className='yp-car-value';if(r.id)p.id=r.id;p.textContent=r.label+': '+r.value;facts.appendChild(p);
+    });
     need.hidden=true;
   };
   paint();
+  const onCodes=()=>{if(document.getElementById('yp-car-finance'))paint();};
+  document.addEventListener('yp-codes',onCodes);
+  const dropCodes=()=>document.removeEventListener('yp-codes',onCodes);
   const foot=document.createElement('div');
   foot.className='yp-step-foot';
   foot.appendChild(ypCarFootButton('Apply','hwb',()=>{
+    dropCodes();
     const result=ypFinanceCar(car.id,percent,years);
     if(!result||!result.ok){need.hidden=false;need.textContent=(result&&result.why)||'This finance could not be approved.';return;}
     ui.shut();
-    ypOpenCarBought(result.car);
+    ypOpenCarHandover(result.car);
   },'yp-car-finance-apply'));
-  foot.appendChild(ypCarFootButton('Back','hwx',()=>{ui.shut();ypOpenCarPay(car.id);},'yp-car-finance-back'));
+  foot.appendChild(ypCarFootButton('Back','hwx',()=>{dropCodes();ui.shut();ypOpenCarPay(car.id);},'yp-car-finance-back'));
   ui.card.append(body,foot);
+}
+
+function ypCarFundsWhy(need,funds,kind){
+  funds=funds||ypCarAvailableFunds();
+  const have=kind==='cash'?funds.spendableNow:funds.available;
+  let why='You need '+ypCarMoney(need)+' '+(kind==='cash'?'spendable now':'available')+' for this purchase, but you have '+ypCarMoney(Math.max(0,have))+'.';
+  if(funds.cash>=need&&have<need&&funds.outgoing>0){
+    why+=' '+ypCarMoney(funds.outgoing)+' is already committed to pending settlements or rentals, so it cannot be used for this car as well.';
+  }
+  if(kind!=='cash'&&funds.incoming>0)why+=' Pending incoming of '+ypCarMoney(funds.incoming)+' is included in the amount available.';
+  why+=' You have '+ypCarMoney(funds.cash)+' in the bank.';
+  return why;
 }
 
 function ypBuyCar(id){
@@ -483,17 +723,18 @@ function ypBuyCar(id){
   ypCarEnsureState();
   if(typeof G==='undefined'||!G)return {ok:false,why:'Your bank could not be checked right now.'};
   const price=Math.max(0,Math.round(+car.price||0));
-  const cash=Math.max(0,Math.round(+G.cash||0));
-  if(cash<price){
-    return {ok:false,why:'You need '+ypCarMoney(price)+' in the bank to buy this car, but you have '+ypCarMoney(cash)+'.'};
+  const funds=ypCarAvailableFunds();
+  if(funds.spendableNow<price){
+    return {ok:false,why:ypCarFundsWhy(price,funds,'cash')};
   }
-  G.cash=cash-price;
-  const rec={id:car.id,brand:car.brand,model:car.model,year:car.year,price:price,image:car.image,boughtWeek:(G.week|0)};
+  G.cash=ypCarBankCash()-price;
+  const rec={id:car.id,brand:car.brand,model:car.model,year:car.year,price:price,image:car.image,pay:'cash',status:'handover-pending',handedOver:0,cashSettled:1,boughtWeek:(G.week|0),congratsSeen:0};
+  ypSetCarWait(rec);
   G.vehicles.push(rec);
-  if(typeof log==='function')log('Bought the '+ypCarTitle(car)+' for '+ypCarMoney(price)+'.');
+  if(typeof log==='function')log('Paid '+ypCarMoney(price)+' for the '+ypCarTitle(car)+'. Waiting for handover.');
   if(typeof save==='function')save();
   if(typeof hud==='function')hud();
-  return {ok:true,car:rec,price:price,cash:G.cash};
+  return {ok:true,car:rec,price:price,cash:G.cash,pending:true};
 }
 
 function ypFinanceCar(id,percent,years){
@@ -504,52 +745,266 @@ function ypFinanceCar(id,percent,years){
   if(!q||!q.ok)return {ok:false,why:"Finance isn't available for cars this old"};
   ypCarEnsureState();
   if(typeof G==='undefined'||!G)return {ok:false,why:'Your bank could not be checked right now.'};
-  const cash=Math.max(0,Math.round(+G.cash||0));
-  if(cash<q.deposit){
-    return {ok:false,why:'You need '+ypCarMoney(q.deposit)+' in the bank for the deposit, but you have '+ypCarMoney(cash)+'.'};
+  const funds=ypCarAvailableFunds();
+  if(funds.available<q.deposit){
+    return {ok:false,why:ypCarFundsWhy(q.deposit,funds,'finance')};
   }
-  if(!ypCarFinanceFits(q.repayWk)){
-    const left=Math.max(0,Math.round(ypCarWeekLeft()));
-    if(left<=0)return {ok:false,why:'You have no money left over in your week for this repayment.'};
-    return {ok:false,why:'You need '+ypCarMoney(q.repayWk)+' a week left over for this repayment, but you have '+ypCarMoney(left)+' a week left.'};
+  const run=q.running&&q.running.total||ypCarRunningCosts(car,ypCarOwned().length>0).total;
+  if(!ypCarFinanceFits(q.repayWk,run)){
+    const a=typeof ypAffordWeek==='function'?ypAffordWeek({carRepay:q.repayWk,carRun:run}):null;
+    const left=a?Math.round(+a.leftMgr||0):Math.round(ypCarWeekLeft());
+    if(left<=0)return {ok:false,why:'You have no money left over in your week for this repayment and the running costs.'};
+    return {ok:false,why:'You need '+ypCarMoney(q.repayWk+run)+' a week left over for this repayment and running costs, but you would have '+ypCarMoney(left)+' a week left.'};
   }
-  G.cash=cash-q.deposit;
   const rec={
-    id:car.id,brand:car.brand,model:car.model,year:car.year,price:q.price,image:car.image,boughtWeek:(G.week|0),
-    loan:{deposit:q.deposit,principal:q.loan,balance:q.loan,rate:YP_CAR_RATE,termYears:q.years,repayWk:q.repayWk,startWeek:(G.week|0)}
+    id:car.id,brand:car.brand,model:car.model,year:car.year,price:q.price,image:car.image,
+    pay:'finance',status:'handover-pending',handedOver:0,cashSettled:0,boughtWeek:(G.week|0),congratsSeen:0,
+    quote:q,
+    loan:{deposit:q.deposit,principal:q.loan,balance:q.loan,rate:YP_CAR_RATE,termYears:q.years,repayWk:q.repayWk,startWeek:null,totalPaid:q.totalPaid,totalInterest:q.totalInterest}
   };
+  ypSetCarWait(rec);
   G.vehicles.push(rec);
-  if(typeof log==='function')log('Bought the '+ypCarTitle(car)+' with a '+ypCarMoney(q.deposit)+' deposit and a '+ypCarMoney(q.repayWk)+' a week loan.');
+  if(typeof log==='function')log('Applied for finance on the '+ypCarTitle(car)+'. Nothing is charged until handover.');
   if(typeof save==='function')save();
   if(typeof hud==='function')hud();
-  return {ok:true,car:rec,quote:q,cash:G.cash};
+  return {ok:true,car:rec,quote:q,cash:G.cash,pending:true};
+}
+
+function ypSetCarWait(rec,clock){
+  if(!rec)return rec;
+  clock=clock||(typeof ypReadClock==='function'?ypReadClock():{wall:Date.now()});
+  const real=typeof YP_RENT_APPLY_REAL_MS==='number'?YP_RENT_APPLY_REAL_MS:30000;
+  const wait=typeof ypRentApplyWaitMs==='function'?ypRentApplyWaitMs(clock):real;
+  const wall=clock&&clock.wall!=null?+clock.wall:Date.now();
+  rec.approveAt=wall+real;
+  rec.applyWaitTotalMs=real;
+  if(typeof ypGameMs==='function')rec.approveGameMs=ypGameMs(clock)+wait;
+  delete rec.pausedAnswerAt;
+  return rec;
+}
+
+function ypCarMsLeft(rec,clock){
+  if(!rec)return 0;
+  if(typeof ypAnswerMsLeft==='function')return ypAnswerMsLeft(rec,clock);
+  clock=clock||{wall:Date.now()};
+  const wall=clock.wall!=null?+clock.wall:Date.now();
+  return Math.max(0,(+rec.approveAt||0)-wall);
+}
+
+function ypCarCheckItems(rec){
+  if(rec&&rec.pay==='cash')return ['Roadworthy Certificate Issued','Car Handed Over'];
+  return ['Finance Application Submitted','Credit Check','Finance Approved','Roadworthy Certificate Issued','Car Handed Over'];
+}
+
+function ypFinishCarHandover(rec){
+  if(!rec||ypCarIsHandedOver(rec))return rec;
+  ypCarEnsureState();
+  if(typeof G==='undefined'||!G)return rec;
+  if(rec.pay==='finance'&&!rec.cashSettled){
+    const dep=Math.max(0,Math.round(+((rec.quote&&rec.quote.deposit)||(rec.loan&&rec.loan.deposit))||0));
+    const cash=ypCarBankCash();
+    if(cash<dep)return rec;
+    G.cash=cash-dep;
+    rec.cashSettled=1;
+    if(rec.loan){
+      rec.loan.balance=Math.max(0,Math.round(+rec.loan.principal||0));
+      rec.loan.startWeek=(G.week|0);
+    }
+    if(typeof log==='function')log('Finance approved for the '+ypCarTitle(rec)+'. Deposit '+ypCarMoney(dep)+' taken and the loan paid to the dealer.');
+  }
+  rec.status='owned';
+  rec.handedOver=1;
+  rec.handedWeek=(G.week|0);
+  rec.boughtWeek=rec.boughtWeek||(G.week|0);
+  if(typeof save==='function')save();
+  if(typeof hud==='function')hud();
+  return rec;
+}
+
+function ypSyncCarHandover(){
+  ypCarEnsureState();
+  if(typeof G==='undefined'||!G)return;
+  let changed=false;
+  (G.vehicles||[]).forEach(v=>{
+    if(!ypCarIsPending(v))return;
+    if(ypCarMsLeft(v)>0)return;
+    const before=v.handedOver;
+    ypFinishCarHandover(v);
+    if(ypCarIsHandedOver(v)&&before===0)changed=true;
+  });
+  const due=(G.vehicles||[]).find(v=>ypCarIsHandedOver(v)&&v.congratsSeen!==1&&(v.pay==='finance'||v.pay==='cash')&&v.approveAt);
+  if(due&&due.congratsSeen!==1){
+    const open=document.getElementById('yp-apply-review');
+    if(open&&open.dataset.ypCarId===due.id)return due;
+    if(!open)ypOpenCarCongrats(due);
+  }
+  return due||null;
+}
+
+function ypOpenCarHandover(car){
+  if(!car)return;
+  if(ypCarIsHandedOver(car)&&car.congratsSeen!==1){ypOpenCarCongrats(car);return;}
+  if(ypCarIsHandedOver(car)){ypOpenCarCongrats(car);return;}
+  if(typeof ypExclusive==='function')ypExclusive('yp-apply-review');
+  if(typeof ypCancelAgentClip==='function')ypCancelAgentClip();
+  document.getElementById('yp-apply-review')?.remove();
+  const panel=document.createElement('div');
+  panel.id='yp-apply-review';
+  panel.className='yp-steps yp-car-check';
+  panel.dataset.ypCarId=car.id;
+  panel.setAttribute('role','dialog');
+  panel.setAttribute('aria-labelledby','yp-car-check-title');
+  const card=document.createElement('div');
+  card.className='card yp-listing yp-step';
+  const shut=()=>{if(typeof ypAppTimer==='number'&&ypAppTimer)clearInterval(ypAppTimer);panel.remove();};
+  if(typeof ypCardHeader==='function')card.appendChild(ypCardHeader({title:car.pay==='cash'?'Car Purchase':'Car Finance',titleId:'yp-car-check-title',id:'yp-car-check-x',onClose:shut}));
+  if(car.image){
+    const media=document.createElement('div');
+    media.className='yp-listing-media';
+    const img=document.createElement('img');
+    ypCarImg(img,car);
+    img.alt=ypCarTitle(car);
+    media.appendChild(img);
+    card.appendChild(media);
+  }
+  const name=document.createElement('p');
+  name.className='yp-approval';
+  name.id='yp-car-check-lead';
+  name.textContent=car.pay==='cash'?'The yard is preparing your car.':'The bank is checking your finance.';
+  card.appendChild(name);
+  const left=document.createElement('p');
+  left.className='yp-status';
+  left.id='yp-car-check-left';
+  card.appendChild(left);
+  const meter=document.createElement('div');
+  meter.className='yp-meter';
+  meter.id='yp-car-check-meter';
+  const fill=document.createElement('span');
+  meter.appendChild(fill);
+  card.appendChild(meter);
+  const labels=ypCarCheckItems(car);
+  const ul=document.createElement('ul');
+  ul.className='yp-checks';
+  ul.id='yp-car-checks';
+  const items=labels.map(t=>{const li=document.createElement('li');li.textContent=t;ul.appendChild(li);return li;});
+  card.appendChild(ul);
+  if(typeof ypFlow==='function'){
+    const q=car.quote||{};
+    const loan=car.loan||{};
+    const rows=[{label:'Car',value:ypCarTitle(car)},{label:'Price',value:ypCarMoney(car.price)}];
+    if(car.pay==='finance'){
+      rows.push({label:'Deposit',value:ypCarMoney(q.deposit||loan.deposit)});
+      rows.push({label:'Loan',value:ypCarMoney(q.loan||loan.principal)});
+      rows.push({label:'Weekly repayment',value:ypCarMoney(q.repayWk||loan.repayWk)+' a week'});
+    }
+    card.appendChild(ypFlow(rows));
+  }
+  const note=document.createElement('p');
+  note.className='yp-limit';
+  note.id='yp-car-check-note';
+  note.textContent=car.pay==='cash'?'The price has already been taken from your bank. The car is not handed over until this finishes.':'Nothing is charged until your finance is approved and the car is handed over.';
+  card.appendChild(note);
+  const total=Number.isFinite(+car.applyWaitTotalMs)&&+car.applyWaitTotalMs>0?+car.applyWaitTotalMs:30000;
+  const draw=()=>{
+    const cur=(G.vehicles||[]).find(v=>v&&v.id===car.id)||car;
+    if(ypCarIsHandedOver(cur)){
+      if(typeof ypAppTimer==='number'&&ypAppTimer)clearInterval(ypAppTimer);
+      ypOpenCarCongrats(cur);
+      return;
+    }
+    const ms=ypCarMsLeft(cur);
+    const done=Math.min(1,Math.max(0,1-ms/total));
+    const waitTxt=(typeof ypCap==='function'&&typeof ypRealLeft==='function')?ypCap(ypRealLeft(ms))+' left.':(Math.ceil(ms/1000)+' seconds left.');
+    left.textContent=waitTxt+' '+(cur.pay==='cash'?'The price has already been taken.':'Nothing is charged yet.');
+    fill.style.width=Math.max(4,Math.round(done*100))+'%';
+    items.forEach((li,i)=>{
+      const ready=done>=(i+1)/(items.length+1)||done>=1;
+      li.classList.toggle('done',ready);
+    });
+    if(ms<=0){
+      ypFinishCarHandover(cur);
+      if(ypCarIsHandedOver(cur)){
+        if(typeof ypAppTimer==='number'&&ypAppTimer)clearInterval(ypAppTimer);
+        ypOpenCarCongrats(cur);
+      }
+    }
+  };
+  draw();
+  if(typeof ypAppTimer==='number'&&ypAppTimer)clearInterval(ypAppTimer);
+  ypAppTimer=setInterval(()=>{
+    if(!panel.isConnected){clearInterval(ypAppTimer);return;}
+    const cur=(G.vehicles||[]).find(v=>v&&v.id===car.id)||car;
+    draw();
+  },200);
+  if(typeof ypPinStepFooter==='function')ypPinStepFooter(card);
+  panel.appendChild(card);
+  document.body.appendChild(panel);
+}
+
+function ypOpenCarCongrats(car){
+  if(!car)return;
+  if(typeof ypExclusive==='function')ypExclusive('yp-apply-review');
+  if(typeof ypCancelAgentClip==='function')ypCancelAgentClip();
+  document.getElementById('yp-apply-review')?.remove();
+  document.getElementById('yp-car-bought')?.remove();
+  const panel=document.createElement('div');
+  panel.id='yp-apply-review';
+  panel.className='yp-steps yp-settle-popup yp-car-congrats';
+  panel.dataset.ypCarId=car.id;
+  panel.setAttribute('role','dialog');
+  panel.setAttribute('aria-labelledby','yp-settle-title');
+  const card=document.createElement('div');
+  card.className='card yp-listing yp-step';
+  const shut=()=>{
+    const cur=(typeof G!=='undefined'&&G&&G.vehicles||[]).find(v=>v&&v.id===car.id);
+    if(cur)cur.congratsSeen=1;
+    if(typeof save==='function')save();
+    panel.remove();
+  };
+  if(typeof ypCardHeader==='function')card.appendChild(ypCardHeader({title:'Congratulations',titleId:'yp-settle-title',id:'yp-car-congrats-x',onClose:shut}));
+  else{const h=document.createElement('h2');h.id='yp-settle-title';h.textContent='Congratulations';card.appendChild(h);}
+  if(car.image){
+    const media=document.createElement('div');
+    media.className='yp-listing-media';
+    const img=document.createElement('img');
+    img.id='yp-car-congrats-photo';
+    ypCarImg(img,car);
+    img.alt=ypCarTitle(car);
+    media.appendChild(img);
+    card.appendChild(media);
+  }
+  const copy=document.createElement('p');
+  copy.className='yp-approval';
+  copy.id='yp-car-congrats-copy';
+  copy.textContent=car.pay==='cash'?'Congratulations, your car has been handed over.':'Congratulations, your finance is approved. And your car has been handed over.';
+  card.appendChild(copy);
+  const loan=car.loan||{};
+  const q=car.quote||{};
+  const rows=[{label:'Car',value:ypCarTitle(car)},{label:'Price',value:ypCarMoney(car.price)}];
+  if(car.pay==='finance'||loan.principal){
+    rows.push({label:'Deposit',value:ypCarMoney(q.deposit||loan.deposit)});
+    rows.push({label:'Loan',value:ypCarMoney(q.loan||loan.principal)});
+    rows.push({label:'Weekly repayment',value:ypCarMoney(q.repayWk||loan.repayWk)+' a week'});
+  }
+  if(typeof ypFlow==='function')card.appendChild(ypFlow(rows));
+  const btn=document.createElement('button');
+  btn.type='button';
+  btn.className='hwb';
+  btn.id='yp-car-congrats-done';
+  btn.textContent='Continue';
+  btn.addEventListener('click',()=>{shut();if(typeof ypOpenCarYardListings==='function')ypOpenCarYardListings();});
+  card.appendChild(btn);
+  if(typeof ypPinStepFooter==='function')ypPinStepFooter(card);
+  panel.appendChild(card);
+  document.body.appendChild(panel);
+  const cur=(typeof G!=='undefined'&&G&&G.vehicles||[]).find(v=>v&&v.id===car.id);
+  if(cur){/* leave congratsSeen until Continue so reload can reopen it */}
 }
 
 function ypOpenCarBought(car){
-  const ui=ypCarPanel('yp-car-bought','Purchase Complete',{close:false});
-  const body=document.createElement('div');
-  body.className='yp-step-body';
-  if(car&&car.image){
-    const img=document.createElement('img');
-    img.id='yp-car-bought-photo';
-    ypCarImg(img,car);
-    img.alt=ypCarTitle(car);
-    body.appendChild(img);
-  }
-  const copy=document.createElement('p');
-  copy.className='yp-car-copy';
-  copy.id='yp-car-bought-copy';
-  const loan=car&&car.loan;
-  if(loan){
-    copy.textContent='You bought the '+ypCarTitle(car)+' for '+ypCarMoney(car.price)+'. You paid a '+ypCarMoney(loan.deposit)+' deposit. Your loan is '+ypCarMoney(loan.principal)+', at '+ypCarMoney(loan.repayWk)+' a week.';
-  }else{
-    copy.textContent='You bought the '+ypCarTitle(car)+' for '+ypCarMoney(car&&car.price)+'.';
-  }
-  body.appendChild(copy);
-  const foot=document.createElement('div');
-  foot.className='yp-step-foot';
-  foot.appendChild(ypCarFootButton('Done','hwb',()=>{ui.shut();ypOpenCarYardListings();},'yp-car-bought-done'));
-  ui.card.append(body,foot);
+  if(!car)return;
+  if(ypCarIsPending(car)){ypOpenCarHandover(car);return;}
+  ypOpenCarCongrats(car);
 }
 
 function ypRenderOwnedVehicles(){
