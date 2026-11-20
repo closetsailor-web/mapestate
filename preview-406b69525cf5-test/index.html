@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates97";
+window.YP_BUILD="dates98";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -2075,7 +2075,7 @@ function netWorth(){if(typeof ypNetWorthParts==='function')return ypNetWorthPart
 /* ======================= WEEKLY SIM ======================= */
 function ypNoteCatch(part,amount){const bag=window.__ypCatch;const n=+amount;if(!bag||!Number.isFinite(n)||!n)return;bag[part]=(+bag[part]||0)+n;}
 function ypOperatingCash(n,part){n=+n||0;if(!n)return;if(typeof window!=='undefined'&&window.__ypWeekBudgetCash)return;if(typeof G!=='undefined'&&G)G.cash=(+G.cash||0)+n;if(part&&typeof ypNoteCatch==='function')ypNoteCatch(part,Math.abs(n));}
-function weekTick(){const ypApplyCash=!!(typeof G!=='undefined'&&G&&(G.homeChosen||G.clockOn));let ypWeekInc=0,ypWeekExp=0,ypWeekLeft=0;if(ypApplyCash&&typeof ypWeekMoneyParts==='function'){try{const P=ypWeekMoneyParts();ypWeekInc=Math.round(+P.incTot||0);ypWeekExp=Math.round(+P.expTot||0);ypWeekLeft=ypWeekInc-ypWeekExp;}catch(e){}}if(typeof window!=='undefined')window.__ypWeekBudgetCash=1;G.week++;const w=G.week;
+function weekTick(){const ypApplyCash=!!(typeof G!=='undefined'&&G&&(G.homeChosen||G.clockOn));let ypWeekInc=0,ypWeekExp=0,ypWeekLeft=0;if(ypApplyCash&&typeof ypWeekMoneyParts==='function'){try{const P=ypWeekMoneyParts();ypWeekInc=Math.round(+P.incTot||0);ypWeekExp=Math.round((+P.expTot||0)-(+P.prepaid||0));ypWeekLeft=Math.round(Number.isFinite(+P.left)?+P.left:ypWeekInc-ypWeekExp);}catch(e){}}if(typeof window!=='undefined')window.__ypWeekBudgetCash=1;G.week++;const w=G.week;
   try{if(typeof ypChargeBuyWeek==='function')ypChargeBuyWeek();}catch(e){}try{if(typeof ypChargeCarLoans==='function')ypChargeCarLoans();}catch(e){}try{if(typeof ypTickMarket==='function')ypTickMarket();}catch(e){}
   if(w%4===0){const top=allProps().find(([i,p])=>p.status==='leased');if(G._rent>0)notify('rent',`Rent received (last 4 wks): ${fmt(G._rent)} after management fees`,top&&top[0],true);if(G._rep>0||G._hold>0)notify('repay',`Paid (last 4 wks): loan repayments ${fmt(G._rep||0)}; rates, water, insurance and maintenance ${fmt(G._hold||0)}`,top&&top[0],true);G._rent=G._rep=G._hold=0;}if(G.started){if(G.payPend&&w>=G.payPend.wk){G.pay={g:G.payPend.g,p:G.payPend.p};delete G.payPend;notify('info','💼 Your new pay has started: '+fmt(G.pay.g+G.pay.p)+'/yr');}
   if(housing()==='rent'&&G.homeChosen){const L=ensureLease();if(!L.m2m&&w>=L.end){L.m2m=1;notify('info',`🔑 Your ${L.months}-month lease at ${L.addr} has ended. It now continues Week By Week at the same rent (${fmt(L.rent)}/wk).`);}}
@@ -4083,8 +4083,8 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates97"></script>
-<script src="player-market.js?v=dates97"></script>
-<script src="car-yard.js?v=dates97"></script>
-<script src="overture-layer.js?v=dates97"></script>
+<script src="map-preview.js?v=dates98"></script>
+<script src="player-market.js?v=dates98"></script>
+<script src="car-yard.js?v=dates98"></script>
+<script src="overture-layer.js?v=dates98"></script>
 </body></html>
