@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates106";
+window.YP_BUILD="dates107";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1173,14 +1173,14 @@ html.yp-preview #rsearch,html.yp-preview #yp-foot,html.yp-preview #yp-map-status
 html.yp-preview:not(.yp-map-on) #map{visibility:hidden}
 html.yp-home #map,html.yp-home #ypbasemap{display:none!important;visibility:hidden!important}
 html.yp-home .fab,html.yp-home #yp-search-area,html.yp-home .maplibregl-ctrl-bottom-right{display:none!important}
-html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon,html.yp-home #yp-physical,html.yp-home #yp-liquid{background:rgba(11,37,69,.28)}
+html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon,html.yp-home #yp-physical,html.yp-home #yp-liquid,html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{background:rgba(11,37,69,.28)}
 html.yp-preview .fab{z-index:8}
 #ypbasemap{position:absolute;inset:0;z-index:2;background:#e7eef5}
 #yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
 #yp-logo img{width:88px;background:#ffffffc9;display:block}
 html.yp-preview #w3dc,html.yp-preview #map canvas#w3dc,body.ypbasemap #w3dc{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-index:5}
-#yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-coin-shop,#yp-sale-detail,#yp-pending,#yp-history,#yp-soon,#yp-apply-review,#yp-history-detail,#yp-living,#yp-away,#yp-start-fresh,#yp-payout,#yp-where-live,#yp-clock-start,#yp-physical,#yp-liquid{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
+#yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-coin-shop,#yp-sale-detail,#yp-pending,#yp-history,#yp-soon,#yp-apply-review,#yp-history-detail,#yp-living,#yp-away,#yp-start-fresh,#yp-payout,#yp-where-live,#yp-clock-start,#yp-physical,#yp-liquid,#yp-bills,#yp-bill-due,#yp-notify-ask{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
 #yp-apply-review{z-index:52}
 #yp-agent-bg{display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;z-index:51;background:#0b2545 center/cover no-repeat}body:has(#yp-apply-review.yp-steps) #yp-agent-bg{display:block}body:has(#yp-apply-review.yp-settle-popup:not(.yp-settle-has-clip)) #yp-agent-bg{display:none}#yp-apply-review.yp-settle-popup:not(.yp-settle-has-clip){align-items:center;background:rgba(11,37,69,.28);padding:148px 16px 108px}#yp-apply-review.yp-settle-popup .yp-listing-media{height:112px;margin:0 0 8px}#yp-apply-review.yp-settle-popup .yp-settle-place{margin:0 0 8px;font:700 14px/1.3 Inter,system-ui,sans-serif;color:#0b2545;text-align:left}#yp-apply-review.yp-settle-popup .yp-settle-place .yp-plink{min-height:0;margin:0;font:700 14px/1.3 Inter,system-ui,sans-serif}#yp-apply-review.yp-settle-popup .yp-step-body{overflow:hidden}#yp-apply-review.yp-settle-popup .yp-flow>div{min-height:28px;padding:4px 0}#yp-apply-review.yp-settle-popup .yp-step-body>p{margin:0 0 8px;font:500 14px/1.35 Inter,system-ui,sans-serif;color:#14213d;text-align:left}#yp-apply-review.yp-steps{align-items:flex-end;padding:96px 16px calc(env(safe-area-inset-bottom) + 20px)}#yp-apply-review.yp-steps .yp-step{max-width:360px}#yp-apply-review .yp-step input{margin:0 0 12px}#yp-apply-review.yp-steps{background:none}#yp-apply-review.yp-chat{display:block;padding:0}.yp-comic{position:absolute;box-sizing:border-box;background:#fff;color:#0b2545;border:3px solid #0b2545;border-radius:22px;padding:10px 14px;box-shadow:3px 4px 0 rgba(11,37,69,.35);animation:ypComic .45s cubic-bezier(.2,1.6,.4,1) both}.yp-comic::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border:3px solid #0b2545;border-width:0 3px 3px 0}.yp-comic-1{left:6%;top:calc(env(safe-area-inset-top) + 50px);max-width:48%;transform-origin:85% 100%}.yp-comic-1.yp-comic-long{max-width:74%}.yp-comic-1::after{right:18%;bottom:-11px;transform:rotate(45deg) skew(10deg,10deg)}.yp-comic-2{left:3%;top:38%;width:46%;max-width:210px;transform-origin:100% 0}.yp-comic-2::after{right:-11px;top:16px;transform:rotate(-45deg) skew(10deg,10deg)}#yp-apply-review.yp-chat.yp-steps .yp-comic p{margin:0;font:800 15px/1.25 Inter,system-ui,sans-serif;color:#0b2545;text-align:left;overflow-wrap:break-word}#yp-apply-review.yp-chat.yp-steps .yp-comic p.yp-comic-amt{font:900 28px/1.1 Inter,system-ui,sans-serif;margin-bottom:6px}#yp-apply-review.yp-chat.yp-steps .yp-comic p.yp-comic-note{font:700 12.5px/1.3 Inter,system-ui,sans-serif;color:#3d4a63;margin-bottom:6px}.yp-pill{display:block;width:100%;min-height:34px;margin-top:6px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:800 13px Inter,system-ui,sans-serif;cursor:pointer}.yp-pill-main{background:#b8410a;border-color:#b8410a;color:#fff}@keyframes ypComic{0%{opacity:0;transform:scale(.3)}70%{opacity:1;transform:scale(1.08)}100%{transform:scale(1)}}@media (prefers-reduced-motion:reduce){.yp-comic{animation:none}}
 #yp-dep{margin:4px 0 10px}#yp-dep .yp-dep-lab{margin:0 0 6px;font:800 14px Inter,system-ui,sans-serif;color:#0b2545}#yp-dep .yp-dep-row{display:flex;gap:8px;margin-bottom:8px}#yp-dep .yp-dep-opt{flex:1;min-height:44px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:800 15px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}#yp-dep .yp-dep-opt[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}#yp-dep .yp-dep-opt:disabled{opacity:.4}#yp-dep input{margin:0 0 4px}#yp-dep .yp-dep-lim{display:block;margin:0;font-size:12.5px;color:#3d4a63}
@@ -1393,9 +1393,9 @@ html.yp-home #yp-feed:not([hidden]){display:block}
 .yp-week-rows{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0;padding:0;border-top:1px solid rgba(20,33,61,.08)}
 .yp-week-rows dt{margin:0;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#5a6780}
 .yp-week-rows dd{margin:0;font:700 15px/1.4 Inter,system-ui,sans-serif;color:#14213d;text-align:right}
-#yp-week-bills{color:#ff8a33}
+#yp-week-bills{color:#b8410a}#yp-week-bills .yp-week-pending-btn,#yp-week-bills-btn{color:#b8410a}
 .yp-week-offers{display:flex;align-items:center;justify-content:flex-end;white-space:nowrap}
-.yp-week-pending-lab,.yp-week-pending-btn{cursor:pointer}
+.yp-week-pending-lab,.yp-week-bills-lab,.yp-week-pending-btn{cursor:pointer}
 .yp-week-pending-btn{appearance:none;-webkit-appearance:none;margin:0;padding:0;border:0;background:transparent;font:700 15px/1.4 Inter,system-ui,sans-serif;color:#0a3a8c;text-align:right;white-space:nowrap;cursor:pointer}
 .yp-week-pending-btn:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
 .yp-offer-kind{font:500 11px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
@@ -1729,7 +1729,7 @@ const NOTIF_TYPES={
  sold:{icon:'handshake',col:'#164ea3',label:'Sold'},auction:{icon:'hammer',col:'#3a82ed',label:'Auction result'},rent:{icon:'dollar',col:'#164ea3',label:'Rent Received'},
  vacancy:{icon:'door',col:'#d95a06',label:'Tenant leaving / vacancy'},repay:{icon:'bank',col:'#475569',label:'Loan repayments & rates'},settled:{icon:'key',col:'#f47b20',label:'Settlement complete'},
  dev:{icon:'crane',col:'#084cb2',label:'Development milestone'},release:{icon:'route',col:'#0f4aa3',label:'New land release'},outbid:{icon:'alert',col:'#dc6f26',label:'Rival activity'},
- maint:{icon:'alert',col:'#d95a06',label:'Maintenance'},info:{icon:'bell',col:'#64748b',label:'Update'}};
+ maint:{icon:'alert',col:'#d95a06',label:'Maintenance'},billDue:{icon:'bell',col:'#b8410a',label:'Bill Due'},regoDue:{icon:'car',col:'#b8410a',label:'Rego Due'},houseSettling:{icon:'key',col:'#0b2545',label:'House Settling'},houseSettled:{icon:'key',col:'#f47b20',label:'House Settled'},rentalApproved:{icon:'dollar',col:'#164ea3',label:'Rental Approved'},financeApproved:{icon:'bank',col:'#0b2545',label:'Finance Approved'},info:{icon:'bell',col:'#64748b',label:'Update'}};
 function notify(type,msg,id,quiet){if(!NOTIF_TYPES[type])type='info';G.notifs=G.notifs||[];G.notifs.unshift({type,msg:String(msg).replace(EMO_RE,'').trim(),id:id||null,w:G.week,t:Date.now(),read:false});if(G.notifs.length>150)G.notifs.length=150;badge();if(!quiet)toast(msg);}
 function badge(){const b=document.getElementById('badge');if(!b)return;const n=(G.notifs||[]).filter(x=>!x.read).length;b.textContent=n>9?'9+':n;b.style.display=n?'grid':'none';}
 function openNotif(i){const n=G.notifs[i];n.read=true;save();badge();if(n.id&&lot(n.id))goMine(n.id);else UI.notifs();}
@@ -4085,8 +4085,9 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates106"></script>
-<script src="player-market.js?v=dates106"></script>
-<script src="car-yard.js?v=dates106"></script>
-<script src="overture-layer.js?v=dates106"></script>
+<script src="map-preview.js?v=dates107"></script>
+<script src="player-market.js?v=dates107"></script>
+<script src="car-yard.js?v=dates107"></script>
+<script src="overture-layer.js?v=dates107"></script>
+<script src="yp-notify.js?v=dates107"></script>
 </body></html>
