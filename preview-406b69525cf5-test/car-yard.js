@@ -15,6 +15,14 @@ function ypCarEnsureState(){if(typeof G==='undefined'||!G)return;if(!Array.isArr
 function ypCarOwned(){ypCarEnsureState();if(typeof G==='undefined'||!G)return [];return (G.vehicles||[]).filter(Boolean);}
 function ypCarOwnedIds(){return new Set(ypCarOwned().map(v=>String(v.id||'')).filter(Boolean));}
 function ypCarYardStock(){const owned=ypCarOwnedIds();return YP_CAR_CATALOG.filter(c=>c&&!owned.has(c.id));}
+/* dates100: weekly running costs (QLD). Rego about $900 a year for a 4-cylinder car. Comprehensive insurance about 3% of the car's value a year, at least $10 a week.
+   Fuel $50 a week for your main car; you can only drive one car at a time, so each extra car costs $15 a week (occasional use). */
+const YP_CAR_REGO_WK=17,YP_CAR_INS_RATE=0.03,YP_CAR_INS_MIN_WK=10,YP_CAR_FUEL_WK=50,YP_CAR_FUEL_EXTRA_WK=15;
+function ypCarRunningCosts(car,extra){const value=Math.max(0,Math.round(+((car&&car.price)||0)));const rego=YP_CAR_REGO_WK;const insurance=Math.max(YP_CAR_INS_MIN_WK,Math.round(value*YP_CAR_INS_RATE/52));const fuel=extra?YP_CAR_FUEL_EXTRA_WK:YP_CAR_FUEL_WK;return {rego,insurance,fuel,total:rego+insurance+fuel};}
+function ypCarRunningList(){return ypCarOwned().map((v,i)=>Object.assign({car:v},ypCarRunningCosts(v,i>0)));}
+function ypCarRunningWk(){return ypCarRunningList().reduce((t,c)=>t+c.total,0);}
+function ypCarRunningText(c){return 'Rego '+ypCarMoney(c.rego)+', Insurance '+ypCarMoney(c.insurance)+', Fuel '+ypCarMoney(c.fuel);}
+function ypCarRunningNote(car,idPrefix){const c=ypCarRunningCosts(car,ypCarOwned().length>0);const wrap=document.createElement('div');wrap.className='yp-car-running';wrap.id=idPrefix+'-running';const h=document.createElement('p');h.className='yp-car-running-total';h.innerHTML='Running Costs <b>'+ypCarMoney(c.total)+' a week</b>';const d=document.createElement('p');d.className='yp-car-running-parts';d.textContent=ypCarRunningText(c)+(ypCarOwned().length>0?' (extra car, less fuel)':'');wrap.append(h,d);return wrap;}
 function ypVehicleAssetsTotal(){return ypCarOwned().reduce((sum,v)=>sum+Math.max(0,Math.round(+v.price||0)),0);}
 function ypCarYardSeen(){return !!(typeof G!=='undefined'&&G&&G.carYardSeen);}
 function ypMarkCarYardSeen(){if(typeof G==='undefined'||!G||G.carYardSeen)return;G.carYardSeen=1;if(typeof save==='function')save();}
@@ -25,7 +33,8 @@ function ypCarYardStyle(){
   s.id='yp-car-yard-style';
   s.textContent=`
 #yp-car-yard-intro,#yp-car-yard,#yp-car-detail,#yp-car-bought,#yp-car-pay,#yp-car-finance{position:fixed;left:0;right:0;top:calc(var(--sat, 0px) + 88px);bottom:calc(var(--sab, 0px) + 86px);width:auto;height:auto;max-height:none;z-index:28;display:flex;align-items:stretch;justify-content:stretch;overflow:hidden;overscroll-behavior:none;touch-action:none;padding:0 10px;background:transparent;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d;box-sizing:border-box}
-#yp-car-yard-intro .card,#yp-car-yard .card,#yp-car-detail .card,#yp-car-bought .card,#yp-car-pay .card,#yp-car-finance .card{background:#fff;border-radius:24px;width:100%;max-width:none;padding:0 16px 16px;text-align:left;box-shadow:0 10px 24px rgba(11,37,69,.18);max-height:none;height:100%;overflow:hidden;margin:0;display:flex;flex-direction:column;box-sizing:border-box}
+#yp-car-yard-intro .card,#yp-car-yard .card,.yp-car-running{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#f4f7fb}.yp-car-running p{margin:0;text-align:left}.yp-car-running-total{font:500 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.yp-car-running-total b{font-weight:700}.yp-car-running-parts{margin-top:2px!important;font:400 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-car-detail .card,#yp-car-bought .card,#yp-car-pay .card,#yp-car-finance .card{background:#fff;border-radius:24px;width:100%;max-width:none;padding:0 16px 16px;text-align:left;box-shadow:0 10px 24px rgba(11,37,69,.18);max-height:none;height:100%;overflow:hidden;margin:0;display:flex;flex-direction:column;box-sizing:border-box}
 #yp-car-yard-intro .yp-card-head,#yp-car-yard .yp-card-head,#yp-car-detail .yp-card-head,#yp-car-bought .yp-card-head,#yp-car-pay .yp-card-head,#yp-car-finance .yp-card-head{min-height:48px;height:48px;box-sizing:border-box;flex:none;margin-left:-16px;margin-right:-16px;width:calc(100% + 32px);max-width:none;margin-bottom:0}
 #yp-car-yard-intro .yp-card-head h2,#yp-car-yard .yp-card-head h2,#yp-car-detail .yp-card-head h2,#yp-car-bought .yp-card-head h2,#yp-car-pay .yp-card-head h2,#yp-car-finance .yp-card-head h2{font:700 16px/1.15 Inter,system-ui,sans-serif}
 #yp-car-intro-body{position:relative;flex:1 1 auto;min-height:0;display:flex;align-items:stretch;justify-content:stretch;background:#0b2545;margin:0 -16px -16px;overflow:hidden}
@@ -377,7 +386,7 @@ function ypOpenCarDetail(id){
   price.className='yp-car-copy';
   price.id='yp-car-detail-price';
   price.innerHTML='<b>'+ypCarMoney(car.price)+'</b>';
-  body.append(img,head,price);
+  body.append(img,head,price,ypCarRunningNote(car,'yp-car-detail'));
   if(cashOnly){
     const tag=document.createElement('p');
     tag.className='yp-car-cash-only';
@@ -411,7 +420,7 @@ function ypOpenCarPay(id){
   price.className='yp-car-copy';
   price.id='yp-car-pay-price';
   price.innerHTML='<b>'+ypCarMoney(car.price)+'</b>';
-  body.append(lead,price);
+  body.append(lead,price,ypCarRunningNote(car,'yp-car-pay'));
   if(cashOnly){
     const tag=document.createElement('p');
     tag.className='yp-car-cash-only';
