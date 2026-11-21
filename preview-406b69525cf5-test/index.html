@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates115";
+window.YP_BUILD="dates116";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1547,6 +1547,35 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 .yp-inherit-foot p:last-child{margin-bottom:0}
 #yp-apply-review[data-step=coins] .yp-step-body,#yp-coin-shop .yp-step-body{display:flex;flex-direction:column}
 #yp-apply-review[data-step=coins] .yp-step-body{flex:1 1 auto;min-height:0;padding-bottom:8px}
+/* dates116: inheritance slider, offer chips and steppers, big prices stay on one line */
+.yp-rel{margin:6px 0 4px;text-align:left}
+.yp-rel-row{display:flex;align-items:center;gap:10px;min-height:56px}
+.yp-rel-name{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:0}
+.yp-rel-lab{font:700 12px/1.2 Inter,system-ui,sans-serif;color:#5a6780}
+.yp-rel-amt{display:block;font:800 30px/1.1 Inter,system-ui,sans-serif;letter-spacing:-0.03em;color:#0b2545;white-space:nowrap;overflow:visible;font-variant-numeric:tabular-nums}
+.yp-rel-range{--pct:0%;-webkit-appearance:none;appearance:none;display:block;width:100%;height:44px;margin:6px 0 0;padding:0;background:transparent;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.yp-rel-range[hidden]{display:none}
+.yp-rel-range::-webkit-slider-runnable-track{height:10px;border-radius:999px;background:linear-gradient(to right,#b8410a 0,#b8410a var(--pct),rgba(10,58,140,.18) var(--pct),rgba(10,58,140,.18) 100%)}
+.yp-rel-range::-moz-range-track{height:10px;border-radius:999px;background:rgba(10,58,140,.18)}
+.yp-rel-range::-moz-range-progress{height:10px;border-radius:999px;background:#b8410a}
+.yp-rel-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:32px;height:32px;margin-top:-11px;border-radius:50%;background:#b8410a;border:4px solid #fff;box-shadow:0 0 0 2px #0b2545,0 2px 6px rgba(11,37,69,.35)}
+.yp-rel-range::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#b8410a;border:4px solid #fff;box-shadow:0 0 0 2px #0b2545}
+.yp-rel-range:focus-visible{outline:2px solid #0a3a8c;outline-offset:2px}
+.yp-offer-step-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 8px}
+.yp-offer-big{flex:1 1 auto;min-width:0;text-align:center;font:800 34px/1.1 Inter,system-ui,sans-serif;letter-spacing:-0.03em;color:#0b2545;white-space:nowrap;overflow:visible;font-variant-numeric:tabular-nums}
+.yp-offer-step{flex:none;width:48px;height:48px;min-height:48px;padding:0;margin:0;border:2px solid #0b2545;border-radius:50%;background:#fff;color:#0b2545;font:800 26px/1 Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center}
+.yp-offer-step:active{background:#b8410a;border-color:#b8410a;color:#fff}
+.yp-offer-chips{display:flex;gap:8px;margin:0 0 6px}
+.yp-offer-chip{flex:1 1 0;min-width:0;min-height:44px;padding:0 4px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:800 15px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+.yp-offer-chip[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}
+.yp-offer-type{display:block;margin:0 auto 8px;padding:6px 12px;min-height:32px;border:0;background:none;color:#0a3a8c;font:700 13px Inter,system-ui,sans-serif;text-decoration:underline;cursor:pointer}
+.yp-offer-typed{margin:0 0 8px}
+.yp-offer-typed[hidden]{display:none}
+.yp-offer-typed input{width:100%;box-sizing:border-box;min-height:44px;margin:0;text-align:center;font:800 20px Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+#yp-apply-review[data-step=offer] .yp-listing-media{flex:none;height:84px;margin:0 0 6px}
+#yp-apply-review[data-step=offer] .yp-progress{margin:2px 0 6px}
+#yp-apply-review.yp-chat.yp-steps .yp-comic p.yp-comic-amt{white-space:nowrap;overflow-wrap:normal;word-break:normal;overflow:visible}
+#yp-apply-review.yp-chat.yp-steps .yp-comic .yp-pill{white-space:nowrap;overflow-wrap:normal}
 
 
 
@@ -2337,7 +2366,7 @@ function offerVendor(id){const op=openPrice(id),o=Math.round(+document.getElemen
   save();UI.plot(id);toast(`❌ Vendor declined (${Math.round(pr*100)}% chance). Try again next week`);}
 function acceptCounter(id){const c=(G.counter||{})[id];if(!c)return;if(contract(id,c.amt,0,'vendor counter-offer')){delete G.counter[id];save();toast('🤝 Counter-offer accepted at '+fmt(c.amt));}UI.plot(id);}
 /* ======================= PAYMENTS (interface; DEMO) ======================= */
-const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',priceAUD:1.99,coins:25000},{sku:'m',label:'Investor',priceAUD:4.99,coins:75000},{sku:'l',label:'Developer',priceAUD:9.99,coins:175000},{sku:'xl',label:'Tycoon',priceAUD:19.99,coins:500000},{sku:'xxl',label:'Magnate',priceAUD:29.99,coins:1000000}];},
+const DemoPayments={demo:true,listProducts(){return[{sku:'s',label:'Starter',priceAUD:1.99,coins:25000},{sku:'m',label:'Investor',priceAUD:4.99,coins:75000},{sku:'l',label:'Developer',priceAUD:9.99,coins:175000},{sku:'xl',label:'Tycoon',priceAUD:19.99,coins:500000},{sku:'xxl',label:'Magnate',priceAUD:29.99,coins:1000000},{sku:'r2',label:'Mogul',priceAUD:49.99,coins:2000000},{sku:'r3',label:'Baron',priceAUD:69.99,coins:3000000},{sku:'r4',label:'Dynasty',priceAUD:84.99,coins:4000000},{sku:'r5',label:'Empire',priceAUD:99.99,coins:5000000},{sku:'r10',label:'Titan',priceAUD:149.99,coins:10000000},{sku:'r20',label:'Legend',priceAUD:249.99,coins:20000000}];},
   purchase(){return new Promise(r=>setTimeout(()=>r({ok:true,demo:true}),300));}};
 const Payments=DemoPayments; /* swap for Stripe / Apple IAP / Google Play Billing with the same API; verify receipts server-side */
 async function buyCoins(sku){const p=Payments.listProducts().find(x=>x.sku===sku);if(!p)return;if(Payments.demo&&!confirm(`DEMO PURCHASE. No real money will be charged.\n\nRelease ${typeof ypMoneyText==='function'?ypMoneyText(p.coins):('$' + Number(p.coins).toLocaleString('en-AU'))} into your bank, fee A$${p.priceAUD}?`))return;
@@ -4129,9 +4158,9 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates115"></script>
-<script src="player-market.js?v=dates115"></script>
-<script src="car-yard.js?v=dates115"></script>
-<script src="overture-layer.js?v=dates115"></script>
-<script src="yp-notify.js?v=dates115"></script>
+<script src="map-preview.js?v=dates116"></script>
+<script src="player-market.js?v=dates116"></script>
+<script src="car-yard.js?v=dates116"></script>
+<script src="overture-layer.js?v=dates116"></script>
+<script src="yp-notify.js?v=dates116"></script>
 </body></html>
