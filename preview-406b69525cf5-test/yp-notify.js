@@ -1,6 +1,7 @@
-/* Your Plot bills, due dates and notifications (dates107).
-   Expense entry at the start is unchanged. Due dates and reminders live on the Bills card,
-   with a one-question prompt when a game bill such as car rego comes up. */
+/* Your Plot bills, due dates and notifications (dates108).
+   Start expenses are copied onto the real-life Bills list and stay in sync with what
+   the player entered. Custom bills can be added too. Game costs stay in their own
+   section and still use game-week reminders. */
 
 const YP_NOTIFY_TYPES={
   billDue:{label:'Bill Due',icon:'bell',col:'#b8410a'},
@@ -183,12 +184,62 @@ function ypNotifyCancel(type,key){
 }
 
 /* ----- Bills data ----- */
+function ypBillsIsGame(it){
+  return !!(it&&(it.source==='game'||String(it.id||'').indexOf('game:')===0));
+}
+function ypBillParseDate(iso){
+  const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return null;
+  const d=new Date(+m[1],+m[2]-1,+m[3],12,0,0,0);
+  if(d.getFullYear()!==+m[1]||d.getMonth()!==(+m[2]-1)||d.getDate()!==+m[3])return null;
+  return d;
+}
+function ypBillFormatDate(d){
+  if(!d||!Number.isFinite(+d))return '';
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function ypBillDateLabel(iso){
+  const d=ypBillParseDate(iso);
+  if(!d)return '';
+  if(typeof ypRealDateLabel==='function')return ypRealDateLabel(+d);
+  return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+}
+function ypBillAddPeriod(iso,freq){
+  const d=ypBillParseDate(iso);
+  if(!d)return '';
+  if(freq==='week')d.setDate(d.getDate()+7);
+  else if(freq==='fortnight')d.setDate(d.getDate()+14);
+  else if(freq==='month')d.setMonth(d.getMonth()+1);
+  else if(freq==='quarter')d.setMonth(d.getMonth()+3);
+  else if(freq==='year')d.setFullYear(d.getFullYear()+1);
+  else d.setDate(d.getDate()+7);
+  return ypBillFormatDate(d);
+}
+function ypBillDueWall(iso){
+  const d=ypBillParseDate(iso);
+  return d?+d:NaN;
+}
 function ypBillsStore(){
   if(typeof G==='undefined'||!G)return null;
-  if(!G.bills||typeof G.bills!=='object')G.bills={v:1,items:{}};
+  if(!G.bills||typeof G.bills!=='object')G.bills={v:2,items:{},seq:0};
   if(!G.bills.items||typeof G.bills.items!=='object')G.bills.items={};
-  G.bills.v=1;
+  if((G.bills.v|0)<2){
+    if(ypBillsMigrate(G.bills))G.bills.v=2;
+  }
   return G.bills;
+}
+function ypBillsMigrate(store){
+  if(!store||!store.items)return true;
+  let ready=true;
+  Object.values(store.items).forEach(it=>{
+    if(!it||ypBillsIsGame(it))return;
+    if(ypBillParseDate(it.dueDate))return;
+    if(it.dueWeek==null||!Number.isFinite(+it.dueWeek))return;
+    const iso=ypBillDateFromWeek(+it.dueWeek);
+    if(iso)it.dueDate=iso;
+    else ready=false;
+  });
+  return ready;
 }
 function ypBillsFreqOfExpense(k,ex){
   if(ex&&ex.yearly&&ex.yearly[k])return 'year';
@@ -205,8 +256,6 @@ function ypBillsExpenseAmount(k,ex,freq){
   const from=ex.yearly&&ex.yearly[k]?'year':ypBillsFreqOfExpense(k,Object.assign({},ex,{yearly:{}}));
   const a=raw,src=YP_BILL_FREQ[from]?from:'week',dst=YP_BILL_FREQ[freq]?freq:src;
   if(src===dst)return Math.round(a);
-  const perYear=a*(YP_BILL_FREQ[src].perYear||(52/YP_BILL_FREQ[src].weeks));
-  // use weeks ratio
   return Math.round(a*YP_BILL_FREQ[src].weeks/YP_BILL_FREQ[dst].weeks);
 }
 function ypBillsUpsert(item,opts){
@@ -223,6 +272,7 @@ function ypBillsUpsert(item,opts){
   if(item.carId)next.carId=item.carId;
   if(item.notifyType)next.notifyType=item.notifyType;
   if(item.autoDue&&next.dueWeek==null&&Number.isFinite(+item.dueWeek))next.dueWeek=+item.dueWeek|0;
+  if('dueDate' in item&&!(opts&&opts.keepDate))next.dueDate=ypBillParseDate(item.dueDate)?item.dueDate:null;
   if(typeof next.remind!=='boolean')next.remind=!!prev.remind;
   if(!YP_NOTIFY_LEADS[next.lead])next.lead=prev.lead&&YP_NOTIFY_LEADS[prev.lead]?prev.lead:'week';
   if(typeof next.asked!=='boolean')next.asked=!!prev.asked;
@@ -235,21 +285,21 @@ function ypBillsSyncFromExpenses(){
   const ex=(typeof G!=='undefined'&&G&&G.income&&G.income.ex)||null;
   const items=ex&&ex.items||{};
   const cats=(typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13:Object.keys(YP_BILL_EXP_NAMES).map(k=>[k]);
-  const seen=new Set();
   cats.forEach(row=>{
     const k=row[0];
     const amt=+items[k]||0;
+    const id='exp:'+k;
+    const prev=store.items[id];
     if(!(amt>0)){
-      const id='exp:'+k;
-      if(store.items[id]&&store.items[id].source==='expense'&&store.items[id].dueWeek==null&&!store.items[id].remind)delete store.items[id];
+      if(prev&&prev.source==='expense'&&!prev.dueDate&&prev.dueWeek==null&&!prev.remind)delete store.items[id];
+      else if(prev&&prev.source==='expense'){
+        ypBillsUpsert({id,source:'expense',kind:'bill',name:YP_BILL_EXP_NAMES[k]||row[2]||k,amount:0,freq:ypBillsFreqOfExpense(k,ex),notifyType:'billDue'});
+      }
       return;
     }
     const freq=ypBillsFreqOfExpense(k,ex);
     const name=YP_BILL_EXP_NAMES[k]||row[2]||k;
-    const amount=Math.round(amt);
-    const prev=store.items['exp:'+k];
-    ypBillsUpsert({id:'exp:'+k,source:'expense',kind:'bill',name,amount,freq,notifyType:'billDue'},{keepFreq:!!(prev&&prev.dueWeek!=null),keepAmount:false});
-    seen.add('exp:'+k);
+    ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:Math.round(amt),freq,notifyType:'billDue'});
   });
 }
 function ypBillsSyncFromCars(){
@@ -303,14 +353,28 @@ function ypBillsEnsure(){
 function ypBillsRollDues(){
   const store=ypBillsStore();if(!store)return;
   const week=(typeof G!=='undefined'&&G)?(G.week|0):0;
+  const today=ypBillFormatDate(new Date());
   let changed=false;
   Object.values(store.items).forEach(it=>{
-    if(!it||it.dueWeek==null||!Number.isFinite(+it.dueWeek))return;
-    const step=(YP_BILL_FREQ[it.freq]||YP_BILL_FREQ.year).weeks;
-    let w=+it.dueWeek|0;
-    if(!(step>0))return;
-    while(w<week){w+=step;changed=true;}
-    if(w!==(+it.dueWeek|0))it.dueWeek=w;
+    if(!it)return;
+    if(ypBillsIsGame(it)){
+      if(it.dueWeek==null||!Number.isFinite(+it.dueWeek))return;
+      const step=(YP_BILL_FREQ[it.freq]||YP_BILL_FREQ.year).weeks;
+      let w=+it.dueWeek|0;
+      if(!(step>0))return;
+      while(w<week){w+=step;changed=true;}
+      if(w!==(+it.dueWeek|0))it.dueWeek=w;
+      return;
+    }
+    if(!ypBillParseDate(it.dueDate))return;
+    let iso=it.dueDate,guard=0;
+    const freq=YP_BILL_FREQ[it.freq]?it.freq:'month';
+    while(iso<today&&guard++<120){
+      const next=ypBillAddPeriod(iso,freq);
+      if(!next||next===iso)break;
+      iso=next;changed=true;
+    }
+    if(iso!==it.dueDate)it.dueDate=iso;
   });
   if(changed&&typeof save==='function')save();
 }
@@ -326,33 +390,63 @@ function ypBillsList(){
   const store=ypBillsStore();if(!store)return [];
   const week=(typeof G!=='undefined'&&G)?(G.week|0):0;
   const list=Object.values(store.items).filter(Boolean).map(it=>{
-    const next=ypBillsNextWeek(it,week);
-    return Object.assign({},it,{nextWeek:next});
+    const row=Object.assign({},it);
+    if(ypBillsIsGame(it))row.nextWeek=ypBillsNextWeek(it,week);
+    else row.nextWeek=NaN;
+    return row;
   });
   list.sort((a,b)=>{
+    const ag=ypBillsIsGame(a),bg=ypBillsIsGame(b);
+    if(ag!==bg)return ag?1:-1;
     const an=Number.isFinite(a.nextWeek),bn=Number.isFinite(b.nextWeek);
     if(an&&bn&&a.nextWeek!==b.nextWeek)return a.nextWeek-b.nextWeek;
     if(an&&!bn)return -1;
     if(!an&&bn)return 1;
+    const ad=a.dueDate||'',bd=b.dueDate||'';
+    if(ad&&bd&&ad!==bd)return ad<bd?-1:1;
+    if(ad&&!bd)return -1;
+    if(!ad&&bd)return 1;
     return String(a.name||'').localeCompare(String(b.name||''));
   });
   return list;
 }
+function ypBillsRealList(){
+  const cats=(typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13.map(r=>r[0]):Object.keys(YP_BILL_EXP_NAMES);
+  const order=new Map(cats.map((k,i)=>['exp:'+k,i]));
+  const real=ypBillsList().filter(it=>!ypBillsIsGame(it));
+  real.sort((a,b)=>{
+    const ae=a.source==='expense',be=b.source==='expense';
+    if(ae&&be){
+      const ia=order.has(a.id)?order.get(a.id):999,ib=order.has(b.id)?order.get(b.id):999;
+      if(ia!==ib)return ia-ib;
+    }
+    if(ae!==be)return ae?-1:1;
+    const ad=a.dueDate||'',bd=b.dueDate||'';
+    if(ad&&bd&&ad!==bd)return ad<bd?-1:1;
+    return String(a.name||'').localeCompare(String(b.name||''));
+  });
+  return real;
+}
+function ypBillsGameList(){return ypBillsList().filter(ypBillsIsGame);}
 function ypBillsGet(id){const s=ypBillsStore();return s&&s.items[id]||null;}
 function ypBillsSave(){if(typeof save==='function')save();ypBillsRefreshOpen();ypNotifySync();if(typeof ypSyncFeed==='function')ypSyncFeed();if(typeof hud==='function')hud();}
 
 function ypBillsDueLabel(it){
-  const w=ypBillsNextWeek(it);
-  if(!Number.isFinite(w))return 'Due Date: Not Set';
-  const weekLab=typeof ypGameWeekLabel==='function'?ypGameWeekLabel(w):('Week '+w);
-  let real='';
-  try{
-    if(typeof ypWallAt==='function'&&typeof CFG!=='undefined'&&CFG){
-      const wall=ypWallAt(w*CFG.weekMs);
-      if(typeof ypRealDateLabel==='function')real=ypRealDateLabel(wall);
-    }
-  }catch(e){}
-  return real?('Due Date: '+weekLab+' · '+real):('Due Date: '+weekLab);
+  if(ypBillsIsGame(it)){
+    const w=ypBillsNextWeek(it);
+    if(!Number.isFinite(w))return 'Due Date: Not Set';
+    const weekLab=typeof ypGameWeekLabel==='function'?ypGameWeekLabel(w):('Week '+w);
+    let real='';
+    try{
+      if(typeof ypWallAt==='function'&&typeof CFG!=='undefined'&&CFG){
+        const wall=ypWallAt(w*CFG.weekMs);
+        if(typeof ypRealDateLabel==='function')real=ypRealDateLabel(wall);
+      }
+    }catch(e){}
+    return real?('Due Date: '+weekLab+' · '+real):('Due Date: '+weekLab);
+  }
+  if(!ypBillParseDate(it&&it.dueDate))return 'Reminder Date: Not Set';
+  return 'Reminder Date: '+(ypBillDateLabel(it.dueDate)||it.dueDate);
 }
 function ypBillsAmountText(it){
   const freq=YP_BILL_FREQ[it&&it.freq]||YP_BILL_FREQ.month;
@@ -360,15 +454,21 @@ function ypBillsAmountText(it){
 }
 function ypBillsWeekLabel(){
   ypBillsEnsure();
-  const week=(typeof G!=='undefined'&&G)?(G.week|0):0;
-  const next=ypBillsList().find(it=>Number.isFinite(it.nextWeek)&&it.nextWeek>=week);
-  if(!next)return 'Set Up Bills';
-  const when=next.nextWeek===week?'This Week':(typeof ypGameWeekLabel==='function'?ypGameWeekLabel(next.nextWeek):('Week '+next.nextWeek));
+  const dated=ypBillsRealList().filter(it=>ypBillParseDate(it.dueDate));
+  if(!dated.length)return 'Set Up Bills';
+  dated.sort((a,b)=>String(a.dueDate).localeCompare(String(b.dueDate)));
+  const next=dated[0];
+  const when=ypBillDateLabel(next.dueDate)||next.dueDate;
   const name=String(next.name||'Bill').split(' · ')[0];
   return name+' · '+when;
 }
 
 /* ----- Bills card and editors ----- */
+let ypBillsAddDraft={name:'',amount:'',freq:'month',dueDate:''};
+let ypBillsEditId=null;
+let ypBillsEditDraft=null;
+let ypBillsDeleteId=null;
+function ypBillsDomId(prefix,id){return prefix+'-'+String(id||'').replace(/[^A-Za-z0-9_-]+/g,'-');}
 function ypBillsInjectCss(){
   if(document.getElementById('yp-bills-css'))return;
   const s=document.createElement('style');
@@ -384,25 +484,34 @@ html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{bac
 #yp-bills .yp-close,#yp-bill-due .yp-close,#yp-notify-ask .yp-close{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
 #yp-bills .yp-bills-lead,#yp-bill-due .yp-bills-lead,#yp-notify-ask .yp-bills-lead{margin:0 0 14px;font:500 14px/1.45 Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-bills .yp-bills-empty{margin:8px 0 16px;font:500 15px/1.45 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-bills .yp-bills-sec{margin:18px 0 8px;font:800 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
+#yp-bills .yp-bills-note{margin:0 0 12px;font:500 14px/1.45 Inter,system-ui,sans-serif;color:#3d4a63}
 .yp-bill-row{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;padding:12px 12px 10px;border:1px solid rgba(20,33,61,.08);border-radius:16px;background:#f6f8fb;color:#14213d}
+.yp-bill-row.yp-bill-add{background:#fff;border:2px solid #0b2545}
 .yp-bill-name{margin:0;font:800 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545;text-align:left}
 .yp-bill-amt{margin:0;font:600 14px/1.35 Inter,system-ui,sans-serif;color:#3d4a63;text-align:left}
 .yp-bill-due{appearance:none;-webkit-appearance:none;margin:4px 0 0;padding:8px 0;border:0;background:transparent;color:#0a3a8c;font:700 14px/1.35 Inter,system-ui,sans-serif;text-align:left;cursor:pointer;min-height:44px}
 .yp-bill-due:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
+.yp-bill-due-static{margin:4px 0 0;padding:8px 0;color:#3d4a63;font:700 14px/1.35 Inter,system-ui,sans-serif;text-align:left}
 .yp-bill-remind{display:flex;align-items:center;gap:12px;min-height:44px}
 .yp-bill-remind>span{flex:1;font:700 14px/1.3 Inter,system-ui,sans-serif;color:#14213d}
 .yp-bill-leads{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 2px}
-.yp-bill-leads button{appearance:none;-webkit-appearance:none;min-height:44px;padding:0 12px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:700 13px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-.yp-bill-leads button[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}
-#yp-bill-due .yp-bill-freq{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 16px}
-#yp-bill-due .yp-bill-freq button{appearance:none;-webkit-appearance:none;min-height:44px;padding:0 12px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:700 13px Inter,system-ui,sans-serif;cursor:pointer}
-#yp-bill-due .yp-bill-freq button[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}
-#yp-bill-due label.yp-bill-date-lab{display:block;margin:8px 0 6px;font:700 14px Inter,system-ui,sans-serif;color:#0b2545}
-#yp-bill-due input[type=date]{box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border:2px solid #0b2545;border-radius:12px;font:600 16px Inter,system-ui,sans-serif;color:#14213d;background:#fff}
+.yp-bill-leads button,.yp-bill-freq button{appearance:none;-webkit-appearance:none;min-height:44px;padding:0 12px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:700 13px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+.yp-bill-leads button[aria-pressed=true],.yp-bill-freq button[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}
+.yp-bill-freq{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+#yp-bills label.yp-bill-date-lab,#yp-bill-due label.yp-bill-date-lab{display:block;margin:8px 0 6px;font:700 14px Inter,system-ui,sans-serif;color:#0b2545}
+#yp-bills input[type=date],#yp-bills input[type=text],#yp-bills input[type=number],#yp-bill-due input[type=date]{box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border:2px solid #0b2545;border-radius:12px;font:600 16px Inter,system-ui,sans-serif;color:#14213d;background:#fff}
 #yp-bill-due .yp-bill-week-hint{margin:8px 0 16px;font:600 13px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-notify-ask .yp-approval{margin:0 0 16px;font:800 17px/1.3 Inter,system-ui,sans-serif;color:#0b2545;text-align:left}
 #yp-notify-ask .yp-step-foot,#yp-bill-due .yp-step-foot{display:flex;flex-direction:column;gap:12px;margin-top:8px}
 #yp-bills .yp-week-pending-btn{color:#0a3a8c}
+#yp-bills .switch{position:relative;width:50px;height:30px;border-radius:15px;background:#d5dbe6;border:0;cursor:pointer;flex:none}
+#yp-bills .switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0004}
+#yp-bills .switch.on{background:#0a3a8c}
+#yp-bills .switch.on::after{left:23px}
+.yp-bill-actions{display:flex;gap:8px;margin:4px 0 2px}
+.yp-bill-actions button{appearance:none;-webkit-appearance:none;flex:1;min-height:44px;padding:0 12px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 14px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+.yp-bill-actions button.yp-bill-del{border-color:#b8410a;color:#b8410a}
 `;
   document.head.appendChild(s);
 }
@@ -424,7 +533,7 @@ function ypOpenBills(){
   const lead=document.createElement('p');
   lead.className='yp-bills-lead';
   lead.id='yp-bills-lead';
-  lead.textContent='Game costs like rego, insurance, fuel and your car loan come out every week automatically as part of the game. Due dates and reminders are just for your real-life bills.';
+  lead.textContent='Set a reminder date for the living costs you entered at the start, or add a bill the game does not list.';
   card.appendChild(lead);
   const list=document.createElement('div');
   list.className='yp-bills-list';
@@ -445,33 +554,194 @@ function ypOpenBills(){
 function ypBillsPaintList(){
   const list=document.getElementById('yp-bills-list');
   if(!list)return;
-  const items=ypBillsEnsure();
+  ypBillsEnsure();
+  const real=ypBillsRealList();
+  const game=ypBillsGameList();
   list.innerHTML='';
-  if(!items.length){
+  const realWrap=document.createElement('div');
+  realWrap.id='yp-bills-real';
+  if(!real.length){
     const empty=document.createElement('p');
     empty.className='yp-bills-empty';
     empty.id='yp-bills-empty';
-    empty.textContent='When you add living costs or get a car, they will show up here.';
-    list.appendChild(empty);
-    return;
+    empty.textContent='Your start expenses will show up here once you have entered them.';
+    realWrap.appendChild(empty);
   }
-  items.forEach(it=>list.appendChild(ypBillsRow(it)));
+  real.forEach(it=>realWrap.appendChild(ypBillsRow(it)));
+  realWrap.appendChild(ypBillsAddRow());
+  list.appendChild(realWrap);
+  if(game.length){
+    const gameWrap=document.createElement('div');
+    gameWrap.id='yp-bills-game';
+    const sec=document.createElement('h3');
+    sec.className='yp-bills-sec';
+    sec.id='yp-bills-game-title';
+    sec.textContent='Game Costs';
+    const note=document.createElement('p');
+    note.className='yp-bills-note';
+    note.id='yp-bills-game-note';
+    note.textContent='These come out every week automatically. You can still turn on a reminder.';
+    gameWrap.append(sec,note);
+    game.forEach(it=>gameWrap.appendChild(ypBillsRow(it)));
+    list.appendChild(gameWrap);
+  }
+}
+function ypBillsFreqButtons(draft,onPick,id){
+  const wrap=document.createElement('div');
+  wrap.className='yp-bill-freq';
+  if(id)wrap.id=id;
+  Object.keys(YP_BILL_FREQ).forEach(k=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.textContent=YP_BILL_FREQ[k].label;
+    b.setAttribute('aria-pressed',draft.freq===k?'true':'false');
+    b.addEventListener('click',()=>{
+      draft.freq=k;
+      [...wrap.querySelectorAll('button')].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+      if(onPick)onPick(k);
+    });
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+function ypBillsField(labText,input,id){
+  const lab=document.createElement('label');
+  lab.className='yp-bill-date-lab';
+  lab.textContent=labText;
+  if(id){lab.setAttribute('for',id);input.id=id;}
+  return [lab,input];
+}
+function ypBillsAddRow(){
+  const row=document.createElement('div');
+  row.className='yp-bill-row yp-bill-add';
+  row.id='yp-bill-add';
+  const title=document.createElement('div');
+  title.className='yp-bill-name';
+  title.id='yp-bill-add-title';
+  title.textContent='Add Your Own Bill';
+  const name=document.createElement('input');
+  name.type='text';
+  name.autocomplete='off';
+  name.maxLength=80;
+  name.placeholder='Item Name';
+  name.value=ypBillsAddDraft.name||'';
+  name.addEventListener('input',()=>{ypBillsAddDraft.name=name.value;});
+  const amt=document.createElement('input');
+  amt.type='text';
+  amt.inputMode='decimal';
+  amt.autocomplete='off';
+  amt.placeholder='0';
+  amt.value=ypBillsAddDraft.amount||'';
+  amt.addEventListener('input',()=>{ypBillsAddDraft.amount=amt.value;});
+  const date=document.createElement('input');
+  date.type='date';
+  date.value=ypBillsAddDraft.dueDate||'';
+  date.addEventListener('input',()=>{ypBillsAddDraft.dueDate=date.value;});
+  if(!YP_BILL_FREQ[ypBillsAddDraft.freq])ypBillsAddDraft.freq='month';
+  const saveBtn=document.createElement('button');
+  saveBtn.type='button';
+  saveBtn.className='hwb';
+  saveBtn.id='yp-bill-new-save';
+  saveBtn.textContent='Save';
+  saveBtn.addEventListener('click',()=>{
+    ypBillsAddDraft.name=name.value;
+    ypBillsAddDraft.amount=amt.value;
+    ypBillsAddDraft.dueDate=date.value;
+    const rec=ypBillsAddCustom(ypBillsAddDraft);
+    if(!rec){
+      name.focus();
+      return;
+    }
+    ypBillsAddDraft={name:'',amount:'',freq:'month',dueDate:''};
+    ypBillsSave();
+  });
+  row.append(title,...ypBillsField('Item Name',name,'yp-bill-new-name'),...ypBillsField('Amount',amt,'yp-bill-new-amount'));
+  const flab=document.createElement('label');
+  flab.className='yp-bill-date-lab';
+  flab.textContent='How Often';
+  row.append(flab,ypBillsFreqButtons(ypBillsAddDraft,null,'yp-bill-new-freq'),...ypBillsField('Reminder Date',date,'yp-bill-new-date'),saveBtn);
+  return row;
+}
+function ypBillsEditRow(it){
+  const draft=ypBillsEditDraft||{name:it.name||'',amount:String(it.amount??''),freq:YP_BILL_FREQ[it.freq]?it.freq:'month',dueDate:it.dueDate||''};
+  ypBillsEditDraft=draft;
+  const row=document.createElement('div');
+  row.className='yp-bill-row yp-bill-add';
+  row.dataset.id=it.id;
+  row.id=ypBillsDomId('yp-bill-edit',it.id);
+  const title=document.createElement('div');
+  title.className='yp-bill-name';
+  title.textContent='Edit Bill';
+  const name=document.createElement('input');
+  name.type='text';
+  name.autocomplete='off';
+  name.maxLength=80;
+  name.placeholder='Item Name';
+  name.value=draft.name;
+  name.addEventListener('input',()=>{draft.name=name.value;});
+  const amt=document.createElement('input');
+  amt.type='text';
+  amt.inputMode='decimal';
+  amt.autocomplete='off';
+  amt.placeholder='0';
+  amt.value=draft.amount;
+  amt.addEventListener('input',()=>{draft.amount=amt.value;});
+  const date=document.createElement('input');
+  date.type='date';
+  date.value=draft.dueDate||'';
+  date.addEventListener('input',()=>{draft.dueDate=date.value;});
+  const saveBtn=document.createElement('button');
+  saveBtn.type='button';
+  saveBtn.className='hwb';
+  saveBtn.textContent='Save';
+  saveBtn.id=ypBillsDomId('yp-bill-edit-save',it.id);
+  saveBtn.addEventListener('click',()=>{
+    draft.name=name.value;
+    draft.amount=amt.value;
+    draft.dueDate=date.value;
+    if(!ypBillsUpdateCustom(it.id,draft)){name.focus();return;}
+    ypBillsEditId=null;ypBillsEditDraft=null;
+    ypBillsSave();
+  });
+  const cancel=document.createElement('button');
+  cancel.type='button';
+  cancel.className='hwx';
+  cancel.textContent='Cancel';
+  cancel.addEventListener('click',()=>{ypBillsEditId=null;ypBillsEditDraft=null;ypBillsPaintList();});
+  row.append(title,...ypBillsField('Item Name',name,ypBillsDomId('yp-bill-edit-name',it.id)),...ypBillsField('Amount',amt,ypBillsDomId('yp-bill-edit-amount',it.id)));
+  const flab=document.createElement('label');
+  flab.className='yp-bill-date-lab';
+  flab.textContent='How Often';
+  row.append(flab,ypBillsFreqButtons(draft,null,ypBillsDomId('yp-bill-edit-freq',it.id)),...ypBillsField('Reminder Date',date,ypBillsDomId('yp-bill-edit-date',it.id)),saveBtn,cancel);
+  return row;
 }
 function ypBillsRow(it){
+  if(!ypBillsIsGame(it)&&it.source==='custom'&&ypBillsEditId===it.id)return ypBillsEditRow(it);
   const row=document.createElement('div');
   row.className='yp-bill-row';
   row.dataset.id=it.id;
+  row.dataset.source=it.source||'';
   const name=document.createElement('div');
   name.className='yp-bill-name';
   name.textContent=it.name||'Bill';
   const amt=document.createElement('div');
   amt.className='yp-bill-amt';
   amt.textContent=ypBillsAmountText(it)+' · '+(YP_BILL_FREQ[it.freq]||YP_BILL_FREQ.month).label;
-  const due=document.createElement('button');
-  due.type='button';
-  due.className='yp-bill-due';
-  due.textContent=ypBillsDueLabel(it);
-  due.addEventListener('click',()=>ypOpenBillDue(it.id));
+  row.append(name,amt);
+  if(ypBillsIsGame(it)){
+    const due=document.createElement('div');
+    due.className='yp-bill-due-static';
+    due.textContent=ypBillsDueLabel(it);
+    row.appendChild(due);
+  }else{
+    const dateId=ypBillsDomId('yp-bill-date',it.id);
+    const date=document.createElement('input');
+    date.type='date';
+    date.value=ypBillParseDate(it.dueDate)?it.dueDate:'';
+    date.setAttribute('aria-label','Reminder Date');
+    date.addEventListener('change',()=>ypBillsSetDate(it.id,date.value));
+    row.append(...ypBillsField('Reminder Date',date,dateId));
+  }
   const remind=document.createElement('div');
   remind.className='yp-bill-remind';
   const lab=document.createElement('span');
@@ -483,7 +753,7 @@ function ypBillsRow(it){
   sw.setAttribute('aria-pressed',it.remind?'true':'false');
   sw.addEventListener('click',()=>ypBillsToggleRemind(it.id,!it.remind));
   remind.append(lab,sw);
-  row.append(name,amt,due,remind);
+  row.appendChild(remind);
   if(it.remind){
     const leads=document.createElement('div');
     leads.className='yp-bill-leads';
@@ -496,6 +766,34 @@ function ypBillsRow(it){
       leads.appendChild(b);
     });
     row.appendChild(leads);
+  }
+  if(!ypBillsIsGame(it)&&it.source==='custom'){
+    const actions=document.createElement('div');
+    actions.className='yp-bill-actions';
+    if(ypBillsDeleteId===it.id){
+      const yes=document.createElement('button');
+      yes.type='button';
+      yes.className='yp-bill-del';
+      yes.textContent='Delete This Bill';
+      yes.addEventListener('click',()=>{ypBillsDeleteId=null;ypBillsDeleteCustom(it.id);});
+      const no=document.createElement('button');
+      no.type='button';
+      no.textContent='Keep';
+      no.addEventListener('click',()=>{ypBillsDeleteId=null;ypBillsPaintList();});
+      actions.append(yes,no);
+    }else{
+      const edit=document.createElement('button');
+      edit.type='button';
+      edit.textContent='Edit';
+      edit.addEventListener('click',()=>{ypBillsEditId=it.id;ypBillsEditDraft=null;ypBillsDeleteId=null;ypBillsPaintList();});
+      const del=document.createElement('button');
+      del.type='button';
+      del.className='yp-bill-del';
+      del.textContent='Delete';
+      del.addEventListener('click',()=>{ypBillsDeleteId=it.id;ypBillsPaintList();});
+      actions.append(edit,del);
+    }
+    row.appendChild(actions);
   }
   return row;
 }
@@ -512,6 +810,57 @@ function ypBillsToggleRemind(id,on){
 function ypBillsSetLead(id,lead){
   const it=ypBillsGet(id);if(!it||!YP_NOTIFY_LEADS[lead])return;
   it.lead=lead;
+  ypBillsSave();
+}
+function ypBillsSetDate(id,iso){
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
+  it.dueDate=ypBillParseDate(iso)?iso:null;
+  ypBillsSave();
+}
+function ypBillsNewCustomId(){
+  const store=ypBillsStore();if(!store)return 'custom:1';
+  store.seq=(store.seq|0)+1;
+  return 'custom:'+store.seq;
+}
+function ypBillsReadAmount(raw){
+  const n=parseFloat(String(raw==null?'':raw).replace(/[^0-9.]/g,''));
+  return Number.isFinite(n)?Math.max(0,Math.round(n)):0;
+}
+function ypBillsAddCustom(fields){
+  const name=String(fields&&fields.name||'').trim();
+  if(!name)return null;
+  const amount=ypBillsReadAmount(fields&&fields.amount);
+  const freq=YP_BILL_FREQ[fields&&fields.freq]?fields.freq:'month';
+  const dueDate=ypBillParseDate(fields&&fields.dueDate)?fields.dueDate:null;
+  const id=ypBillsNewCustomId();
+  const rec=ypBillsUpsert({
+    id,source:'custom',kind:'bill',name,amount,freq,dueDate,notifyType:'billDue'
+  });
+  if(rec){
+    if(dueDate&&typeof rec.remind!=='boolean')rec.remind=true;
+    if(dueDate&&!rec.remind&&rec.choice==null)rec.remind=true;
+    if(rec.remind&&!YP_NOTIFY_LEADS[rec.lead])rec.lead='week';
+  }
+  return rec;
+}
+function ypBillsUpdateCustom(id,fields){
+  const it=ypBillsGet(id);if(!it||it.source!=='custom')return null;
+  const name=String(fields&&fields.name||'').trim();
+  if(!name)return null;
+  it.name=name;
+  it.amount=ypBillsReadAmount(fields&&fields.amount);
+  if(YP_BILL_FREQ[fields&&fields.freq])it.freq=fields.freq;
+  it.dueDate=ypBillParseDate(fields&&fields.dueDate)?fields.dueDate:null;
+  return it;
+}
+function ypBillsDeleteCustom(id){
+  const store=ypBillsStore();
+  const it=store&&store.items[id];
+  if(!it||it.source!=='custom')return;
+  const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:'billDue';
+  ypNotifyCancel(type,id);
+  delete store.items[id];
+  if(ypBillsEditId===id){ypBillsEditId=null;ypBillsEditDraft=null;}
   ypBillsSave();
 }
 function ypBillWeekFromDate(iso){
@@ -535,89 +884,11 @@ function ypBillDateFromWeek(week){
   }catch(e){return '';}
 }
 function ypOpenBillDue(id){
-  ypBillsInjectCss();
-  const it=ypBillsGet(id);if(!it)return;
-  document.getElementById('yp-bill-due')?.remove();
-  const week=(typeof G!=='undefined'&&G)?(G.week|0):0;
-  let draftWeek=Number.isFinite(ypBillsNextWeek(it,week))?ypBillsNextWeek(it,week):(week+4);
-  let draftFreq=YP_BILL_FREQ[it.freq]?it.freq:'month';
-  const panel=document.createElement('div');
-  panel.id='yp-bill-due';
-  panel.setAttribute('role','dialog');
-  panel.setAttribute('aria-labelledby','yp-bill-due-title');
-  const card=document.createElement('div');
-  card.className='card yp-listing';
-  const shut=()=>panel.remove();
-  if(typeof ypCardHeader==='function')card.appendChild(ypCardHeader({title:'Set Due Date',titleId:'yp-bill-due-title',id:'yp-bill-due-x',onClose:shut}));
-  const lead=document.createElement('p');
-  lead.className='yp-bills-lead';
-  lead.textContent=it.name||'Bill';
-  card.appendChild(lead);
-  const lab=document.createElement('label');
-  lab.className='yp-bill-date-lab';
-  lab.setAttribute('for','yp-bill-date');
-  lab.textContent='Due Date';
-  const input=document.createElement('input');
-  input.type='date';
-  input.id='yp-bill-date';
-  input.value=ypBillDateFromWeek(draftWeek);
-  const hint=document.createElement('p');
-  hint.className='yp-bill-week-hint';
-  hint.id='yp-bill-week-hint';
-  const paintHint=()=>{
-    const w=ypBillWeekFromDate(input.value);
-    if(Number.isFinite(w)&&w>=0){draftWeek=w|0;hint.textContent='That is '+(typeof ypGameWeekLabel==='function'?ypGameWeekLabel(draftWeek):('Week '+draftWeek))+' in the game.';}
-    else hint.textContent='Pick a date to set the game week.';
-  };
-  input.addEventListener('input',paintHint);
-  paintHint();
-  const flab=document.createElement('label');
-  flab.className='yp-bill-date-lab';
-  flab.textContent='Repeats';
-  const freqs=document.createElement('div');
-  freqs.className='yp-bill-freq';
-  Object.keys(YP_BILL_FREQ).forEach(k=>{
-    const b=document.createElement('button');
-    b.type='button';
-    b.textContent=YP_BILL_FREQ[k].label;
-    b.setAttribute('aria-pressed',draftFreq===k?'true':'false');
-    b.addEventListener('click',()=>{draftFreq=k;[...freqs.querySelectorAll('button')].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));});
-    freqs.appendChild(b);
-  });
-  const foot=document.createElement('div');
-  foot.className='yp-step-foot';
-  const saveBtn=document.createElement('button');
-  saveBtn.type='button';
-  saveBtn.className='hwb';
-  saveBtn.id='yp-bill-due-save';
-  saveBtn.textContent='Save';
-  saveBtn.addEventListener('click',()=>{
-    const w=ypBillWeekFromDate(input.value);
-    const rec=ypBillsGet(id);if(!rec)return shut();
-    if(YP_BILL_FREQ[draftFreq]&&YP_BILL_FREQ[rec.freq]&&draftFreq!==rec.freq){
-      rec.amount=Math.max(0,Math.round((+rec.amount||0)*YP_BILL_FREQ[draftFreq].weeks/YP_BILL_FREQ[rec.freq].weeks));
-    }
-    rec.freq=draftFreq;
-    rec.dueWeek=Number.isFinite(w)&&w>=0?(w|0):null;
-    ypBillsSave();
-    shut();
-  });
-  const cancel=document.createElement('button');
-  cancel.type='button';
-  cancel.className='hwx';
-  cancel.id='yp-bill-due-cancel';
-  cancel.textContent='Cancel';
-  cancel.addEventListener('click',shut);
-  const clear=document.createElement('button');
-  clear.type='button';
-  clear.className='yp-close';
-  clear.id='yp-bill-due-clear';
-  clear.textContent='Clear Due Date';
-  clear.addEventListener('click',()=>{const rec=ypBillsGet(id);if(rec){rec.dueWeek=null;ypBillsSave();}shut();});
-  foot.append(saveBtn,cancel,clear);
-  card.append(lab,input,hint,flab,freqs,foot);
-  panel.appendChild(card);
-  document.body.appendChild(panel);
+  /* Real-life dates are edited on the Bills row. Game costs keep their game-week due date. */
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
+  const safe=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape(id):String(id).replace(/"/g,'');
+  const row=document.querySelector('#yp-bills [data-id="'+safe+'"] input[type=date]');
+  if(row){try{row.focus();if(typeof row.showPicker==='function')row.showPicker();}catch(e){}}
 }
 
 /* ----- One-question reminder prompt ----- */
@@ -746,22 +1017,55 @@ function ypBillsMaybePrompt(){
 
 /* ----- Schedule sync and game-event watch ----- */
 function ypBillsScheduleAll(){
-  const week=(typeof G!=='undefined'&&G)?(G.week|0):0;
   ypBillsList().forEach(it=>{
     const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:(it.kind==='rego'?'regoDue':'billDue');
     const key=it.id;
     ypNotifyCancel(type,key);
-    if(!it.remind||!Number.isFinite(it.nextWeek)||!ypNotifyTypeOn(type))return;
+    if(!it.remind||!ypNotifyTypeOn(type))return;
     try{
-      if(typeof ypWallAt!=='function'||typeof CFG==='undefined')return;
-      const dueWall=ypWallAt(it.nextWeek*CFG.weekMs);
+      let dueWall=NaN,label='';
+      if(ypBillsIsGame(it)){
+        if(!Number.isFinite(it.nextWeek)||typeof ypWallAt!=='function'||typeof CFG==='undefined')return;
+        dueWall=ypWallAt(it.nextWeek*CFG.weekMs);
+        label=typeof ypGameWeekLabel==='function'?ypGameWeekLabel(it.nextWeek):('Week '+it.nextWeek);
+      }else{
+        dueWall=ypBillDueWall(it.dueDate);
+        if(!Number.isFinite(dueWall))return;
+        label=ypBillDateLabel(it.dueDate)||it.dueDate;
+      }
       const lead=(YP_NOTIFY_LEADS[it.lead]||YP_NOTIFY_LEADS.week).ms;
       const at=dueWall-lead;
       const when=at>Date.now()+1000?at:(dueWall>Date.now()+1000?dueWall:NaN);
       if(!Number.isFinite(when))return;
-      const msg=it.name+' is due '+(typeof ypGameWeekLabel==='function'?ypGameWeekLabel(it.nextWeek):('Week '+it.nextWeek))+'.';
+      const msg=it.name+' is due '+label+'.';
       ypNotifySchedule(type,key,when,YP_NOTIFY_TYPES[type].label,msg,it.id);
     }catch(e){}
+  });
+}
+function ypBillsFireDue(){
+  const now=Date.now();
+  ypBillsList().forEach(it=>{
+    if(!it||!it.remind)return;
+    const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:(it.kind==='rego'?'regoDue':'billDue');
+    if(!ypNotifyTypeOn(type))return;
+    let dueWall=NaN,label='',occ='';
+    if(ypBillsIsGame(it)){
+      if(!Number.isFinite(it.nextWeek))return;
+      try{if(typeof ypWallAt==='function'&&typeof CFG!=='undefined')dueWall=ypWallAt(it.nextWeek*CFG.weekMs);}catch(e){}
+      label=typeof ypGameWeekLabel==='function'?ypGameWeekLabel(it.nextWeek):('Week '+it.nextWeek);
+      occ='w'+it.nextWeek;
+    }else{
+      dueWall=ypBillDueWall(it.dueDate);
+      if(!Number.isFinite(dueWall))return;
+      label=ypBillDateLabel(it.dueDate)||it.dueDate;
+      occ=it.dueDate;
+    }
+    if(!Number.isFinite(dueWall))return;
+    const lead=(YP_NOTIFY_LEADS[it.lead]||YP_NOTIFY_LEADS.week).ms;
+    const at=dueWall-lead;
+    if(now<at)return;
+    const firedKey=type+':'+it.id+':'+occ;
+    ypNotifyEvent(type,it.name+' is due '+label+'.',it.id,{key:firedKey});
   });
 }
 function ypNotifyWatchSettlements(){
@@ -830,6 +1134,7 @@ function ypNotifySync(){
   if(typeof G==='undefined'||!G)return;
   ypNotifyState();
   ypBillsEnsure();
+  ypBillsFireDue();
   ypBillsScheduleAll();
   ypNotifyWatchSettlements();
   /* restore any saved web timers after reload */
@@ -849,6 +1154,7 @@ function ypNotifyTick(){
   ypNotifyTickBusy=1;
   try{
     ypBillsEnsure();
+    ypBillsFireDue();
     ypNotifyWatchSettlements();
     ypNotifyWatchRentals();
     ypBillsMaybePrompt();
