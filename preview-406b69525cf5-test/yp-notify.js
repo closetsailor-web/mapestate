@@ -1,8 +1,7 @@
 /* Your Plot bills, due dates and notifications (dates113).
    Start expenses are copied onto the real-life Bills list and stay in sync with what
-   the player entered. Custom bills can be added too. Game costs stay in their own
-   section as read-only weekly amounts, with no reminders. Real-life reminders follow
-   a next due date and how often it repeats. */
+   the player entered. Custom bills can be added too. Game costs are not shown in Bills.
+   Real-life reminders follow a next due date and how often it repeats. */
 
 const YP_NOTIFY_TYPES={
   billDue:{label:'Bill Due',icon:'bell',col:'#b8410a'},
@@ -635,7 +634,6 @@ function ypBillsPaintList(){
   if(!list)return;
   ypBillsEnsure();
   const real=ypBillsRealList();
-  const game=ypBillsGameList();
   list.innerHTML='';
   const realWrap=document.createElement('div');
   realWrap.id='yp-bills-real';
@@ -649,21 +647,6 @@ function ypBillsPaintList(){
   real.forEach(it=>realWrap.appendChild(ypBillsRow(it)));
   realWrap.appendChild(ypBillsAddRow());
   list.appendChild(realWrap);
-  if(game.length){
-    const gameWrap=document.createElement('div');
-    gameWrap.id='yp-bills-game';
-    const sec=document.createElement('h3');
-    sec.className='yp-bills-sec';
-    sec.id='yp-bills-game-title';
-    sec.textContent='Game Costs';
-    const note=document.createElement('p');
-    note.className='yp-bills-note';
-    note.id='yp-bills-game-note';
-    note.textContent='These come out every week automatically.';
-    gameWrap.append(sec,note);
-    game.forEach(it=>gameWrap.appendChild(ypBillsRow(it)));
-    list.appendChild(gameWrap);
-  }
 }
 function ypBillsFreqSelect(draft,onPick,id){
   const sel=document.createElement('select');
