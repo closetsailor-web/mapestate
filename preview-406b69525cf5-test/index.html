@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates112";
+window.YP_BUILD="dates113";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1263,9 +1263,10 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 #yp-where .hwb:focus,#yp-where .hwb:focus-visible,#yp-where .hwx:focus,#yp-where .hwx:focus-visible,#yp-prop button:focus,#yp-prop button:focus-visible,#yp-rent-list button:focus,#yp-rent-detail button:focus,#yp-sale-detail button:focus{outline:3px solid #0a3a8c;outline-offset:3px}
 #yp-rent-detail #yp-coin-shop .yp-listing,.yp-listing,#yp-sale-detail .yp-listing,#yp-apply-review .yp-listing,#yp-history-detail .yp-listing,#yp-living .yp-listing,#yp-payout .yp-listing,#yp-away .yp-listing,#yp-where-live .yp-listing,#yp-clock-start .yp-listing{text-align:left;max-width:440px;max-height:min(78dvh,calc(100dvh - 160px));overflow:auto;margin:0 auto}
 #yp-rent-detail .yp-listing p:not(.yp-kicker),#yp-sale-detail .yp-listing p:not(.yp-kicker),#yp-apply-review .yp-listing p:not(.yp-kicker),#yp-history-detail .yp-listing p:not(.yp-kicker),#yp-living .yp-listing p:not(.yp-kicker),#yp-fixture-board .yp-listing p:not(.yp-kicker){text-align:left}
-.yp-listing .yp-price{margin:16px 0 6px;color:#0b2545}
-.yp-listing .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;letter-spacing:-.5px}
-.yp-listing .yp-per{margin-left:8px;font:700 16px Inter,system-ui,sans-serif;color:#5a6780}
+.yp-listing .yp-price{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:2px;margin:16px 0 6px;color:#0b2545}
+.yp-listing .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;letter-spacing:-.5px;min-width:0;max-width:100%}
+.yp-listing .yp-per{margin-left:0;font:700 16px Inter,system-ui,sans-serif;color:#5a6780;white-space:nowrap}
+.yp-listing .yp-price.yp-price-stack{flex-direction:column;align-items:flex-start;gap:2px}
 .yp-listing .yp-place{margin:0 0 14px;font:600 16px/1.35 Inter,system-ui,sans-serif;color:#14213d;overflow-wrap:anywhere}
 .yp-listing .yp-facts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
 .yp-listing .yp-facts div{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#e7f0ff;color:#0a3a8c}
@@ -4125,9 +4126,9 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates112"></script>
-<script src="player-market.js?v=dates112"></script>
-<script src="car-yard.js?v=dates112"></script>
-<script src="overture-layer.js?v=dates112"></script>
-<script src="yp-notify.js?v=dates112"></script>
+<script src="map-preview.js?v=dates113"></script>
+<script src="player-market.js?v=dates113"></script>
+<script src="car-yard.js?v=dates113"></script>
+<script src="overture-layer.js?v=dates113"></script>
+<script src="yp-notify.js?v=dates113"></script>
 </body></html>

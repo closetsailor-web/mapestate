@@ -1,7 +1,8 @@
-/* Your Plot bills, due dates and notifications (dates112).
+/* Your Plot bills, due dates and notifications (dates113).
    Start expenses are copied onto the real-life Bills list and stay in sync with what
    the player entered. Custom bills can be added too. Game costs stay in their own
-   section. Reminders follow a next due date and how often it repeats. */
+   section as read-only weekly amounts, with no reminders. Real-life reminders follow
+   a next due date and how often it repeats. */
 
 const YP_NOTIFY_TYPES={
   billDue:{label:'Bill Due',icon:'bell',col:'#b8410a'},
@@ -382,11 +383,28 @@ function ypBillsSyncFromCars(){
     }
   });
 }
+function ypBillsClearGameReminders(){
+  const store=ypBillsStore();if(!store||!store.items)return;
+  let changed=false;
+  Object.values(store.items).forEach(it=>{
+    if(!ypBillsIsGame(it))return;
+    const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:(it.kind==='rego'?'regoDue':'billDue');
+    try{ypNotifyCancel(type,it.id);}catch(e){}
+    if(it.remind||it.choice==='yes'||!it.asked){
+      it.remind=false;
+      it.asked=true;
+      if(it.choice==='yes'||it.choice==null)it.choice='no';
+      changed=true;
+    }
+  });
+  if(changed&&typeof save==='function')save();
+}
 function ypBillsEnsure(){
   if(!ypBillsStore())return [];
   ypNotifyState();
   ypBillsSyncFromExpenses();
   ypBillsSyncFromCars();
+  ypBillsClearGameReminders();
   ypBillsRollDues();
   return ypBillsList();
 }
@@ -641,7 +659,7 @@ function ypBillsPaintList(){
     const note=document.createElement('p');
     note.className='yp-bills-note';
     note.id='yp-bills-game-note';
-    note.textContent='These come out every week automatically. You can still turn on a reminder.';
+    note.textContent='These come out every week automatically.';
     gameWrap.append(sec,note);
     game.forEach(it=>gameWrap.appendChild(ypBillsRow(it)));
     list.appendChild(gameWrap);
@@ -833,8 +851,23 @@ function ypBillsEditRow(it){
   row.append(title,...ypBillsField('Item Name',name,ypBillsDomId('yp-bill-edit-name',it.id)),alab,amtRow,dateParts[0],dateParts[1],saveBtn,cancel);
   return row;
 }
+function ypBillsGameRow(it){
+  const row=document.createElement('div');
+  row.className='yp-bill-row';
+  row.dataset.id=it.id;
+  row.dataset.source=it.source||'';
+  const name=document.createElement('div');
+  name.className='yp-bill-name';
+  name.textContent=it.name||'Bill';
+  const amt=document.createElement('div');
+  amt.className='yp-bill-amt yp-bill-amt-static';
+  amt.textContent=ypBillsAmountText(it);
+  row.append(name,amt);
+  return row;
+}
 function ypBillsRow(it){
-  if(!ypBillsIsGame(it)&&it.source==='custom'&&ypBillsEditId===it.id)return ypBillsEditRow(it);
+  if(ypBillsIsGame(it))return ypBillsGameRow(it);
+  if(it.source==='custom'&&ypBillsEditId===it.id)return ypBillsEditRow(it);
   const row=document.createElement('div');
   row.className='yp-bill-row';
   row.dataset.id=it.id;
@@ -919,7 +952,7 @@ function ypBillsRow(it){
 }
 function ypBillsRefreshOpen(){if(document.getElementById('yp-bills-list'))ypBillsPaintList();}
 function ypBillsToggleRemind(id,on){
-  const it=ypBillsGet(id);if(!it)return;
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
   it.remind=!!on;
   it.asked=true;
   it.choice=on?'yes':'no';
@@ -928,7 +961,7 @@ function ypBillsToggleRemind(id,on){
   if(on)ypNotifyOnFirstYes();
 }
 function ypBillsSetLead(id,lead){
-  const it=ypBillsGet(id);if(!it||!YP_NOTIFY_LEADS[lead])return;
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it)||!YP_NOTIFY_LEADS[lead])return;
   it.lead=lead;
   ypBillsSave();
 }
@@ -947,7 +980,7 @@ function ypBillsSetAmount(id,raw){
   ypBillsPersist();
 }
 function ypBillsSetFreq(id,freq){
-  const it=ypBillsGet(id);if(!it||!YP_BILL_FREQ[freq])return;
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it)||!YP_BILL_FREQ[freq])return;
   if(it.freq===freq){it.freqUser=1;return;}
   it.freq=freq;
   it.freqUser=1;
@@ -955,7 +988,7 @@ function ypBillsSetFreq(id,freq){
   ypBillsPersist();
 }
 function ypBillsSetDate(id,iso){
-  const it=ypBillsGet(id);if(!it)return;
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
   const d=ypBillParseDate(iso);
   const next=d?iso:null;
   const day=d?d.getDate():null;
@@ -1054,7 +1087,7 @@ function ypBillsAskReminder(idOrItem){
   ypBillsInjectCss();
   const id=typeof idOrItem==='string'?idOrItem:(idOrItem&&idOrItem.id);
   ypBillsEnsure();
-  const it=ypBillsGet(id);if(!it)return false;
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return false;
   if(it.asked)return false;
   if(document.getElementById('yp-notify-ask'))return false;
   const due=ypBillsDueLabel(it).replace(/^(Next Due Date|Due Date|Reminder Date): /,'');
@@ -1164,13 +1197,7 @@ function ypBillsMaybePrompt(){
     const open=ypOpenDialogs().filter(id=>id&&id!=='yp-bills'&&id!=='sheet'&&id!=='drawer');
     if(open.length)return;
   }
-  ypBillsEnsure();
-  const week=(typeof G!=='undefined'&&G)?(G.week|0):0;
-  const items=ypBillsList();
-  const fresh=items.find(it=>it.source==='game'&&it.kind==='rego'&&!it.asked&&it._justAppeared);
-  if(fresh){ypBillsAskReminder(fresh.id);return;}
-  const coming=items.find(it=>it.source==='game'&&!it.asked&&Number.isFinite(it.nextWeek)&&it.nextWeek-week<=4&&it.nextWeek>=week);
-  if(coming)ypBillsAskReminder(coming.id);
+  /* Game-cost car items no longer use reminders, and this prompt was only used for them. */
 }
 
 /* ----- Schedule sync and game-event watch ----- */
@@ -1179,7 +1206,7 @@ function ypBillsScheduleAll(){
     const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:(it.kind==='rego'?'regoDue':'billDue');
     const key=it.id;
     ypNotifyCancel(type,key);
-    if(!it.remind||!ypNotifyTypeOn(type))return;
+    if(ypBillsIsGame(it)||!it.remind||!ypNotifyTypeOn(type))return;
     try{
       const occ=ypBillsOccurrence(it);
       if(!occ)return;
@@ -1214,7 +1241,7 @@ function ypBillsOccurrence(it,iso){
   return null;
 }
 function ypBillsFireOccurrence(it,iso,past){
-  if(!it||!it.remind)return false;
+  if(!it||ypBillsIsGame(it)||!it.remind)return false;
   const rec=ypBillsOccurrence(it,iso);
   if(!rec)return false;
   if(!ypNotifyTypeOn(rec.type))return false;
