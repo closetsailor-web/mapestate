@@ -1,4 +1,4 @@
-/* Your Plot bills, due dates and notifications (dates110).
+/* Your Plot bills, due dates and notifications (dates112).
    Start expenses are copied onto the real-life Bills list and stay in sync with what
    the player entered. Custom bills can be added too. Game costs stay in their own
    section. Reminders follow a next due date and how often it repeats. */
@@ -20,10 +20,11 @@ const YP_BILL_FREQ={
   week:{label:'Weekly',every:'Every Week',weeks:1,unit:'a week'},
   fortnight:{label:'Fortnightly',every:'Every Fortnight',weeks:2,unit:'a fortnight'},
   month:{label:'Monthly',every:'Every Month',weeks:4,unit:'a month'},
+  sixmonths:{label:'Every 6 Months',every:'Every 6 Months',weeks:26,unit:'every 6 months'},
   quarter:{label:'Quarterly',every:'Every Quarter',weeks:13,unit:'a quarter'},
   year:{label:'Yearly',every:'Every Year',weeks:52,unit:'a year'}
 };
-const YP_BILL_FREQ_CHOICES=['week','fortnight','month','year'];
+const YP_BILL_FREQ_CHOICES=['week','fortnight','month','sixmonths','year'];
 const YP_BILL_EXP_NAMES={
   transport:'Transport and Fuel',rego:'Car Registration (Rego)',carins:'Car Insurance',
   phone:'Phone',internet:'Internet',power:'Electricity',gaswater:'Gas and Water',
@@ -222,6 +223,7 @@ function ypBillAddPeriod(iso,freq,dueDay){
   if(freq==='fortnight'){d.setDate(d.getDate()+14);return ypBillFormatDate(d);}
   let months=0;
   if(freq==='month')months=1;
+  else if(freq==='sixmonths')months=6;
   else if(freq==='quarter')months=3;
   else if(freq==='year')months=12;
   else {d.setDate(d.getDate()+7);return ypBillFormatDate(d);}
@@ -331,13 +333,13 @@ function ypBillsSyncFromExpenses(){
     if(!(amt>0)){
       if(prev&&prev.source==='expense'&&!prev.dueDate&&prev.dueWeek==null&&!prev.remind)delete store.items[id];
       else if(prev&&prev.source==='expense'){
-        ypBillsUpsert({id,source:'expense',kind:'bill',name:YP_BILL_EXP_NAMES[k]||row[2]||k,amount:0,freq:ypBillsFreqOfExpense(k,ex),notifyType:'billDue'},{keepFreq:true});
+        ypBillsUpsert({id,source:'expense',kind:'bill',name:YP_BILL_EXP_NAMES[k]||row[2]||k,amount:0,freq:ypBillsFreqOfExpense(k,ex),notifyType:'billDue'},{keepFreq:true,keepAmount:!!(prev&&prev.amountUser)});
       }
       return;
     }
     const freq=ypBillsFreqOfExpense(k,ex);
     const name=YP_BILL_EXP_NAMES[k]||row[2]||k;
-    ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:Math.round(amt),freq,notifyType:'billDue'},{keepFreq:true});
+    ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:Math.round(amt),freq,notifyType:'billDue'},{keepFreq:true,keepAmount:!!(prev&&prev.amountUser)});
   });
 }
 function ypBillsSyncFromCars(){
@@ -489,11 +491,6 @@ function ypBillsDueLabel(it){
   return 'Next Due Date: Not Set';
 }
 function ypBillsAmountFreq(it){
-  if(it&&it.source==='expense'){
-    const k=String(it.id||'').replace(/^exp:/,'');
-    const ex=(typeof G!=='undefined'&&G&&G.income&&G.income.ex)||null;
-    return ypBillsFreqOfExpense(k,ex);
-  }
   if(ypBillsIsGame(it))return 'year';
   return (it&&YP_BILL_FREQ[it.freq])?it.freq:'month';
 }
@@ -545,10 +542,13 @@ html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{bac
 .yp-bill-remind{display:flex;align-items:center;gap:12px;min-height:44px}
 .yp-bill-remind>span{flex:1;font:700 14px/1.3 Inter,system-ui,sans-serif;color:#14213d}
 .yp-bill-leads{display:flex;flex-wrap:nowrap;align-items:stretch;gap:6px;margin:0 0 2px;width:100%}
-.yp-bill-leads button,.yp-bill-freq button{appearance:none;-webkit-appearance:none;min-height:44px;padding:0 12px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:700 13px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-.yp-bill-leads button{flex:1 1 0;min-width:0;padding:6px 4px;font:700 11px/1.2 Inter,system-ui,sans-serif;white-space:normal;text-align:center}
-.yp-bill-leads button[aria-pressed=true],.yp-bill-freq button[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}
-.yp-bill-freq{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 8px}
+.yp-bill-leads button{appearance:none;-webkit-appearance:none;flex:1 1 0;min-width:0;min-height:44px;padding:6px 4px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:700 11px/1.2 Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation;white-space:normal;text-align:center}
+.yp-bill-leads button[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}
+.yp-bill-amt-row{display:flex;align-items:stretch;gap:8px;width:100%;margin:0 0 2px}
+.yp-bill-amt-field{position:relative;flex:0 1 38%;min-width:96px}
+.yp-bill-amt-prefix{position:absolute;left:10px;top:50%;transform:translateY(-50%);font:700 16px Inter,system-ui,sans-serif;color:#0b2545;pointer-events:none}
+.yp-bill-amt-static{flex:0 1 38%;min-width:96px;display:flex;align-items:center;margin:0;padding:0 2px;font:700 14px/1.3 Inter,system-ui,sans-serif;color:#3d4a63}
+.yp-bill-freq-select{appearance:none;-webkit-appearance:none;flex:1 1 62%;min-width:0;min-height:44px;box-sizing:border-box;padding:8px 28px 8px 10px;border:2px solid #0b2545;border-radius:12px;background-color:#fff;background-image:linear-gradient(45deg,transparent 50%,#0b2545 50%),linear-gradient(135deg,#0b2545 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;color:#0b2545;font:700 16px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
 .yp-bill-date-wrap{position:relative;width:100%}
 .yp-bill-date-ph{display:none;position:absolute;left:12px;top:50%;transform:translateY(-50%);font:600 16px Inter,system-ui,sans-serif;color:#5a6780;pointer-events:none;z-index:1}
 .yp-bill-date-wrap.yp-bill-date-empty .yp-bill-date-ph{display:block}
@@ -561,6 +561,7 @@ html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{bac
 .yp-bill-date-wrap.yp-bill-date-empty input[type=date]::-webkit-datetime-edit-year-field{color:transparent;-webkit-text-fill-color:transparent}
 #yp-bills label.yp-bill-date-lab,#yp-bill-due label.yp-bill-date-lab{display:block;margin:8px 0 6px;font:700 14px Inter,system-ui,sans-serif;color:#0b2545}
 #yp-bills input[type=date],#yp-bills input[type=text],#yp-bills input[type=number],#yp-bill-due input[type=date]{box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border:2px solid #0b2545;border-radius:12px;font:600 16px Inter,system-ui,sans-serif;color:#14213d;background:#fff}
+#yp-bills .yp-bill-amt-field input{width:100%;padding-left:28px}
 #yp-bill-due .yp-bill-week-hint{margin:8px 0 16px;font:600 13px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-notify-ask .yp-approval{margin:0 0 16px;font:800 17px/1.3 Inter,system-ui,sans-serif;color:#0b2545;text-align:left}
 #yp-notify-ask .yp-step-foot,#yp-bill-due .yp-step-foot{display:flex;flex-direction:column;gap:12px;margin-top:8px}
@@ -646,24 +647,58 @@ function ypBillsPaintList(){
     list.appendChild(gameWrap);
   }
 }
-function ypBillsFreqButtons(draft,onPick,id){
-  const wrap=document.createElement('div');
-  wrap.className='yp-bill-freq';
-  if(id)wrap.id=id;
+function ypBillsFreqSelect(draft,onPick,id){
+  const sel=document.createElement('select');
+  sel.className='yp-bill-freq-select';
+  if(id)sel.id=id;
+  sel.setAttribute('aria-label','How Often');
   const keys=YP_BILL_FREQ_CHOICES.slice();
-  if(draft&&draft.freq==='quarter')keys.push('quarter');
+  if(draft&&draft.freq==='quarter'&&keys.indexOf('quarter')<0)keys.push('quarter');
   keys.forEach(k=>{
-    const b=document.createElement('button');
-    b.type='button';
-    b.textContent=(YP_BILL_FREQ[k]&&YP_BILL_FREQ[k].every)||YP_BILL_FREQ[k].label;
-    b.setAttribute('aria-pressed',draft.freq===k?'true':'false');
-    b.addEventListener('click',()=>{
-      draft.freq=k;
-      [...wrap.querySelectorAll('button')].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
-      if(onPick)onPick(k);
-    });
-    wrap.appendChild(b);
+    const o=document.createElement('option');
+    o.value=k;
+    o.textContent=(YP_BILL_FREQ[k]&&YP_BILL_FREQ[k].every)||YP_BILL_FREQ[k].label;
+    sel.appendChild(o);
   });
+  sel.value=YP_BILL_FREQ[draft&&draft.freq]?draft.freq:'month';
+  sel.addEventListener('change',()=>{
+    const k=sel.value;
+    if(!YP_BILL_FREQ[k])return;
+    if(draft)draft.freq=k;
+    if(onPick)onPick(k);
+  });
+  return sel;
+}
+function ypBillsAmtPeriodRow(opts){
+  opts=opts||{};
+  const wrap=document.createElement('div');
+  wrap.className='yp-bill-amt-row';
+  if(opts.editable){
+    const field=document.createElement('div');
+    field.className='yp-bill-amt-field';
+    const prefix=document.createElement('span');
+    prefix.className='yp-bill-amt-prefix';
+    prefix.textContent='$';
+    const input=document.createElement('input');
+    input.type='text';
+    input.inputMode='decimal';
+    input.autocomplete='off';
+    input.placeholder='0';
+    input.value=opts.amount==null||opts.amount===''?'':String(opts.amount);
+    input.setAttribute('aria-label','Amount');
+    if(opts.amountId)input.id=opts.amountId;
+    const commit=()=>{if(opts.onAmount)opts.onAmount(input.value);};
+    input.addEventListener('change',commit);
+    input.addEventListener('blur',commit);
+    field.append(prefix,input);
+    wrap.appendChild(field);
+  }else{
+    const stat=document.createElement('div');
+    stat.className='yp-bill-amt yp-bill-amt-static';
+    stat.textContent=opts.amountText||'';
+    wrap.appendChild(stat);
+  }
+  wrap.appendChild(ypBillsFreqSelect({freq:opts.freq},opts.onFreq,opts.freqId));
   return wrap;
 }
 function ypBillsDateField(labText,value,id,onChange){
@@ -709,13 +744,6 @@ function ypBillsAddRow(){
   name.placeholder='Item Name';
   name.value=ypBillsAddDraft.name||'';
   name.addEventListener('input',()=>{ypBillsAddDraft.name=name.value;});
-  const amt=document.createElement('input');
-  amt.type='text';
-  amt.inputMode='decimal';
-  amt.autocomplete='off';
-  amt.placeholder='0';
-  amt.value=ypBillsAddDraft.amount||'';
-  amt.addEventListener('input',()=>{ypBillsAddDraft.amount=amt.value;});
   if(!YP_BILL_FREQ[ypBillsAddDraft.freq])ypBillsAddDraft.freq='month';
   const dateParts=ypBillsDateField('Next Due Date',ypBillsAddDraft.dueDate,'yp-bill-new-date',v=>{ypBillsAddDraft.dueDate=v;});
   const date=dateParts[2];
@@ -726,7 +754,8 @@ function ypBillsAddRow(){
   saveBtn.textContent='Save';
   saveBtn.addEventListener('click',()=>{
     ypBillsAddDraft.name=name.value;
-    ypBillsAddDraft.amount=amt.value;
+    const liveAmt=document.getElementById('yp-bill-new-amount');
+    if(liveAmt)ypBillsAddDraft.amount=liveAmt.value;
     ypBillsAddDraft.dueDate=date.value;
     const rec=ypBillsAddCustom(ypBillsAddDraft);
     if(!rec){
@@ -736,11 +765,19 @@ function ypBillsAddRow(){
     ypBillsAddDraft={name:'',amount:'',freq:'month',dueDate:''};
     ypBillsSave();
   });
-  row.append(title,...ypBillsField('Item Name',name,'yp-bill-new-name'),...ypBillsField('Amount',amt,'yp-bill-new-amount'));
-  const flab=document.createElement('label');
-  flab.className='yp-bill-date-lab';
-  flab.textContent='How Often';
-  row.append(flab,ypBillsFreqButtons(ypBillsAddDraft,null,'yp-bill-new-freq'),dateParts[0],dateParts[1],saveBtn);
+  const alab=document.createElement('label');
+  alab.className='yp-bill-date-lab';
+  alab.textContent='Amount';
+  const amtRow=ypBillsAmtPeriodRow({
+    editable:true,
+    amount:ypBillsAddDraft.amount,
+    freq:ypBillsAddDraft.freq,
+    amountId:'yp-bill-new-amount',
+    freqId:'yp-bill-new-freq',
+    onAmount:v=>{ypBillsAddDraft.amount=v;},
+    onFreq:k=>{ypBillsAddDraft.freq=k;}
+  });
+  row.append(title,...ypBillsField('Item Name',name,'yp-bill-new-name'),alab,amtRow,dateParts[0],dateParts[1],saveBtn);
   return row;
 }
 function ypBillsEditRow(it){
@@ -760,13 +797,6 @@ function ypBillsEditRow(it){
   name.placeholder='Item Name';
   name.value=draft.name;
   name.addEventListener('input',()=>{draft.name=name.value;});
-  const amt=document.createElement('input');
-  amt.type='text';
-  amt.inputMode='decimal';
-  amt.autocomplete='off';
-  amt.placeholder='0';
-  amt.value=draft.amount;
-  amt.addEventListener('input',()=>{draft.amount=amt.value;});
   const dateParts=ypBillsDateField('Next Due Date',draft.dueDate,ypBillsDomId('yp-bill-edit-date',it.id),v=>{draft.dueDate=v;});
   const date=dateParts[2];
   const saveBtn=document.createElement('button');
@@ -776,7 +806,8 @@ function ypBillsEditRow(it){
   saveBtn.id=ypBillsDomId('yp-bill-edit-save',it.id);
   saveBtn.addEventListener('click',()=>{
     draft.name=name.value;
-    draft.amount=amt.value;
+    const liveAmt=document.getElementById(ypBillsDomId('yp-bill-edit-amount',it.id));
+    if(liveAmt)draft.amount=liveAmt.value;
     draft.dueDate=date.value;
     if(!ypBillsUpdateCustom(it.id,draft)){name.focus();return;}
     ypBillsEditId=null;ypBillsEditDraft=null;
@@ -787,11 +818,19 @@ function ypBillsEditRow(it){
   cancel.className='hwx';
   cancel.textContent='Cancel';
   cancel.addEventListener('click',()=>{ypBillsEditId=null;ypBillsEditDraft=null;ypBillsPaintList();});
-  row.append(title,...ypBillsField('Item Name',name,ypBillsDomId('yp-bill-edit-name',it.id)),...ypBillsField('Amount',amt,ypBillsDomId('yp-bill-edit-amount',it.id)));
-  const flab=document.createElement('label');
-  flab.className='yp-bill-date-lab';
-  flab.textContent='How Often';
-  row.append(flab,ypBillsFreqButtons(draft,null,ypBillsDomId('yp-bill-edit-freq',it.id)),dateParts[0],dateParts[1],saveBtn,cancel);
+  const alab=document.createElement('label');
+  alab.className='yp-bill-date-lab';
+  alab.textContent='Amount';
+  const amtRow=ypBillsAmtPeriodRow({
+    editable:true,
+    amount:draft.amount,
+    freq:draft.freq,
+    amountId:ypBillsDomId('yp-bill-edit-amount',it.id),
+    freqId:ypBillsDomId('yp-bill-edit-freq',it.id),
+    onAmount:v=>{draft.amount=v;},
+    onFreq:k=>{draft.freq=k;}
+  });
+  row.append(title,...ypBillsField('Item Name',name,ypBillsDomId('yp-bill-edit-name',it.id)),alab,amtRow,dateParts[0],dateParts[1],saveBtn,cancel);
   return row;
 }
 function ypBillsRow(it){
@@ -803,16 +842,26 @@ function ypBillsRow(it){
   const name=document.createElement('div');
   name.className='yp-bill-name';
   name.textContent=it.name||'Bill';
-  const amt=document.createElement('div');
-  amt.className='yp-bill-amt';
-  amt.textContent=ypBillsAmountText(it);
-  row.append(name,amt);
+  row.appendChild(name);
   const dateParts=ypBillsDateField('Next Due Date',it.dueDate,ypBillsDomId('yp-bill-date',it.id),v=>ypBillsSetDate(it.id,v));
-  const flab=document.createElement('label');
-  flab.className='yp-bill-date-lab';
-  flab.textContent='How Often';
-  const freqId=ypBillsDomId('yp-bill-freq',it.id);
-  row.append(dateParts[0],dateParts[1],flab,ypBillsFreqButtons({freq:YP_BILL_FREQ[it.freq]?it.freq:'month'},k=>ypBillsSetFreq(it.id,k),freqId));
+  const editable=!ypBillsIsGame(it);
+  if(editable){
+    const alab=document.createElement('label');
+    alab.className='yp-bill-date-lab';
+    alab.textContent='Amount';
+    row.appendChild(alab);
+  }
+  row.appendChild(ypBillsAmtPeriodRow({
+    editable:editable,
+    amount:it.amount,
+    amountText:ypBillsAmountText(it),
+    freq:YP_BILL_FREQ[it.freq]?it.freq:(editable?'month':'year'),
+    amountId:editable?ypBillsDomId('yp-bill-amount',it.id):null,
+    freqId:ypBillsDomId('yp-bill-freq',it.id),
+    onAmount:editable?(v=>ypBillsSetAmount(it.id,v)):null,
+    onFreq:k=>ypBillsSetFreq(it.id,k)
+  }));
+  row.append(dateParts[0],dateParts[1]);
   const remind=document.createElement('div');
   remind.className='yp-bill-remind';
   const lab=document.createElement('span');
@@ -883,18 +932,44 @@ function ypBillsSetLead(id,lead){
   it.lead=lead;
   ypBillsSave();
 }
+function ypBillsPersist(){
+  if(typeof save==='function')save();
+  ypNotifySync();
+  if(typeof ypSyncFeed==='function')ypSyncFeed();
+  if(typeof hud==='function')hud();
+}
+function ypBillsSetAmount(id,raw){
+  const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
+  const amount=ypBillsReadAmount(raw);
+  if(it.amount===amount)return;
+  it.amount=amount;
+  it.amountUser=1;
+  ypBillsPersist();
+}
 function ypBillsSetFreq(id,freq){
   const it=ypBillsGet(id);if(!it||!YP_BILL_FREQ[freq])return;
+  if(it.freq===freq){it.freqUser=1;return;}
   it.freq=freq;
   it.freqUser=1;
-  ypBillsSave();
+  /* Persist without rebuilding the list so an iPhone select stays open on first tap. */
+  ypBillsPersist();
 }
 function ypBillsSetDate(id,iso){
   const it=ypBillsGet(id);if(!it)return;
   const d=ypBillParseDate(iso);
-  it.dueDate=d?iso:null;
-  it.dueDay=d?d.getDate():null;
-  ypBillsSave();
+  const next=d?iso:null;
+  const day=d?d.getDate():null;
+  const prev=ypBillParseDate(it.dueDate)?it.dueDate:null;
+  if(prev===next){
+    if(next&&day&&it.dueDay!==day)it.dueDay=day;
+    return;
+  }
+  it.dueDate=next;
+  it.dueDay=day;
+  /* Persist without rebuilding the Bills list. iOS Safari often fires change
+     when an empty date input is first opened; a repaint would replace the
+     field and close the native picker. */
+  ypBillsPersist();
 }
 function ypBillsNewCustomId(){
   const store=ypBillsStore();if(!store)return 'custom:1';
@@ -916,7 +991,7 @@ function ypBillsAddCustom(fields){
   const rec=ypBillsUpsert({
     id,source:'custom',kind:'bill',name,amount,freq,dueDate,notifyType:'billDue'
   });
-  if(rec){rec.freqUser=1;if(dueDay)rec.dueDay=dueDay;}
+  if(rec){rec.freqUser=1;rec.amountUser=1;if(dueDay)rec.dueDay=dueDay;}
   if(rec){
     if(dueDate&&typeof rec.remind!=='boolean')rec.remind=true;
     if(dueDate&&!rec.remind&&rec.choice==null)rec.remind=true;
@@ -930,7 +1005,7 @@ function ypBillsUpdateCustom(id,fields){
   if(!name)return null;
   it.name=name;
   it.amount=ypBillsReadAmount(fields&&fields.amount);
-  if(YP_BILL_FREQ[fields&&fields.freq]){it.freq=fields.freq;it.freqUser=1;}
+  if(YP_BILL_FREQ[fields&&fields.freq]){it.freq=fields.freq;it.freqUser=1;}it.amountUser=1;
   const d=ypBillParseDate(fields&&fields.dueDate);
   it.dueDate=d?fields.dueDate:null;
   it.dueDay=d?d.getDate():null;
