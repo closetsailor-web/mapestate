@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates123";
+window.YP_BUILD="dates124";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1298,6 +1298,11 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 #yp-living .yp-money-out .yp-money-title,#bankbox .yp-money-out .yp-money-title{color:#b8410a}
 #yp-living .yp-money-in .yp-money-val,#bankbox .yp-money-in .yp-money-val{color:#1a478a}
 #yp-living .yp-money-out .yp-money-val,#bankbox .yp-money-out .yp-money-val{color:#b8410a}
+#yp-living[data-yp-fin=snap] .yp-money-save .yp-money-title,#yp-living[data-yp-fin=snap] .yp-money-save .yp-money-val{color:#0d7a3e}
+#yp-living[data-yp-fin=snap] .yp-money-short .yp-money-title,#yp-living[data-yp-fin=snap] .yp-money-short .yp-money-val{color:#c4231a}
+#yp-living[data-yp-fin=snap] .yp-money-plain .yp-money-toggle{cursor:default}
+#yp-living[data-yp-fin=snap] .yp-reality-plan{margin:0 0 12px;padding:0;font:500 14px/1.4 Inter,system-ui,sans-serif;color:#b8410a;text-align:left}
+
 #bankbox .yp-flow-list{margin:0}
 #bankbox .yp-money-group,#bankbox .yp-flow>div{text-align:left}
 #yp-living .yp-money-due .yp-money-val{color:#14213d}
@@ -1319,6 +1324,9 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 .yp-week-save .yp-week-title,.yp-week-save .yp-week-val{color:#0d7a3e}
 .yp-week-short .yp-week-title,.yp-week-short .yp-week-val{color:#c4231a}
 .yp-week-result .yp-hint{display:block;font:500 12px Inter,system-ui,sans-serif;color:#5a6780}
+.yp-week-result-stack{flex-wrap:wrap;align-items:center}
+.yp-week-result-stack .yp-hint{flex:1 0 100%;margin-top:4px}
+
 
 
 
@@ -4157,9 +4165,9 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates123"></script>
-<script src="player-market.js?v=dates123"></script>
-<script src="car-yard.js?v=dates123"></script>
-<script src="overture-layer.js?v=dates123"></script>
-<script src="yp-notify.js?v=dates123"></script>
+<script src="map-preview.js?v=dates124"></script>
+<script src="player-market.js?v=dates124"></script>
+<script src="car-yard.js?v=dates124"></script>
+<script src="overture-layer.js?v=dates124"></script>
+<script src="yp-notify.js?v=dates124"></script>
 </body></html>
