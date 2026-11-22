@@ -525,6 +525,26 @@ function ypBillsWeekLabel(){
   const name=String(next.name||'Bill').split(' · ')[0];
   return name+' · '+when;
 }
+function ypBillsDueThisWeek(){
+  ypBillsEnsure();
+  const week=(typeof G!=='undefined'&&G)?(G.week|0):0;
+  let start=NaN,end=NaN;
+  try{if(typeof ypWallAt==='function'&&typeof CFG!=='undefined'){start=ypWallAt(week*CFG.weekMs);end=ypWallAt((week+1)*CFG.weekMs);}}catch(e){}
+  const due=ypBillsRealList().filter(it=>{
+    const d=ypBillParseDate(it.dueDate);
+    if(!d)return false;
+    if(Number.isFinite(start)&&Number.isFinite(end)){
+      const day0=new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+      const day1=day0+24*60*60*1000;
+      return day0<end&&day1>start;
+    }
+    const w=typeof ypBillWeekFromDate==='function'?ypBillWeekFromDate(it.dueDate):NaN;
+    return Number.isFinite(w)&&((w|0)===week);
+  });
+  due.sort((a,b)=>String(a.dueDate||'').localeCompare(String(b.dueDate||'')));
+  return due;
+}
+
 
 /* ----- Bills card and editors ----- */
 let ypBillsAddDraft={name:'',amount:'',freq:'month',dueDate:''};
@@ -1393,7 +1413,7 @@ function ypNotifyHook(){
     ypOpenCarCongrats.__ypNotify=1;
   }
   if(typeof ypWeekCard==='function'&&!ypWeekCard.__ypNotify){
-    /* source also patches the Bills Due row; this keeps the label fresh if an older copy loads */
+    /* bills due this week still feed the Real Week card via ypBillsDueThisWeek / ypBillsFeedKey */
     ypWeekCard.__ypNotify=1;
   }
   if(typeof ypFeedStateKey==='function'&&!ypFeedStateKey.__ypNotify){
