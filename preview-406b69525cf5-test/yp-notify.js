@@ -1421,49 +1421,6 @@ function ypNotifyHook(){
       };
       UI.settings.__ypNotify=1;
     }
-    if(typeof UI.menu==='function'&&!UI.menu.__ypNotify){
-      const orig=UI.menu.bind(UI);
-      UI.menu=function(show){
-        const r=orig.apply(this,arguments);
-        try{
-          if(show===false)return r;
-          const pane=document.querySelector('#drawer .pane');
-          if(pane&&!pane.querySelector('#yp-menu-bills')){
-            const after=pane.querySelector('#yp-menu-car-yard')||pane.querySelector('.mi:nth-child(6)');
-            const btn=document.createElement('button');
-            btn.className='mi';
-            btn.id='yp-menu-bills';
-            btn.onclick=()=>{UI.menu(false);ypOpenBills();};
-            const iconHtml=(typeof icon==='function'?`<span class="mic">${icon('bell')}</span>`:'');
-            btn.innerHTML=iconHtml+'<span>Bills<small>Due dates and reminders</small></span>';
-            if(after&&after.parentNode)after.parentNode.insertBefore(btn,after.nextSibling);
-            else pane.appendChild(btn);
-          }
-        }catch(e){}
-        return r;
-      };
-      UI.menu.__ypNotify=1;
-    }
-  }
-  if(typeof ypOpenFinancesMenu==='function'&&!ypOpenFinancesMenu.__ypNotify){
-    const orig=ypOpenFinancesMenu;
-    ypOpenFinancesMenu=function(anchor){
-      /* replaced in map-preview.js; keep a fallback insert */
-      const r=orig.apply(this,arguments);
-      try{
-        const menu=document.getElementById('yp-section-menu');
-        if(menu&&!menu.querySelector('[data-label="Bills"]')){
-          const card=menu.querySelector('.card');
-          const notch=card&&card.querySelector('.yp-notch');
-          const btn=document.createElement('button');
-          btn.type='button';btn.className='yp-menu-item';btn.dataset.label='Bills';btn.id='yp-menu-fin-bills';btn.textContent='Bills';
-          btn.addEventListener('click',()=>{if(typeof ypHideDialog==='function')ypHideDialog(menu);else menu.remove();ypOpenBills();});
-          if(card){if(notch)card.insertBefore(btn,notch);else card.appendChild(btn);}
-        }
-      }catch(e){}
-      return r;
-    };
-    ypOpenFinancesMenu.__ypNotify=1;
   }
 }
 

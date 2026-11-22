@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates118";
+window.YP_BUILD="dates119";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1368,7 +1368,7 @@ html.yp-preview nav button{transition:none}
 #yp-property-menu .yp-menu-item+.yp-menu-item,#yp-section-menu .yp-menu-item+.yp-menu-item{border-top:1px solid rgba(20,33,61,.08)}
 #yp-property-menu .card,#yp-section-menu .card{padding-bottom:20px}#yp-property-menu .yp-card-head+.yp-menu-item,#yp-section-menu .yp-card-head+.yp-menu-item{margin-top:12px}
 #yp-property-menu .yp-menu-item:active,#yp-section-menu .yp-menu-item:active{background:#fff4ec}
-#yp-property-menu .yp-notch,#yp-section-menu .yp-notch{position:absolute;bottom:-7px;width:14px;height:8px;background:#fff;clip-path:polygon(0 0,100% 0,50% 100%)}
+#yp-property-menu .yp-notch,#yp-section-menu .yp-notch{position:absolute;bottom:-7px;width:14px;height:8px;background:#fff;clip-path:polygon(0 0,100% 0,50% 100%)}#yp-property-menu .card.yp-menu-from-header,#yp-section-menu .card.yp-menu-from-header{padding-top:20px;padding-bottom:12px;max-height:calc(100dvh - var(--sat) - 90px);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch}#yp-property-menu .yp-menu-from-header .yp-notch,#yp-section-menu .yp-menu-from-header .yp-notch{bottom:auto;top:-7px;clip-path:polygon(50% 0,0 100%,100% 100%)}
 html.yp-preview .maplibregl-ctrl-bottom-right{bottom:calc(var(--sab) + 76px)!important;left:8px!important;right:auto!important;max-width:calc(100vw - 72px)}
 html.yp-preview .maplibregl-ctrl-attrib{font-size:10px;line-height:1.3;background:rgba(255,255,255,.92);border-radius:8px}
 html.yp-menu-open .maplibregl-ctrl-bottom-right{display:none!important}
@@ -1597,7 +1597,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 #yp-sale-detail .yp-listing-media{height:112px;margin:0 0 8px}
 #yp-sale-detail .yp-step-foot{padding-top:8px;box-shadow:none;border-top:1px solid rgba(20,33,61,.06)}
 
-/* dates99: Game Budget and Reality Snap scroll inside the card on iOS so Weekly Savings and Close are reachable */#yp-living[data-yp-fin] .card.yp-listing{overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;max-height:calc(var(--vh,1dvh)*100 - 256px);max-height:calc(100dvh - 256px - var(--sat,0px) - var(--sab,0px))}#yp-living[data-yp-fin] .card.yp-listing>.yp-close{flex:none}
+/* dates99: Game Budget and Reality Check scroll inside the card on iOS so Weekly Savings and Close are reachable */#yp-living[data-yp-fin] .card.yp-listing{overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;max-height:calc(var(--vh,1dvh)*100 - 256px);max-height:calc(100dvh - 256px - var(--sat,0px) - var(--sab,0px))}#yp-living[data-yp-fin] .card.yp-listing>.yp-close{flex:none}
 /* dates99: the same 12px gap between stacked action buttons on every card */#yp-sale-detail .yp-step-foot>button+button,#yp-rent-detail .yp-step-foot>button+button,#yp-apply-review .yp-step-foot button+button,#yp-board-request .yp-step-foot button+button,.yp-market-steps .yp-step-foot button+button,#yp-boarder-view .yp-step-foot button+button,#yp-car-detail .yp-step-foot>button+button,#yp-car-pay .yp-step-foot>button+button,#yp-car-finance .yp-step-foot>button+button,#yp-car-bought .yp-step-foot>button+button{margin-top:12px!important}#yp-sale-detail .yp-own-actions{row-gap:12px;margin-bottom:12px}
 </style>
 </head><body>
@@ -2929,7 +2929,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     <div class="row seg" id="inc_view">${seg}</div><div class="fin" id="inc_conv"></div>
     <label for="inc_pay_btn" style="display:block;margin:8px 0 2px">Payments and other income</label><div id="inc_pay_wrap"></div><div class="sub" style="white-space:normal">Pick any payments or other money you receive. Amounts are a week.</div><div id="inc_pay_amts"></div>
     <label for="inc_cs" style="display:block;margin:8px 0 2px">Child Support Received</label><input type="text" inputmode="decimal" autocomplete="off" id="inc_cs" value="${i.childSupport?Math.round(i.childSupport*100)/100:''}" placeholder="0" oninput="incLive()"><div class="sub">Type the amount you get each week. Leave blank if none.</div>
-    <div class="pcard"><button class="lrow" id="exp_edit" onclick="UI.expenses('income')"><span>My expenses: <b id="inc_expv">${fmt(i.exp)}</b> a month</span><i>›</i></button></div>
+    <div class="pcard"><button class="lrow" id="exp_edit" onclick="UI.expenses('income')"><span>Budget: <b id="inc_expv">${fmt(i.exp)}</b> a month</span><i>›</i></button></div>
     <details${i.debt?' open':''}><summary style="margin-top:10px"><b>More options</b> (optional)</summary>
     <label for="inc_debt" style="display:block;margin:8px 0 2px">Monthly repayments on other debts (car, cards, HECS)</label><input type="text" inputmode="decimal" autocomplete="off" id="inc_debt" value="${i.debt?Math.round(i.debt*100)/100:''}" placeholder="0" oninput="incLive()"></details>
     <div id="inc_err" role="alert" style="color:#c0672b;font-size:14px;min-height:16px;margin-top:6px"></div><div class="fin" id="inc_out"></div>
@@ -2938,15 +2938,15 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     ${!G.homeChosen&&h!=='home'?(G.clockOn?'<div class="sub">No home right now. You pay $200 a week board until you find a place to live.</div>':'<div class="sub">No home chosen yet.</div>'):h==='rent'?`<div class="sub">Home: <b>${esc(ensureLease().addr)}</b></div><select id="lease_m" ${leaseLock()?'disabled':''} onchange="setLease(this.value)" style="width:100%;font-size:16px;padding:8px;margin-top:4px">${leaseOpts()}</select><div class="sub">${fmt(ensureLease().rent)}/wk. ${leaseLock()?esc(leaseMsg()):'Your lease has ended, so you can choose a new lease length.'}</div>`:h==='family'?`<div id="board_ro" style="font-size:13px">Board you pay each week: <b>${fmt(boardWk())}</b> <small>(set by the room owner)</small></div><div class="sub">No rent. You still pay the same living costs as everyone ($400 a week) on top of your board.</div>`:`<div class="sub">You live in ${esc(pname(myHome()))}, so you pay no rent.</div>`}
     </div><div class="pcard"><div class="ctitle">Deposit goal</div><div class="fgrid"><select id="goal_pct" onchange="moneyLive()" style="flex:1;font-size:16px;padding:8px">${[.05,.1,.2].map(x=>`<option value="${x}"${x===g.g.pct?' selected':''}>${x*100}% deposit</option>`).join('')}</select><select id="goal_sub" onchange="document.getElementById('goal_price').value='';moneyLive()" style="flex:2;font-size:16px;padding:8px">${BUNDY_SUBS.map((R,k)=>`<option value="${k}"${k===g.k?' selected':''}>${esc(R.n)} median ${fmtK(R.med)}</option>`).join('')}</select></div>
     <input type="number" id="goal_price" min="0" inputmode="decimal" placeholder="Or type a price" value="${g.g.price||''}" oninput="moneyLive()"></div>
-    <div id="sitbox">${situation()}</div><div class="fin" id="mon_out"></div><div class="pcard"><div class="ctitle">Income and expenses</div><button class="lrow" onclick="UI.income()"><span>Change my income</span><i>›</i></button><button class="lrow" id="prof_exp" onclick="UI.expenses('profile')"><span>My expenses: ${fmt(INC().exp)} a month</span><i>›</i></button></div>${UI.bankBox()}<button class="btn sec" onclick="UI.el.classList.remove('open');document.body.classList.remove('sheetopen')">Close</button>`);this.el.style.zIndex=60;moneyLive();},
-  expenses(from){expOpen(from);this.open(`<h2>My Expenses</h2><div class="sub">Leave a box empty if it's $0. Don't include rent, because that comes from where you live in the game.</div>
+    <div id="sitbox">${situation()}</div><div class="fin" id="mon_out"></div><div class="pcard"><div class="ctitle">Income and Budget</div><button class="lrow" onclick="UI.income()"><span>Change my income</span><i>›</i></button><button class="lrow" id="prof_exp" onclick="UI.expenses('profile')"><span>Budget: ${fmt(INC().exp)} a month</span><i>›</i></button></div>${UI.bankBox()}<button class="btn sec" onclick="UI.el.classList.remove('open');document.body.classList.remove('sheetopen')">Close</button>`);this.el.style.zIndex=60;moneyLive();},
+  expenses(from){expOpen(from);this.open(`<h2>Budget</h2><div class="sub">Leave a box empty if it's $0. Don't include rent, because that comes from where you live in the game.</div>
     <div class="row seg" id="exp_unit">${['week','fortnight','month'].map(u=>`<button type="button" data-u="${u}" onclick="expUnitSet('${u}')">${u==='week'?'Weekly':u==='fortnight'?'Fortnightly':'Monthly'}</button>`).join('')}</div>
     <div class="sub">Rego and car insurance are often paid once a year. Tick "I pay this yearly" and the game works out the amount.</div>
     <div id="exp_rows"></div><div id="exp_err" role="alert" style="color:#c0672b;font-size:13px"></div><div class="sub" id="exp_note" style="color:#b35a10"></div>
-    <div class="cta"><div id="exp_tot"></div><button class="btn buy" id="exp_save" onclick="expSave()">Save expenses</button></div><button class="btn sec" onclick="expFrom==='income'?UI.income():expFrom==='profile'?UI.money():closeSheet()">Cancel</button>`);this.el.style.zIndex=60;expRender();},
+    <div class="cta"><div id="exp_tot"></div><button class="btn buy" id="exp_save" onclick="expSave()">Save Budget</button></div><button class="btn sec" onclick="expFrom==='income'?UI.income():expFrom==='profile'?UI.money():closeSheet()">Cancel</button>`);this.el.style.zIndex=60;expRender();},
   menu(show=true){const d=document.getElementById('drawer');if(!show){d.classList.remove('open');return;}const it=(i,t,s,f,id)=>`<button class="mi"${id?` id="${id}"`:''} onclick="UI.menu(false);${f}"><span class="mic">${icon(i)}</span><span>${t}<small>${s}</small></span></button>`,b=bank();
     d.querySelector('.pane').innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:4px 8px 14px"><div class="logo" style="font-size:22px"><i class="ypico big" aria-hidden="true"></i>Your <b>Plot</b><small style="cursor:pointer;text-decoration:underline" onclick="UI.menu(false);UI.profile()">@${esc(uname())}, my profile</small></div></div>
-      ${it('wallet','My money (profile)','Where I live, savings, deposit goal, borrowing',"UI.money()")}${it('dollar','Inheritance','Release inheritance into your bank',"UI.shop()",'yp-menu-coins')}${it('wallet','My income','Pay band, expenses, '+fmtK(SALARY)+'/yr',"UI.income()")}${it('dollar','My expenses','Weekly and monthly living costs',"UI.expenses('profile')")}${it('bank','Lenders & borrowing power','Borrowing power '+fmtK(b.power),"UI.lenders()")}${it('globe','Cities','Switch city, '+esc(CITIES.find(c=>c.id===G.cur).name),"picker()")}${it('car','Car Yard','Browse cars for sale',"typeof ypOpenCarYard==='function'&&ypOpenCarYard()",'yp-menu-car-yard')}
+      ${it('wallet','My money (profile)','Where I live, savings, deposit goal, borrowing',"UI.money()")}${it('dollar','Inheritance','Release inheritance into your bank',"UI.shop()",'yp-menu-coins')}${it('home','Real Life','Your real income, bills and budget',"ypOpenRealLifeMenu()",'yp-menu-real-life')}${it('bank','Lenders & borrowing power','Borrowing power '+fmtK(b.power),"UI.lenders()")}${it('globe','Cities','Switch city, '+esc(CITIES.find(c=>c.id===G.cur).name),"picker()")}${it('car','Car Yard','Browse cars for sale',"typeof ypOpenCarYard==='function'&&ypOpenCarYard()",'yp-menu-car-yard')}
       ${it('trophy','Leaderboard','Total property value',"UI.lead()")}${it('layers','Colour key','What the map colours mean',"UI.key()")}
       ${it('save','Saves & backups','Export, import, restore',"UI.saves()")}${it('lock','Privacy','Usernames only, no tracking',"UI.privacy()")}
       ${it('sliders','Settings','Dark mode, motion',"UI.settings()")}${it('help','Help','How it works, Replay tutorial',"UI.help()")}${typeof ypSkipWeekAllowed==='function'&&ypSkipWeekAllowed()?it('clock','Skip A Week','Test only. Go to the start of the next game week.',"ypSkipAWeek()",'yp-menu-skip-week'):''}${it('alert','Start over / new player','Wipes this game and shows the welcome screens',"startOver()")}
@@ -3121,7 +3121,7 @@ const TUT=[
  {k:'name',t:"Hi, I'm Reno! Pick a player name to start.",tg:'#uname',done:()=>G.started},
  {k:'home',t:()=>UI.el.classList.contains('open')&&document.getElementById('livebox')?'Choose how you live here: pick a lease and tap Rent, tap Live here (no rent), or buy it below.':'Tap a house on the map to choose your home. Or search a street.',setup:()=>startView(),tg:()=>UI.el.classList.contains('open')&&document.getElementById('livebox')?'#livebox':'#rsearch',done:()=>G.homeChosen,btn:['Search a street',()=>focusSearch()]},
  {k:'income',t:'Your pay band. Pick it, then tap Save below.',setup:()=>{UI.income();},tg:'#inc_band',done:()=>G.income&&G.income.set},
- {k:'expenses',t:'What do you spend? Fill in what you know, then tap Save expenses.',setup:()=>{UI.expenses();},tg:'#exp_tot',done:()=>G.income&&G.income.expSet},
+ {k:'expenses',t:'What do you spend? Fill in what you know, then tap Save Budget.',setup:()=>{UI.expenses();},tg:'#exp_tot',done:()=>G.income&&G.income.expSet},
  {k:'tap',t:'Tap any house on the map to see its rent and costs.',setup:()=>{closeSheet();window._tp=0;},done:()=>window._tp&&UI.el.classList.contains('open'),btn:['Show me one',()=>{const id=tutHouse();if(id)go(id);}]},
  {k:'explain',t:'Rent comes in, costs go out. What is left is your weekly cash flow.',tg:'.sheet details',btn:['Next']},
  {k:'week',t:()=>ypClockSentence()+' Wait, or skip ahead one week.',setup:()=>{closeSheet();G.tut.w0=G.week;},done:()=>G.week>G.tut.w0,btn:['Skip ahead a week',()=>{weekTick();hud();save();}]},
@@ -3248,7 +3248,7 @@ function borrowSimple(b,pre){const a=ypBankAfford(b),L=(t,v,c)=>`<div><dt>${t}</
   const box=a.power>0?`<div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(a.power)}</b><div class="bsub">What the bank would lend after its own checks, not your leftover money. Repayments would be about <b id="${pre}_rep">${fmt(a.repay)}</b> a month</div></div>`:`<div class="banswer banswer-no"><div>The bank can't lend you more right now</div><div class="bsub">You spend more than you earn each week. Cut costs or earn more, for example rent out a property, then check again.</div></div>`;
   return `<dl class="yp-flow">${L('Income',fmt(a.income))}${L('Expenses',fmt(a.expenses))}${L('Left over',fmt(a.left),a.left<0?'color:#c0672b':'color:#1a478a')}</dl>
   ${box}`;}
-/* v24 expenses editor: one screen, used from the tutorial, My income and Profile */
+/* v24 budget editor: one screen, used from the tutorial, Income and Profile */
 let expDraft=null,expFrom=null;
 const expTypical=()=>{const t=Math.round(hemMo(SALARY+INC().partner)),o=Object.fromEntries(EXP_CATS.map(([k,,p])=>[k,Math.round(t*p)]));o.other+=t-expTotal(o);return o;}; // total equals the existing HEM-style figure exactly
 /* v27 expenses editor = the approved prototype's 13 rows. Empty by default. Stored in G.income.ex {freq,items,yearly}; G.income.exp = monthly total. */
@@ -3262,7 +3262,7 @@ const eFmtIn=v=>v==null?'':String(Math.round(v*100)/100);
 function expRender(){const d=expDraft;document.getElementById('exp_rows').innerHTML=EXP13.map(([k,ic,l,yr])=>`<div class="er13" id="er_${k}"><span class="mic">${icon(ic)}</span><label for="exp_${k}">${l}</label><div class="money13"><span>$</span><input id="exp_${k}" data-k="${k}" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="${eFmtIn(d.items[k])}" oninput="expSet('${k}',this.value)"></div>${yr?`<label class="yr13"><input type="checkbox" id="expy_${k}" ${d.yearly[k]?'checked':''} onchange="expYearly('${k}',this.checked)"> I pay this yearly<span id="expyh_${k}"></span></label>`:''}<div class="emsg13" id="em_${k}"></div></div>`).join('');
   document.querySelectorAll('#exp_unit button').forEach(b=>b.className=b.dataset.u===d.freq?'on':'');expTot();}
 function expTot(){const d=expDraft,tot=expTotal(d),mo=expMonthly(d),hem=hemMo(SALARY);
-  document.getElementById('exp_tot').innerHTML=`<span>Your expenses</span><b id="exp_total">${fmt(tot)} ${EFL[d.freq]}</b>`;
+  document.getElementById('exp_tot').innerHTML=`<span>Your Budget</span><b id="exp_total">${fmt(tot)} ${EFL[d.freq]}</b>`;
   document.getElementById('exp_note').textContent=mo<hem?`Banks assume at least ${fmt(econv(hem,'month',d.freq))} ${EFL[d.freq]} for someone on your pay, so they will use that.`:'';
   EXP13.forEach(([k,,,yr])=>{if(!yr)return;const e=document.getElementById('expyh_'+k);if(e)e.innerHTML=!d.yearly[k]?'':d.items[k]?` · that's <b>${fmt(econv(d.items[k],'year',d.freq))} ${EFL[d.freq]}</b>`:' (type the yearly amount)';});}
 function expSet(k,v){const r=eParse(v),em=document.getElementById('em_'+k),row=document.getElementById('er_'+k);let msg=r.e||'';if(!msg&&r.v!=null&&econv(r.v,expDraft.yearly[k]?'year':expDraft.freq,'year')>1e6)msg="That's over $1 million a year. Check the number.";
@@ -3270,7 +3270,7 @@ function expSet(k,v){const r=eParse(v),em=document.getElementById('em_'+k),row=d
 function expYearly(k,on){const d=expDraft;if(d.items[k]!=null)d.items[k]=on?econv(d.items[k],d.freq,'year'):econv(d.items[k],'year',d.freq);d.yearly[k]=on;expRender();}
 function expUnitSet(u){const d=expDraft;if(d.freq===u)return;EXP13.forEach(([k])=>{if(d.items[k]!=null&&!d.yearly[k])d.items[k]=econv(d.items[k],d.freq,u);});d.freq=u;expRender();}
 function expSave(){if(document.querySelector('.er13.bad')){document.getElementById('exp_err').textContent='Fix the red boxes first.';return false;}
-  const i=INC(),mo=Math.round(expMonthly(expDraft)*100)/100;G.income=Object.assign({},G.income||i,{ex:JSON.parse(JSON.stringify(expDraft)),exp:mo,set:(G.income&&G.income.set)||false,expSet:1});save();hud();toast('Expenses saved: '+fmt(mo)+' a month');const back=expFrom;expFrom=null;if(back==='income')UI.income();else if(back==='profile')UI.money();else closeSheet();return true;}
+  const i=INC(),mo=Math.round(expMonthly(expDraft)*100)/100;G.income=Object.assign({},G.income||i,{ex:JSON.parse(JSON.stringify(expDraft)),exp:mo,set:(G.income&&G.income.set)||false,expSet:1});save();hud();toast('Budget saved: '+fmt(mo)+' a month');const back=expFrom;expFrom=null;if(back==='income')UI.income();else if(back==='profile')UI.money();else closeSheet();return true;}
 function expOpen(from){expFrom=from||null;const x=G.income&&G.income.ex;expDraft=x&&x.items?JSON.parse(JSON.stringify(x)):{freq:{weekly:'week',fortnightly:'fortnight',monthly:'month'}[INC().view]||'week',items:{},yearly:{}};if(!x&&INC().exp)expDraft.items.other=econv(INC().exp,'month',expDraft.freq);}
 function tip(k,t){return;/* v45: all tips removed */G.tips=G.tips||{seen:{},off:0};if(G.tips.off||tutOn()||G.tips.seen[k])return;G.tips.seen[k]=1;save();setTimeout(()=>{coach(t,[['Got it',coachHide,'go'],['Turn tips off',()=>{G.tips.off=1;save();coachHide();}]],'bot');setTimeout(()=>{if(!tutOn()&&document.getElementById('coachtxt').textContent===t)coachHide();},14000);},300);}
 function chooseCity(cid){for(const k of Object.keys(CS))if(k!==cid){delete CS[k];localStorage.removeItem(cityKey(k));}G.cur=cid;ensureCity(cid);G.started=1;G.visited=[cid];save();MapView.load(GEN[cid]);hud();onboard(3);}
@@ -4158,9 +4158,9 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates118"></script>
-<script src="player-market.js?v=dates118"></script>
-<script src="car-yard.js?v=dates118"></script>
-<script src="overture-layer.js?v=dates118"></script>
-<script src="yp-notify.js?v=dates118"></script>
+<script src="map-preview.js?v=dates119"></script>
+<script src="player-market.js?v=dates119"></script>
+<script src="car-yard.js?v=dates119"></script>
+<script src="overture-layer.js?v=dates119"></script>
+<script src="yp-notify.js?v=dates119"></script>
 </body></html>
