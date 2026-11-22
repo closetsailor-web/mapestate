@@ -345,19 +345,12 @@ function ypBillsSyncFromExpenses(){
   const cats=(typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13:Object.keys(YP_BILL_EXP_NAMES).map(k=>[k]);
   cats.forEach(row=>{
     const k=row[0];
-    const amt=+items[k]||0;
+    const amt=Math.max(0,Math.round(+items[k]||0));
     const id='exp:'+k;
     const prev=store.items[id];
-    if(!(amt>0)){
-      if(prev&&prev.source==='expense'&&!prev.dueDate&&prev.dueWeek==null&&!prev.remind)delete store.items[id];
-      else if(prev&&prev.source==='expense'){
-        ypBillsUpsert({id,source:'expense',kind:'bill',name:YP_BILL_EXP_NAMES[k]||row[2]||k,amount:0,freq:ypBillsFreqOfExpense(k,ex),notifyType:'billDue'},{keepFreq:true,keepAmount:!!(prev&&prev.amountUser)});
-      }
-      return;
-    }
     const freq=ypBillsFreqOfExpense(k,ex);
     const name=YP_BILL_EXP_NAMES[k]||row[2]||k;
-    ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:Math.round(amt),freq,notifyType:'billDue'},{keepFreq:true,keepAmount:!!(prev&&prev.amountUser)});
+    ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:amt,freq,notifyType:'billDue'},{keepFreq:true,keepAmount:!!(prev&&prev.amountUser)});
   });
 }
 function ypBillsSyncFromCars(){
@@ -623,7 +616,7 @@ html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{bac
 .yp-bill-due:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
 .yp-bill-due-static{margin:4px 0 0;padding:8px 0;color:#3d4a63;font:700 14px/1.35 Inter,system-ui,sans-serif;text-align:left}
 .yp-bill-remind{display:flex;align-items:center;gap:12px;min-height:44px}
-.yp-bill-remind>span{flex:1;font:700 14px/1.3 Inter,system-ui,sans-serif;color:#14213d}
+.yp-bill-remind>span{flex:1;font:500 14px/1.3 Inter,system-ui,sans-serif;color:#14213d}
 .yp-bill-leads{display:flex;flex-wrap:nowrap;align-items:stretch;gap:6px;margin:0 0 2px;width:100%}
 .yp-bill-leads button{appearance:none;-webkit-appearance:none;flex:1 1 0;min-width:0;min-height:44px;padding:6px 4px;border:1px solid #e3e8f0;border-radius:999px;background:#fff;color:#14213d;font:500 13px/1.2 Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation;white-space:normal;text-align:center}
 .yp-bill-leads button[aria-pressed=true]{background:#b8410a;border-color:#b8410a;color:#fff}
@@ -631,7 +624,7 @@ html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{bac
 .yp-bill-amt-field{position:relative;flex:0 1 38%;min-width:96px}
 .yp-bill-amt-prefix{position:absolute;left:10px;top:50%;transform:translateY(-50%);font:500 15px Inter,system-ui,sans-serif;color:#5d6b82;pointer-events:none}
 .yp-bill-amt-static{flex:0 1 38%;min-width:96px;display:flex;align-items:center;margin:0;padding:0 2px;font:700 14px/1.3 Inter,system-ui,sans-serif;color:#3d4a63}
-.yp-bill-freq-select{appearance:none;-webkit-appearance:none;flex:1 1 62%;min-width:0;min-height:44px;box-sizing:border-box;padding:8px 28px 8px 10px;border:1px solid #e3e8f0;border-radius:12px;background-color:#fff;background-image:linear-gradient(45deg,transparent 50%,#5d6b82 50%),linear-gradient(135deg,#5d6b82 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;color:#14213d;font:400 14px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
+.yp-bill-freq-select{appearance:none;-webkit-appearance:none;flex:1 1 62%;min-width:0;min-height:44px;box-sizing:border-box;padding:8px 28px 8px 10px;border:1px solid #e3e8f0;border-radius:12px;background-color:#fff;background-image:linear-gradient(45deg,transparent 50%,#5d6b82 50%),linear-gradient(135deg,#5d6b82 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 12px) 50%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;color:#14213d;font:400 16px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
 .yp-bill-date-wrap{position:relative;width:100%}
 .yp-bill-date-ph{display:none;position:absolute;left:12px;top:50%;transform:translateY(-50%);font:400 16px Inter,system-ui,sans-serif;color:#5a6780;pointer-events:none;z-index:1}
 .yp-bill-date-wrap.yp-bill-date-empty .yp-bill-date-ph{display:block}
@@ -642,7 +635,7 @@ html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{bac
 .yp-bill-date-wrap.yp-bill-date-empty input[type=date]::-webkit-datetime-edit-month-field,
 .yp-bill-date-wrap.yp-bill-date-empty input[type=date]::-webkit-datetime-edit-day-field,
 .yp-bill-date-wrap.yp-bill-date-empty input[type=date]::-webkit-datetime-edit-year-field{color:transparent;-webkit-text-fill-color:transparent}
-#yp-bills label.yp-bill-date-lab,#yp-bill-due label.yp-bill-date-lab{display:block;margin:8px 0 6px;font:700 14px Inter,system-ui,sans-serif;color:#0b2545}
+#yp-bills label.yp-bill-date-lab,#yp-bill-due label.yp-bill-date-lab{display:block;margin:8px 0 6px;font:500 14px Inter,system-ui,sans-serif;color:#0b2545}
 #yp-bills input[type=date],#yp-bills input[type=text],#yp-bills input[type=number],#yp-bill-due input[type=date]{box-sizing:border-box;width:100%;min-height:44px;padding:8px 10px;border:1px solid #e3e8f0;border-radius:12px;font:400 16px Inter,system-ui,sans-serif;color:#14213d;background:#fff}
 #yp-bills .yp-bill-amt-field input{width:100%;padding-left:28px}
 #yp-bill-due .yp-bill-week-hint{margin:8px 0 16px;font:600 13px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}
