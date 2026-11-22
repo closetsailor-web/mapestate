@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates119";
+window.YP_BUILD="dates120";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -2915,14 +2915,6 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     <div class="fin">Nickname (shown to others; use a nickname, not your real name): <input type="text" id="uname" maxlength="16" value="${esc(uname())}"><button class="btn sec" onclick="setUname()">Save username</button></div>
     <button class="btn sec" onclick="UI.privacy()">🔒 Privacy</button><button class="btn sec" onclick="UI.saves()">💾 Save, export &amp; restore</button><button class="btn sec" onclick="resetGame()">Reset game</button>`);},
   mine(){const b=typeof ypOwnedPropertyBlocks==='function'?ypOwnedPropertyBlocks():{n:0,html:'<p class="yp-empty-msg">You Don\'t Own Any Properties</p>'};this.open(`<h2>My Properties${b.n?` (${b.n})`:''}</h2><div class="yp-own-sheet">${b.html}</div>`);},
-  key(){const sw=(c,o={})=>`<span style="display:inline-block;width:22px;height:14px;border-radius:3px;vertical-align:middle;margin-right:8px;background:${c};border:${o.b||'1px solid rgba(18,36,63,.25)'}"></span>`;
-    const it=(c,t,o)=>`<div style="padding:3px 0;font-size:13.5px">${sw(c,o)}${t}</div>`;
-    this.open(`<h2>🗺️ Map Key</h2><div style="columns:2;column-gap:14px">
-      <b style="font-size:12px;color:#4d6890">PROPERTY TYPES</b>${Object.values(TYPES).map(t=>it(t.col,t.label)).join('')}
-      <b style="font-size:12px;color:#4d6890">OWNERSHIP</b>${it('#f9a35c','Yours (large orange dot when zoomed out)')}${it('#ffd2ad','Selected',{b:'3px solid #f47b20'})}${RIVALS.map(r=>it(shade(r.color,.3),esc(r.name)+' <span class="tag">AI</span>')).join('')}${it('#f9a35c','Yours, settling or for sale',{b:'2px dashed #b35a10'})}
-      <b style="font-size:12px;color:#4d6890">AREAS</b>${it(mix(TYPES.house.col,LOCKGREY,LOCKMIX),'Locked street (faded type colour, dashed)',{b:'2px dashed #738db3'})}${it('#c5d0e0','Future land release',{b:'2px dashed #90a5c3'})}${it('#f5cdb3','Beach')}${it('#9fd3ec','Ocean / river / marina')}${it('#9ab5dd','Park')}
-      <div style="padding:3px 0;font-size:13.5px"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1a6fb0;border:1px solid #fff;margin:0 14px 0 6px"></span>Waterfront or water view (premium)</div></div>
-      <div class="sub">🏷️ button: jumps to the nearest street with lots for sale (open, unowned, not vacant). Tap again for the next one.<br>Lot colours show the property type. Blue = house, lilac = unit, peach = shop. Faded, dashed lots are on streets not released yet. Owned lots are coloured by owner instead. Tap any lot for details.</div>`);},
   income(){const i=INC(),vw=i.view,seg=['weekly','fortnightly','monthly'].map(k=>`<button type="button" data-v="${k}" class="${k===vw?'on':''}" onclick="incView('${k}')">${k[0].toUpperCase()+k.slice(1)}</button>`).join('');
     this.open(`<h2>My Income</h2><div class="sub">Everyone in the game is paid $100,000 a year. Pick your real yearly pay before tax so we can show how you'd go with it.</div>
     <label for="inc_band" style="display:block;margin:8px 0 2px">Yearly income (before tax)</label><select id="inc_band" onchange="incLive()">${PAY_BANDS.map((b,k)=>`<option value="${k}"${k===i.band?' selected':''}>${bandLabel(k)}</option>`).join('')}</select>
@@ -2944,11 +2936,10 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     <div class="sub">Rego and car insurance are often paid once a year. Tick "I pay this yearly" and the game works out the amount.</div>
     <div id="exp_rows"></div><div id="exp_err" role="alert" style="color:#c0672b;font-size:13px"></div><div class="sub" id="exp_note" style="color:#b35a10"></div>
     <div class="cta"><div id="exp_tot"></div><button class="btn buy" id="exp_save" onclick="expSave()">Save Budget</button></div><button class="btn sec" onclick="expFrom==='income'?UI.income():expFrom==='profile'?UI.money():closeSheet()">Cancel</button>`);this.el.style.zIndex=60;expRender();},
-  menu(show=true){const d=document.getElementById('drawer');if(!show){d.classList.remove('open');return;}const it=(i,t,s,f,id)=>`<button class="mi"${id?` id="${id}"`:''} onclick="UI.menu(false);${f}"><span class="mic">${icon(i)}</span><span>${t}<small>${s}</small></span></button>`,b=bank();
+  menu(show=true){const d=document.getElementById('drawer');if(!show){d.classList.remove('open');return;}const it=(i,t,s,f,id)=>`<button class="mi"${id?` id="${id}"`:''} onclick="UI.menu(false);${f}"><span class="mic">${icon(i)}</span><span>${t}<small>${s}</small></span></button>`;
     d.querySelector('.pane').innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:4px 8px 14px"><div class="logo" style="font-size:22px"><i class="ypico big" aria-hidden="true"></i>Your <b>Plot</b><small style="cursor:pointer;text-decoration:underline" onclick="UI.menu(false);UI.profile()">@${esc(uname())}, my profile</small></div></div>
-      ${it('wallet','My money (profile)','Where I live, savings, deposit goal, borrowing',"UI.money()")}${it('dollar','Inheritance','Release inheritance into your bank',"UI.shop()",'yp-menu-coins')}${it('home','Real Life','Your real income, bills and budget',"ypOpenRealLifeMenu()",'yp-menu-real-life')}${it('bank','Lenders & borrowing power','Borrowing power '+fmtK(b.power),"UI.lenders()")}${it('globe','Cities','Switch city, '+esc(CITIES.find(c=>c.id===G.cur).name),"picker()")}${it('car','Car Yard','Browse cars for sale',"typeof ypOpenCarYard==='function'&&ypOpenCarYard()",'yp-menu-car-yard')}
-      ${it('trophy','Leaderboard','Total property value',"UI.lead()")}${it('layers','Colour key','What the map colours mean',"UI.key()")}
-      ${it('save','Saves & backups','Export, import, restore',"UI.saves()")}${it('lock','Privacy','Usernames only, no tracking',"UI.privacy()")}
+      ${it('dollar','Inheritance','Release inheritance into your bank',"UI.shop()",'yp-menu-coins')}${it('home','Real Life','Your real income, bills and budget',"ypOpenRealLifeMenu()",'yp-menu-real-life')}${it('car','Car Yard','Browse cars for sale',"typeof ypOpenCarYard==='function'&&ypOpenCarYard()",'yp-menu-car-yard')}
+      ${it('lock','Privacy','Usernames only, no tracking',"UI.privacy()")}
       ${it('sliders','Settings','Dark mode, motion',"UI.settings()")}${it('help','Help','How it works, Replay tutorial',"UI.help()")}${typeof ypSkipWeekAllowed==='function'&&ypSkipWeekAllowed()?it('clock','Skip A Week','Test only. Go to the start of the next game week.',"ypSkipAWeek()",'yp-menu-skip-week'):''}${it('alert','Start over / new player','Wipes this game and shows the welcome screens',"startOver()")}
       <div class="sub" style="padding:14px 12px 0">${GEN[G.cur].osm?'Bundaberg coast & water data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL).':''} Game ${gdate(G.week)}.</div>`;
     d.querySelector('.pane').insertAdjacentHTML('beforeend',`<div class="buildid" id="buildid_menu" style="padding:10px 12px 18px;font-size:11px;color:#5a6780">Test build ${TEST_BUILD_ID}</div>`);d.classList.add('open');},
@@ -4158,9 +4149,9 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates119"></script>
-<script src="player-market.js?v=dates119"></script>
-<script src="car-yard.js?v=dates119"></script>
-<script src="overture-layer.js?v=dates119"></script>
-<script src="yp-notify.js?v=dates119"></script>
+<script src="map-preview.js?v=dates120"></script>
+<script src="player-market.js?v=dates120"></script>
+<script src="car-yard.js?v=dates120"></script>
+<script src="overture-layer.js?v=dates120"></script>
+<script src="yp-notify.js?v=dates120"></script>
 </body></html>
