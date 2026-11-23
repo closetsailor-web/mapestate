@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates126";
+window.YP_BUILD="dates127";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -3317,7 +3317,7 @@ function ypRestorePlaceName(){if(!G||G.placeName)return;try{const o=JSON.parse(l
 function ypRentalTown(rental){if(!rental)return '';if(typeof ypDisplaySuburb==='function'){const shown=ypDisplaySuburb(rental);if(shown&&shown!=='Unknown suburb')return shown;}const raw=rental.locality||rental.placeLabel||'';let name=String(raw).trim();if(name.includes(','))name=name.split(',')[0].trim();if(name&&!/\d/.test(name))return name;const key=String(rental.suburbKey||(String(rental.id||'').split(':')[1])||'');const word=key.split(' ').filter(Boolean)[0]||'';return word?word.charAt(0).toUpperCase()+word.slice(1):'';}
 function ypBeginConfirmedTenancy(rental){if(!G)return;rental=rental||ypActiveTenancy();if(!rental)return;const place=ypRentalTown(rental);if(place)G.placeName=place;const months=typeof ypChosenLeaseMonths==='function'?ypChosenLeaseMonths(rental):(LEASE_WKS[rental&&rental.leaseMonths]?+rental.leaseMonths:(LEASE_WKS[G.statusLease]?G.statusLease:12));const signWeek=G.week|0;const rentStart=typeof ypLeaseRentStartWeek==='function'?ypLeaseRentStartWeek(signWeek):signWeek;const start=rental&&rental.startWeek!=null&&Number.isFinite(+rental.startWeek)?(+rental.startWeek|0):rentStart;const end=typeof ypLeaseEndWeek==='function'?ypLeaseEndWeek(start,months):start+(LEASE_WKS[months]||52);const starting=!G.homeChosen&&!G.clockOn;G.housing='rent';G.homeChosen=1;G.clockOn=1;if(starting)G.acc=0;const leaseId=rental.footprintId||rental.id;if(!G.lease||G.lease.broken||G.lease.id!==leaseId)G.lease={id:leaseId,addr:place||rental.placeLabel||rental.locality||'Your rental',rent:Math.round(+rental.weeklyRent||0),months,start,end,m2m:0};if(G.tut){G.tut.home=1;G.tut.done=1;}}
 function ypResumeTenancyClock(){if(!G||G.homeChosen)return;if(ypActiveTenancy())ypBeginConfirmedTenancy();}
-roomMigrate();ypMigrateSavedClock();ypRestorePlaceName();ypResumeTenancyClock();if(!G.started)G.last=Date.now();{window.__ypCatch={income:0,expense:0};const c0=G.cash,n=advance(Date.now()-G.last);save();hud();if(n>1)window.__ypAway={n,cash:G.cash-c0,income:window.__ypCatch.income,expense:window.__ypCatch.expense};}
+roomMigrate();ypMigrateSavedClock();ypRestorePlaceName();ypResumeTenancyClock();if(!G.started)G.last=Date.now();window.__ypPendingAwayLast=+G.last||Date.now();
 checkReleases();
 {const h=UI.help;UI.help=function(){const r=h.apply(this,arguments);UI.body.insertAdjacentHTML('beforeend',`<div class="buildid" id="buildid_help" style="padding:12px 0 4px;font-size:11px;color:#5a6780">Test build ${TEST_BUILD_ID}</div>`);return r;};}
 let CLK=Date.now();function clockStep(){const t=Date.now(),dt=Math.max(0,Math.min(t-CLK,CFG.weekMs*CFG.offlineCapWeeks));CLK=t;let n=0;const c0=G.cash;window.__ypCatch={income:0,expense:0};try{n=advance(dt);}catch(err){console.warn('advance',err);}try{if(typeof ypSyncSample==='function')ypSyncSample();}catch(err){console.warn('ypSyncSample',err);}try{if(typeof ypSyncBuys==='function')ypSyncBuys();}catch(err){console.warn('ypSyncBuys',err);}try{if(typeof ypSyncCarHandover==='function')ypSyncCarHandover();}catch(err){console.warn('ypSyncCarHandover',err);}try{if(typeof ypTickMarket==='function')ypTickMarket();}catch(err){console.warn('ypTickMarket',err);}if(G.started&&G.statusPick&&!G.homeChosen&&!G.clockOn&&!window.__nohomeTip&&!document.getElementById('status')){if(typeof ypOpenClockStartCard==='function'&&ypOpenClockStartCard())window.__nohomeTip=1;}if(n>2&&G.started&&typeof ypShowAwayCard==='function')ypShowAwayCard(n,G.cash-c0,window.__ypCatch);try{if(n)save();}catch(err){}try{hud();}catch(err){}try{checkReleases();}catch(err){}}setInterval(clockStep,1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)clockStep();});window.addEventListener('pageshow',()=>clockStep());
@@ -4176,9 +4176,10 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates126"></script>
-<script src="player-market.js?v=dates126"></script>
-<script src="car-yard.js?v=dates126"></script>
-<script src="overture-layer.js?v=dates126"></script>
-<script src="yp-notify.js?v=dates126"></script>
+<script src="map-preview.js?v=dates127"></script>
+<script src="player-market.js?v=dates127"></script>
+<script src="car-yard.js?v=dates127"></script>
+<script src="overture-layer.js?v=dates127"></script>
+<script src="yp-notify.js?v=dates127"></script>
+<script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
