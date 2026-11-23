@@ -206,6 +206,38 @@ function ypBillDateLabel(iso){
   if(typeof ypRealDateLabel==='function')return ypRealDateLabel(+d);
   return d.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 }
+function ypBillOrdinalDay(n){
+  n=n|0;
+  const v=n%100;
+  const suf=(v>=11&&v<=13)?'th':(n%10===1?'st':n%10===2?'nd':n%10===3?'rd':'th');
+  return n+suf;
+}
+function ypBillWeekDateText(iso){
+  const d=typeof ypBillParseDate==='function'?ypBillParseDate(iso):null;
+  if(!d)return '';
+  const days=(typeof YP_DAYS!=='undefined'&&YP_DAYS)||['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const months=(typeof YP_MONTHS!=='undefined'&&YP_MONTHS)||['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()]+' '+ypBillOrdinalDay(d.getDate())+' '+months[d.getMonth()];
+}
+function ypBillHasAmount(it){
+  return !!(it&&it.amount!=null&&it.amount!==''&&+it.amount>0);
+}
+function ypBillWeekAmountText(it){
+  if(!ypBillHasAmount(it))return 'Not Set';
+  return typeof ypNotifyMoney==='function'?ypNotifyMoney(it.amount):(typeof ypMoneyText==='function'?ypMoneyText(Math.round(+it.amount)):('$'+Math.round(+it.amount)));
+}
+function ypBillWeekRightText(it){
+  it=it||{};
+  const iso=it.showDate||it.thisWeekDate||it.dueDate;
+  const when=ypBillWeekDateText(iso);
+  const amt=ypBillWeekAmountText(it);
+  const bits=[];
+  if(it.overdue)bits.push('Overdue');
+  if(when)bits.push(when);
+  bits.push(amt);
+  return bits.join(' ');
+}
+
 function ypBillLastDay(year,month){
   return new Date(+year, +month+1, 0).getDate();
 }

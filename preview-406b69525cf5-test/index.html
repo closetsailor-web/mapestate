@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates125";
+window.YP_BUILD="dates126";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1433,7 +1433,15 @@ html.yp-home #yp-feed:not([hidden]){display:block}
 .yp-listings-offer{border:0;background:none;padding:0;font:inherit;font-weight:700;color:#0a3a8c;cursor:pointer;text-align:right}
 #yp-feed .yp-listings-offer{min-height:0}
 .yp-week-bills-list{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:0}
-#yp-real-bills{color:#b8410a}#yp-real-bills .yp-week-pending-btn,#yp-real-bills-btn{color:#b8410a;white-space:normal;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+#yp-real-week .yp-week-bills-lab{grid-column:1/-1}
+#yp-real-week #yp-real-bills{grid-column:1/-1;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;text-align:left;color:#14213d}
+#yp-real-week #yp-real-bills .yp-week-pending-btn{align-self:flex-end;color:#0a3a8c;white-space:nowrap}
+#yp-real-week .yp-week-bills-list{align-items:stretch;gap:6px;width:100%}
+#yp-real-week .yp-week-bill-row{appearance:none;-webkit-appearance:none;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:start;width:100%;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;touch-action:manipulation}
+#yp-real-week .yp-week-bill-row:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
+#yp-real-week .yp-week-bill-name{min-width:0;margin:0;font:500 13px/1.4 Inter,system-ui,sans-serif;color:#5a6780;text-align:left;overflow-wrap:anywhere;word-break:break-word}
+#yp-real-week .yp-week-bill-meta{flex:none;margin:0;font:700 15px/1.4 Inter,system-ui,sans-serif;color:#14213d;text-align:right;white-space:nowrap}
+#yp-real-week .yp-week-bill-meta.yp-week-bill-overdue{color:#b8410a}
 #yp-game-week,#yp-real-week{box-sizing:border-box}
 
 .yp-week-pending-btn:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
@@ -4165,9 +4173,9 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates125"></script>
-<script src="player-market.js?v=dates125"></script>
-<script src="car-yard.js?v=dates125"></script>
-<script src="overture-layer.js?v=dates125"></script>
-<script src="yp-notify.js?v=dates125"></script>
+<script src="map-preview.js?v=dates126"></script>
+<script src="player-market.js?v=dates126"></script>
+<script src="car-yard.js?v=dates126"></script>
+<script src="overture-layer.js?v=dates126"></script>
+<script src="yp-notify.js?v=dates126"></script>
 </body></html>
