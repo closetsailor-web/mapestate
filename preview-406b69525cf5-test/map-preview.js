@@ -1778,7 +1778,11 @@ function ypRealWeekCard(){const card=document.createElement('section');card.clas
     const btn=document.createElement('button');btn.type='button';btn.className='yp-week-bill-row';if(i===0)btn.id='yp-real-bills-btn';
     const name=document.createElement('span');name.className='yp-week-bill-name';name.textContent=String(it.name||'Bill').split(' · ')[0];
     const meta=document.createElement('span');meta.className='yp-week-bill-meta'+(it.overdue?' yp-week-bill-overdue':'');
-    meta.textContent=typeof ypBillWeekRightText==='function'?ypBillWeekRightText(it):'';
+    const when=document.createElement('span');when.className='yp-week-bill-when';
+    when.textContent=typeof ypBillWeekWhenText==='function'?ypBillWeekWhenText(it):'';
+    const amt=document.createElement('span');amt.className='yp-week-bill-amt';
+    amt.textContent=typeof ypBillWeekAmountText==='function'?ypBillWeekAmountText(it):'';
+    meta.append(when,document.createTextNode(' '),amt);
     btn.append(name,meta);
     btn.addEventListener('click',openBills);
     list.appendChild(btn);

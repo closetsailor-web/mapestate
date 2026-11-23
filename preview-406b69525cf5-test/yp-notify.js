@@ -226,16 +226,20 @@ function ypBillWeekAmountText(it){
   if(!ypBillHasAmount(it))return 'Not Set';
   return typeof ypNotifyMoney==='function'?ypNotifyMoney(it.amount):(typeof ypMoneyText==='function'?ypMoneyText(Math.round(+it.amount)):('$'+Math.round(+it.amount)));
 }
-function ypBillWeekRightText(it){
+function ypBillWeekWhenText(it){
   it=it||{};
   const iso=it.showDate||it.thisWeekDate||it.dueDate;
   const when=ypBillWeekDateText(iso);
-  const amt=ypBillWeekAmountText(it);
   const bits=[];
   if(it.overdue)bits.push('Overdue');
   if(when)bits.push(when);
-  bits.push(amt);
   return bits.join(' ');
+}
+function ypBillWeekRightText(it){
+  it=it||{};
+  const when=ypBillWeekWhenText(it);
+  const amt=ypBillWeekAmountText(it);
+  return (when?(when+' '):'')+amt;
 }
 
 function ypBillLastDay(year,month){
