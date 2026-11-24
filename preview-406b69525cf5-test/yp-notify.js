@@ -478,6 +478,7 @@ function ypBillsEnsure(){
   ypBillsSyncFromCars();
   ypBillsClearGameReminders();
   ypBillsRollDues();
+  try{ypHabitsEnsure();}catch(e){}
   return ypBillsList();
 }
 function ypBillsRollDues(){
@@ -759,6 +760,309 @@ function ypBillsDueThisWeek(){
 
 
 
+
+/* ----- Weekly Money Check-in and On-Time Bills Streak ----- */
+function ypHabitsEnsure(){
+  const s=typeof ypBillsStore==='function'?ypBillsStore():null;
+  if(!s)return null;
+  if(!s.habits||typeof s.habits!=='object')s.habits={};
+  const cur=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
+  if(!ypBillParseDate(s.habits.anchorWeek))s.habits.anchorWeek=(cur&&cur.start)||(typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):'');
+  if(!s.habits.checkIns||typeof s.habits.checkIns!=='object')s.habits.checkIns={};
+  return s.habits;
+}
+function ypHabitsWeekStartOf(iso){
+  if(!ypBillParseDate(iso))return '';
+  const b=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.parse(iso+'T12:00:00+10:00')):null;
+  return (b&&b.start)||'';
+}
+function ypHabitsShiftWeek(start,weeks){
+  if(!ypBillParseDate(start))return '';
+  const ms=Date.parse(start+'T12:00:00+10:00')+(weeks||0)*7*86400000;
+  return typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(ms):'';
+}
+function ypHabitsPrevWeekBounds(ms){
+  const cur=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(ms==null?Date.now():ms):null;
+  if(!cur||!cur.start)return null;
+  const prevMs=Date.parse(cur.start+'T12:00:00+10:00')-7*86400000;
+  return typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(prevMs):null;
+}
+function ypHabitsWeekItems(start,end){
+  if(!ypBillParseDate(start)||!ypBillParseDate(end))return [];
+  const today=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):ypBillFormatDate(new Date());
+  const items=[];
+  (typeof ypBillsRealList==='function'?ypBillsRealList():[]).forEach(it=>{
+    (typeof ypBillsOccurrencesInRange==='function'?ypBillsOccurrencesInRange(it,start,end):[]).forEach(iso=>{
+      const row=typeof ypBillsOccRow==='function'?ypBillsOccRow(it,iso,today):Object.assign({},it,{occDate:iso,paid:typeof ypBillsIsPaid==='function'?ypBillsIsPaid(it.id,iso):false});
+      const info=typeof ypBillsPaidInfo==='function'?ypBillsPaidInfo(it.id,iso):null;
+      const paidDate=info&&ypBillParseDate(info.paidDate)?info.paidDate:'';
+      row.paidDate=paidDate;
+      row.onTime=!!(row.paid&&(!paidDate||paidDate<=iso));
+      row.late=!!(row.paid&&paidDate&&paidDate>iso);
+      items.push(row);
+    });
+  });
+  items.sort((a,b)=>String(a.occDate||'').localeCompare(String(b.occDate||''))||String(a.name||'').localeCompare(String(b.name||'')));
+  return items;
+}
+function ypHabitsWeekReview(start,end){
+  const items=ypHabitsWeekItems(start,end);
+  const due=items.length,onTime=items.filter(x=>x.onTime).length,paid=items.filter(x=>x.paid).length,late=items.filter(x=>x.late).length;
+  return {start,end,label:typeof ypBillsWeekRangeLabel==='function'?ypBillsWeekRangeLabel(start,end):'',items,due,paid,onTime,late,empty:!due,good:!!due&&onTime===due};
+}
+function ypHabitsCompletedWeeks(ms){
+  const now=ms==null?Date.now():ms;
+  const cur=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(now):null;
+  if(!cur)return [];
+  const habits=ypHabitsEnsure();
+  const from=ypBillParseDate(habits&&habits.anchorWeek)?habits.anchorWeek:(typeof ypBillsTrackFrom==='function'?ypBillsTrackFrom():cur.start);
+  const first=ypHabitsWeekStartOf(from)||cur.start;
+  const weeks=[];
+  let start=first,guard=0;
+  while(start&&start<cur.start&&guard++<260){
+    const end=ypHabitsShiftWeek(start,1);
+    const weekEnd=ypBillParseDate(end)?ypHabitsShiftWeek(end,-0):'';
+    const sun=ypBillParseDate(end)?ypBrisbaneYmd(Date.parse(end+'T12:00:00+10:00')-86400000):'';
+    weeks.push({start,end:sun||start});
+    const next=ypHabitsShiftWeek(start,1);
+    if(!next||next<=start)break;
+    start=next;
+  }
+  return weeks;
+}
+function ypHabitsStreakInfo(){
+  ypHabitsEnsure();
+  const weeks=ypHabitsCompletedWeeks();
+  let streak=0,freezes=2,toward=0;
+  const settled=[];
+  weeks.forEach(wb=>{
+    const st=ypHabitsWeekReview(wb.start,wb.end);
+    if(st.empty){settled.push(Object.assign({},st,{skipped:true,usedFreeze:false}));return;}
+    if(st.good){
+      streak+=1;toward+=1;
+      if(toward>=4){freezes=Math.min(2,freezes+1);toward=0;}
+      settled.push(Object.assign({},st,{usedFreeze:false}));
+      return;
+    }
+    if(streak>0&&freezes>0){
+      freezes-=1;
+      settled.push(Object.assign({},st,{usedFreeze:true}));
+      return;
+    }
+    streak=0;toward=0;
+    settled.push(Object.assign({},st,{reset:true,usedFreeze:false}));
+  });
+  return {streak,freezes,toward,maxFreezes:2,weeks:settled};
+}
+function ypHabitsStreakLabel(info){
+  info=info||ypHabitsStreakInfo();
+  const n=info.streak|0;
+  if(!n)return 'Not Started Yet';
+  const weeks=n===1?'1 Week':(n+' Weeks');
+  const f=info.freezes|0;
+  if(f>0)return weeks+' · '+f+' '+(f===1?'Freeze':'Freezes');
+  return weeks;
+}
+function ypHabitsStreakHint(info){
+  info=info||ypHabitsStreakInfo();
+  if(!(info.streak|0))return 'Your streak starts when every bill due in a week is paid on time.';
+  const f=info.freezes|0;
+  if(f>=2)return 'You have 2 freezes, so one missed week will not wipe this out.';
+  if(f===1)return 'You have 1 freeze left, so one missed week will not wipe this out.';
+  return 'Four weeks in a row with every bill paid on time will earn a freeze back.';
+}
+function ypHabitsBillsSummary(review){
+  if(!review||review.empty)return 'No bills were due last week.';
+  if(review.good)return 'Every bill due last week was paid on time.';
+  if(review.paid===review.due&&review.late){
+    const n=review.late;
+    return 'You paid every bill last week, and '+n+' '+(n===1?'was':'were')+' after the due date.';
+  }
+  return 'You paid '+review.onTime+' of '+review.due+' bills on time last week. Next week is a fresh start.';
+}
+function ypHabitsCheckInTarget(){
+  ypHabitsEnsure();
+  const prev=ypHabitsPrevWeekBounds();
+  const habits=ypHabitsEnsure();
+  if(!prev||!ypBillParseDate(prev.start)||!habits||!ypBillParseDate(habits.anchorWeek))return null;
+  if(prev.start<habits.anchorWeek)return null;
+  return prev;
+}
+function ypHabitsCheckInRecord(start){
+  const habits=ypHabitsEnsure();
+  if(!habits||!start)return null;
+  return habits.checkIns[start]||null;
+}
+function ypHabitsMarkCheckIn(start,extra){
+  const habits=ypHabitsEnsure();
+  if(!habits||!start)return null;
+  const rec=Object.assign({},habits.checkIns[start]||{},extra||{});
+  habits.checkIns[start]=rec;
+  if(typeof save==='function')save();
+  return rec;
+}
+function ypOpenMoneyCheckIn(week){
+  ypBillsInjectCss();
+  if(typeof ypBillsEnsure==='function')ypBillsEnsure();
+  const target=week&&ypBillParseDate(week.start)?week:ypHabitsCheckInTarget();
+  if(!target)return null;
+  const review=ypHabitsWeekReview(target.start,target.end);
+  if(typeof ypExclusive==='function')ypExclusive('yp-money-checkin');
+  if(typeof ypUseHome==='function')ypUseHome();
+  document.getElementById('yp-money-checkin')?.remove();
+  ypHabitsMarkCheckIn(target.start,{prompted:true});
+  const panel=document.createElement('div');
+  panel.id='yp-money-checkin';
+  panel.setAttribute('role','dialog');
+  panel.setAttribute('aria-labelledby','yp-money-checkin-title');
+  const card=document.createElement('div');
+  card.className='card yp-listing';
+  const shut=(opts)=>{
+    opts=opts||{};
+    if(opts.dismiss)ypHabitsMarkCheckIn(target.start,{dismissed:true});
+    panel.remove();
+    if(typeof ypUseHome==='function')ypUseHome();
+    if(typeof ypSyncFeed==='function')ypSyncFeed();
+  };
+  if(typeof ypCardHeader==='function')card.appendChild(ypCardHeader({title:'Weekly Money Check-in',titleId:'yp-money-checkin-title',id:'yp-money-checkin-x',onClose:()=>shut({dismiss:true})}));
+  else{const h=document.createElement('h2');h.id='yp-money-checkin-title';h.textContent='Weekly Money Check-in';card.appendChild(h);}
+  const hint=document.createElement('p');
+  hint.className='yp-pay-hint';
+  hint.id='yp-money-checkin-hint';
+  hint.textContent=review.label?('Here is a quick look at last week, '+review.label+'.'):'Here is a quick look at last week.';
+  card.appendChild(hint);
+  const billsSec=document.createElement('section');
+  billsSec.className='yp-pay-sec';
+  billsSec.id='yp-money-checkin-bills';
+  const billsTitle=document.createElement('h3');
+  billsTitle.className='yp-pay-title';
+  billsTitle.textContent="Last Week's Bills";
+  billsSec.appendChild(billsTitle);
+  const summary=document.createElement('p');
+  summary.className='yp-checkin-summary';
+  summary.id='yp-money-checkin-summary';
+  summary.textContent=ypHabitsBillsSummary(review);
+  billsSec.appendChild(summary);
+  if(review.items.length){
+    const list=document.createElement('div');
+    list.id='yp-money-checkin-list';
+    review.items.forEach((it,i)=>{
+      const row=document.createElement('div');
+      row.className='yp-checkin-row';
+      row.id='yp-money-checkin-row-'+i;
+      const name=document.createElement('div');
+      name.className='yp-checkin-name';
+      name.textContent=String(it.name||'Bill').split(' · ')[0];
+      const meta=document.createElement('div');
+      meta.className='yp-checkin-meta';
+      const when=document.createElement('div');
+      when.className='yp-checkin-when';
+      when.textContent=(typeof ypBillWeekDateText==='function'?ypBillWeekDateText(it.occDate):it.occDate)||'';
+      const amt=document.createElement('div');
+      amt.className='yp-checkin-amt';
+      amt.textContent=typeof ypBillWeekAmountText==='function'?ypBillWeekAmountText(it):(it.amount!=null?('$'+Math.round(+it.amount||0)):'');
+      meta.append(when,amt);
+      const mark=document.createElement('div');
+      mark.className='yp-checkin-mark';
+      mark.textContent=it.onTime?'Paid On Time':(it.late?'Paid After The Due Date':'Not Paid Yet');
+      row.append(name,meta,mark);
+      list.appendChild(row);
+    });
+    billsSec.appendChild(list);
+  }
+  card.appendChild(billsSec);
+  const bud=document.createElement('section');
+  bud.className='yp-pay-sec';
+  bud.id='yp-money-checkin-budget';
+  const budTitle=document.createElement('h3');
+  budTitle.className='yp-pay-title';
+  budTitle.id='yp-money-checkin-budget-title';
+  budTitle.textContent='Did You Stay In Your Budget?';
+  bud.appendChild(budTitle);
+  const budHint=document.createElement('p');
+  budHint.className='yp-pay-hint';
+  budHint.id='yp-money-checkin-budget-hint';
+  budHint.textContent='This is just for you. There is no right or wrong answer.';
+  bud.appendChild(budHint);
+  const actions=document.createElement('div');
+  actions.className='yp-checkin-actions';
+  const rec=ypHabitsCheckInRecord(target.start)||{};
+  const paintChosen=()=>{
+    const latest=ypHabitsCheckInRecord(target.start)||{};
+    yes.classList.toggle('yp-checkin-picked',latest.budget===true);
+    no.classList.toggle('yp-checkin-picked',latest.budget===false);
+    yes.setAttribute('aria-pressed',latest.budget===true?'true':'false');
+    no.setAttribute('aria-pressed',latest.budget===false?'true':'false');
+  };
+  const answer=(stayed)=>{
+    ypHabitsMarkCheckIn(target.start,{budget:!!stayed,done:true});
+    paintChosen();
+    shut({});
+  };
+  const yes=document.createElement('button');
+  yes.type='button';yes.className='hwb';yes.id='yp-money-checkin-yes';yes.textContent='Yes';
+  yes.addEventListener('click',e=>{e.preventDefault();answer(true);});
+  const no=document.createElement('button');
+  no.type='button';no.className='hwx';no.id='yp-money-checkin-no';no.textContent='No';
+  no.addEventListener('click',e=>{e.preventDefault();answer(false);});
+  actions.append(yes,no);
+  bud.appendChild(actions);
+  card.appendChild(bud);
+  if(rec.budget===true||rec.budget===false)paintChosen();
+  const close=document.createElement('button');
+  close.type='button';
+  close.className='yp-close';
+  close.id='yp-money-checkin-close';
+  close.textContent='Not Now';
+  close.addEventListener('click',()=>shut({dismiss:true}));
+  card.appendChild(close);
+  panel.appendChild(card);
+  document.body.appendChild(panel);
+  return panel;
+}
+let ypHabitsPromptTimer=0;
+function ypHabitsSchedulePrompt(){
+  if(ypHabitsPromptTimer)return;
+  ypHabitsPromptTimer=setTimeout(()=>{ypHabitsPromptTimer=0;try{ypHabitsMaybePrompt();}catch(e){}},500);
+}
+function ypHabitsMaybePrompt(){
+  if(typeof G==='undefined'||!G||!G.started||!G.homeChosen)return;
+  if(document.getElementById('flow'))return;
+  if(!document.documentElement.classList.contains('yp-home'))return;
+  if(document.getElementById('yp-money-checkin'))return;
+  if(document.getElementById('yp-notify-ask'))return;
+  if(document.getElementById('yp-apply-review'))return;
+  if(typeof ypOpenDialogs==='function'){
+    const open=ypOpenDialogs().filter(id=>id&&id!=='sheet'&&id!=='drawer');
+    if(open.length)return;
+  }
+  const target=ypHabitsCheckInTarget();
+  if(!target)return;
+  const rec=ypHabitsCheckInRecord(target.start);
+  if(rec&&(rec.prompted||rec.dismissed||rec.done))return;
+  ypOpenMoneyCheckIn(target);
+}
+function ypProcessStreakBlock(){
+  const info=ypHabitsStreakInfo();
+  const sec=document.createElement('section');
+  sec.className='yp-pay-sec';
+  sec.id='yp-process-streak';
+  const title=document.createElement('h3');
+  title.className='yp-pay-title';
+  title.textContent='On-Time Streak';
+  const val=document.createElement('p');
+  val.className='yp-streak-value';
+  val.id='yp-process-streak-value';
+  val.textContent=ypHabitsStreakLabel(info);
+  const hint=document.createElement('p');
+  hint.className='yp-pay-hint';
+  hint.id='yp-process-streak-hint';
+  hint.textContent=ypHabitsStreakHint(info);
+  sec.append(title,val,hint);
+  return sec;
+}
+
+
 /* ----- Bills card and editors ----- */
 let ypBillsAddDraft={name:'',amount:'',freq:'month',dueDate:''};
 let ypBillsEditId=null;
@@ -771,14 +1075,14 @@ function ypBillsInjectCss(){
   const s=document.createElement('style');
   s.id='yp-bills-css';
   s.textContent=`
-#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 148px;box-sizing:border-box;background:rgba(11,37,69,.28)}
+#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask,#yp-money-checkin{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 148px;box-sizing:border-box;background:rgba(11,37,69,.28)}
 #yp-bill-due,#yp-notify-ask{z-index:54;padding:148px 16px 148px}
-html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{background:rgba(11,37,69,.28)}
-#yp-bills .card,#yp-process-bills .card,#yp-bill-due .card,#yp-notify-ask .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 20px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.35);color:#14213d}
-#yp-bills .yp-listing,#yp-process-bills .yp-listing,#yp-bill-due .yp-listing,#yp-notify-ask .yp-listing{text-align:left;max-height:calc(100dvh - 256px);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
-#yp-bills .hwb,#yp-bill-due .hwb,#yp-notify-ask .hwb{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-#yp-bills .hwx,#yp-bill-due .hwx,#yp-notify-ask .hwx{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:8px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-#yp-bills .yp-close,#yp-process-bills .yp-close,#yp-bill-due .yp-close,#yp-notify-ask .yp-close{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
+html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask,html.yp-home #yp-money-checkin{background:rgba(11,37,69,.28)}
+#yp-bills .card,#yp-process-bills .card,#yp-bill-due .card,#yp-notify-ask .card,#yp-money-checkin .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 20px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.35);color:#14213d}
+#yp-bills .yp-listing,#yp-process-bills .yp-listing,#yp-bill-due .yp-listing,#yp-notify-ask .yp-listing,#yp-money-checkin .yp-listing{text-align:left;max-height:calc(100dvh - 256px);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
+#yp-bills .hwb,#yp-bill-due .hwb,#yp-notify-ask .hwb,#yp-money-checkin .hwb{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+#yp-bills .hwx,#yp-bill-due .hwx,#yp-notify-ask .hwx,#yp-money-checkin .hwx{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:8px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+#yp-bills .yp-close,#yp-process-bills .yp-close,#yp-bill-due .yp-close,#yp-notify-ask .yp-close,#yp-money-checkin .yp-close{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
 #yp-bills .yp-bills-lead,#yp-bill-due .yp-bills-lead,#yp-notify-ask .yp-bills-lead{margin:0 0 14px;font:500 14px/1.45 Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-bills .yp-bills-empty{margin:8px 0 16px;font:500 15px/1.45 Inter,system-ui,sans-serif;color:#5a6780}
 #yp-bills .yp-bills-sec{margin:18px 0 8px;font:800 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
@@ -866,6 +1170,23 @@ html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,
 #yp-process-bills .yp-hist-mark{width:28px;text-align:center;font:700 22px/1 Inter,system-ui,sans-serif}
 #yp-process-bills .yp-hist-tick{color:#2e7d32}
 #yp-process-bills .yp-hist-dash{color:#8a94a6;font-weight:400}
+#yp-money-checkin .yp-pay-hint{margin:8px 0 0;font:400 15px/1.5 Inter,system-ui,sans-serif;color:#b8410a;text-align:left}
+#yp-money-checkin .yp-pay-sec{margin:18px 0 8px}
+#yp-money-checkin .yp-pay-title{margin:0 0 8px;font:600 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
+#yp-money-checkin .yp-checkin-summary{margin:0 0 10px;font:500 15px/1.45 Inter,system-ui,sans-serif;color:#14213d}
+#yp-money-checkin .yp-checkin-row{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:12px;row-gap:2px;padding:10px 0;border-bottom:1px solid #e3e8f0}
+#yp-money-checkin .yp-checkin-name{margin:0;font:400 16px/1.35 Inter,system-ui,sans-serif;color:#14213d;overflow-wrap:anywhere}
+#yp-money-checkin .yp-checkin-meta{text-align:right;white-space:nowrap}
+#yp-money-checkin .yp-checkin-when{font:400 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-money-checkin .yp-checkin-amt{font:700 16px/1.35 Inter,system-ui,sans-serif;color:#14213d}
+#yp-money-checkin .yp-checkin-mark{grid-column:1/-1;font:500 13px/1.35 Inter,system-ui,sans-serif;color:#0a3a8c}
+#yp-money-checkin .yp-checkin-actions{display:flex;gap:10px;margin-top:10px}
+#yp-money-checkin .yp-checkin-actions .hwb,#yp-money-checkin .yp-checkin-actions .hwx{flex:1;width:auto;margin-top:0}
+#yp-money-checkin .yp-checkin-actions .hwx.yp-checkin-picked{background:#0a3a8c;color:#fff}
+#yp-process-bills .yp-streak-value{margin:0 0 4px;font:700 22px/1.2 Inter,system-ui,sans-serif;color:#0b2545}
+#yp-process-bills #yp-process-streak{margin:10px 0 4px}
+#yp-process-bills #yp-process-streak .yp-pay-hint{margin:0}
+
 `;
   document.head.appendChild(s);
 }
@@ -913,6 +1234,7 @@ function ypProcessBillsPaint(){
   const week=ypBillsThisWeekOccurrences();
   const hist=ypBillsHistoryWeeks();
   list.innerHTML='';
+  if(typeof ypProcessStreakBlock==='function')list.appendChild(ypProcessStreakBlock());
   if(overdue.length){
     const sec=document.createElement('section');
     sec.className='yp-pay-sec';
@@ -1825,6 +2147,7 @@ function ypNotifyTick(){
     ypNotifyWatchSettlements();
     ypNotifyWatchRentals();
     ypBillsMaybePrompt();
+    ypHabitsSchedulePrompt();
   }catch(e){}
   ypNotifyTickBusy=0;
 }
@@ -1845,7 +2168,10 @@ function ypNotifySettingsHtml(){
 }
 
 function ypBillsFeedKey(){
-  try{return ypBillsWeekLabel();}catch(e){return '';}
+  try{
+    const st=typeof ypHabitsStreakInfo==='function'?ypHabitsStreakInfo():null;
+    return ypBillsWeekLabel()+'|s:'+(st?((st.streak|0)+':'+(st.freezes|0)):'');
+  }catch(e){return '';}
 }
 
 /* ----- hooks into existing game functions (expense entry itself is not changed) ----- */
@@ -1899,6 +2225,11 @@ function ypNotifyHook(){
     const orig=ypFeedStateKey;
     ypFeedStateKey=function(){const k=orig.apply(this,arguments);try{return k+'|'+ypBillsFeedKey();}catch(e){return k;}};
     ypFeedStateKey.__ypNotify=1;
+  }
+  if(typeof ypSyncFeed==='function'&&!ypSyncFeed.__ypHabits){
+    const orig=ypSyncFeed;
+    ypSyncFeed=function(){const r=orig.apply(this,arguments);try{ypHabitsSchedulePrompt();}catch(e){}return r;};
+    ypSyncFeed.__ypHabits=1;
   }
   if(typeof UI==='object'&&UI){
     if(typeof UI.settings==='function'&&!UI.settings.__ypNotify){
