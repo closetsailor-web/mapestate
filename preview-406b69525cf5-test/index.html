@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates130";
+window.YP_BUILD="dates131";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -2980,6 +2980,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
     <details${i.debt?' open':''}><summary style="margin-top:10px"><b>More options</b> (optional)</summary>
     <label for="inc_debt" style="display:block;margin:8px 0 2px">Monthly repayments on other debts (car, cards, HECS)</label><input type="text" inputmode="decimal" autocomplete="off" id="inc_debt" value="${i.debt?Math.round(i.debt*100)/100:''}" placeholder="0" oninput="incLive()"></details>
     <div id="inc_err" role="alert" style="color:#c0672b;font-size:14px;min-height:16px;margin-top:6px"></div><div class="fin" id="inc_out"></div>
+    <button type="button" class="yp-paycalc-link" id="inc_paycalc" onclick="typeof ypPayCalcOpen==='function'&&ypPayCalcOpen()">Pay Calculator</button>
     <div class="cta"><button class="btn buy" id="inc_save" onclick="incSave(true)">Save</button></div><button class="btn sec" onclick="UI.el.classList.remove('open');document.body.classList.remove('sheetopen')">Close</button>`);this.el.style.zIndex=60;incPayMount();incLive();},
   money(){const g=goalCalc(),h=housing(),hb=(m,t)=>`<button class="${h===m?'on':''}" onclick="setHousing('${m}')">${t}</button>`;this.open(`<h2>Profile: My Money</h2><div class="sub">@${esc(uname())}</div><div class="pcard"><div class="ctitle">Where I live</div><div class="row seg">${hb('rent','Renting')}${h==='family'?hb('family','Room share'):''}${hb('home','My own home')}</div><button class="btn sec" id="choosehome" onclick="leaseLock()?toast(leaseMsg()):chooseHome()">Choose a different home on the map</button>
     ${!G.homeChosen&&h!=='home'?(G.clockOn?'<div class="sub">No home right now. You pay $200 a week board until you find a place to live.</div>':'<div class="sub">No home chosen yet.</div>'):h==='rent'?`<div class="sub">Home: <b>${esc(ensureLease().addr)}</b></div><select id="lease_m" ${leaseLock()?'disabled':''} onchange="setLease(this.value)" style="width:100%;font-size:16px;padding:8px;margin-top:4px">${leaseOpts()}</select><div class="sub">${fmt(ensureLease().rent)}/wk. ${leaseLock()?esc(leaseMsg()):'Your lease has ended, so you can choose a new lease length.'}</div>`:h==='family'?`<div id="board_ro" style="font-size:13px">Board you pay each week: <b>${fmt(boardWk())}</b> <small>(set by the room owner)</small></div><div class="sub">No rent. You still pay the same living costs as everyone ($400 a week) on top of your board.</div>`:`<div class="sub">You live in ${esc(pname(myHome()))}, so you pay no rent.</div>`}
@@ -3121,7 +3122,7 @@ let incViewSel=null;function incView(v){incViewSel=v;G.income=Object.assign({},G
 const FLBL2={weekly:'a week',fortnightly:'a fortnight',monthly:'a month'};
 function incLive(){const{o,err}=incRead(),old=G.income,oldPend=G.payPend;G.income=o;delete G.payPend;const bs=typeof ypRealIncomeSummary==='function'?ypRealIncomeSummary('inc'):'';/* dates130: My Income shows the shared real-life figures, never the game bank */G.income=old;if(oldPend)G.payPend=oldPend;
   const v=INC().view,mid=Number.isInteger(o.band)?bandMid(o.band):0,gross=Number.isInteger(o.band)?((+o.amt>0)?+o.amt:mid):0,blk=raiseBlock(o.band);
-  const nm=netIncome(gross);const midNote=Math.abs(gross-mid)<1?' (the middle of your band)':'';document.getElementById('inc_conv').innerHTML=`Your take-home pay is about <b id="inc_per">${fmt(nm/FREQ[v])} ${FLBL2[v]}</b><br><small>${['weekly','fortnightly','monthly'].filter(x=>x!==v).map(x=>fmt(nm/FREQ[x])+' '+FLBL2[x]).join(' · ')} · ${fmt(nm)} a year, after tax and Medicare<br>Pay before tax: <b>${fmt(gross)} a year</b>${midNote}.</small>`;
+  const pc=typeof ypPayCalc==='function'?ypPayCalc({yearlyGross:gross}):null;const nm=pc&&pc.takeHome!=null?pc.takeHome:netIncome(gross);const midNote=Math.abs(gross-mid)<1?' (the middle of your band)':'';document.getElementById('inc_conv').innerHTML=`Your take-home pay is about <b id="inc_per">${fmt(nm/FREQ[v])} ${FLBL2[v]}</b><br><small>${['weekly','fortnightly','monthly'].filter(x=>x!==v).map(x=>fmt(nm/FREQ[x])+' '+FLBL2[x]).join(' · ')} · ${fmt(nm)} a year, after tax and Medicare<br>Pay before tax: <b>${fmt(gross)} a year</b>${midNote}.</small>`;
   document.getElementById('inc_err').textContent=blk||err.join(' · ');document.getElementById('inc_save').disabled=!!(blk||err.length);
   document.getElementById('inc_out').innerHTML=`<div id="inc_simple">${bs}</div>${G.payPend?`<small><br>Pay rise to ${fmt(G.payPend.g)}/yr arrives from week ${G.payPend.wk+1}.</small>`:''}`;if(typeof incPayPaintList==='function')incPayPaintList();return err;}
 /* v27 anti-cheat: a raise is one band up at a time, at most once every 26 game weeks. A cut is always allowed and applies now. Free during setup. */
@@ -4202,10 +4203,11 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates130"></script>
-<script src="player-market.js?v=dates130"></script>
-<script src="car-yard.js?v=dates130"></script>
-<script src="overture-layer.js?v=dates130"></script>
-<script src="yp-notify.js?v=dates130"></script>
+<script src="yp-paycalc.js?v=dates131"></script>
+<script src="map-preview.js?v=dates131"></script>
+<script src="player-market.js?v=dates131"></script>
+<script src="car-yard.js?v=dates131"></script>
+<script src="overture-layer.js?v=dates131"></script>
+<script src="yp-notify.js?v=dates131"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
