@@ -294,12 +294,28 @@ function ypBillDueWall(iso){
 }
 function ypBillsStore(){
   if(typeof G==='undefined'||!G)return null;
-  if(!G.bills||typeof G.bills!=='object')G.bills={v:3,items:{},seq:0};
+  if(!G.bills||typeof G.bills!=='object')G.bills={v:4,items:{},seq:0,paid:{}};
   if(!G.bills.items||typeof G.bills.items!=='object')G.bills.items={};
+  if(!G.bills.paid||typeof G.bills.paid!=='object')G.bills.paid={};
   if((G.bills.v|0)<3){
     if(ypBillsMigrate(G.bills))G.bills.v=3;
   }
+  if((G.bills.v|0)<4)ypBillsMigratePaid(G.bills);
+  if(!ypBillParseDate(G.bills.trackFrom)){
+    const b=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
+    G.bills.trackFrom=(b&&b.start)||(typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):'');
+  }
   return G.bills;
+}
+function ypBillsMigratePaid(store){
+  if(!store)return;
+  if(!store.paid||typeof store.paid!=='object')store.paid={};
+  const b=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
+  if(!ypBillParseDate(store.trackFrom))store.trackFrom=(b&&b.start)||(typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):'');
+  Object.values(store.items||{}).forEach(it=>{
+    if(it&&!ypBillParseDate(it.since))it.since=store.trackFrom;
+  });
+  store.v=4;
 }
 function ypBillsDefaultFreq(it){
   if(it&&YP_BILL_FREQ[it.freq])return it.freq;
@@ -371,6 +387,16 @@ function ypBillsUpsert(item,opts){
   if(!YP_NOTIFY_LEADS[next.lead])next.lead=prev.lead&&YP_NOTIFY_LEADS[prev.lead]?prev.lead:'week';
   if(typeof next.asked!=='boolean')next.asked=!!prev.asked;
   if(next.choice!=='yes'&&next.choice!=='no')next.choice=prev.choice==='yes'||prev.choice==='no'?prev.choice:null;
+  if(ypBillParseDate(item.since))next.since=item.since;
+  if(!ypBillParseDate(next.since)){
+    const today=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):ypBillFormatDate(new Date());
+    const floor=ypBillParseDate(store.trackFrom)?store.trackFrom:today;
+    let since=today;
+    if(ypBillParseDate(next.dueDate)&&next.dueDate<today)since=next.dueDate;
+    if(ypBillParseDate(next.lastDueDate)&&next.lastDueDate<since)since=next.lastDueDate;
+    if(since<floor)since=floor;
+    next.since=since;
+  }
   store.items[item.id]=next;
   return next;
 }
@@ -586,28 +612,151 @@ function ypBillLastOccurrence(it,today){
   const prev=ypBillShiftPeriod(next,freq,it.dueDay,-1);
   return (prev&&prev<next)?prev:'';
 }
-function ypBillsDueThisWeek(){
+function ypBillsPaidKey(id,iso){return String(id||'')+'|'+String(iso||'');}
+function ypBillsPaidMap(){const s=ypBillsStore();if(!s)return null;if(!s.paid||typeof s.paid!=='object')s.paid={};return s.paid;}
+function ypBillsTrackFrom(){const s=ypBillsStore();return s&&ypBillParseDate(s.trackFrom)?s.trackFrom:'';}
+function ypBillsIsPaid(id,iso){const paid=ypBillsPaidMap();return !!(paid&&iso&&paid[ypBillsPaidKey(id,iso)]);}
+function ypBillsPaidInfo(id,iso){const paid=ypBillsPaidMap();return (paid&&iso&&paid[ypBillsPaidKey(id,iso)])||null;}
+function ypBillsOccurrencesInRange(it,from,to){
+  if(!it||ypBillsIsGame(it)||!ypBillParseDate(it.dueDate))return [];
+  const freq=YP_BILL_FREQ[it.freq]?it.freq:'month';
+  const dueDay=ypBillDueDay(it.dueDate,it.dueDay);
+  if(ypBillParseDate(it.since)&&(!from||it.since>from))from=it.since;
+  const today=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):ypBillFormatDate(new Date());
+  const out=[];const seen=new Set();
+  const add=iso=>{
+    if(!ypBillParseDate(iso))return;
+    if(from&&iso<from)return;
+    if(to&&iso>to)return;
+    if(seen.has(iso))return;
+    seen.add(iso);out.push(iso);
+  };
+  add(it.dueDate);
+  let iso=it.dueDate,guard=0;
+  while(iso&&guard++<240){
+    const prev=ypBillShiftPeriod(iso,freq,dueDay,-1);
+    if(!prev||prev>=iso)break;
+    if(from&&prev<from)break;
+    iso=prev;
+    if(iso>=today)continue;
+    add(iso);
+  }
+  iso=it.dueDate;guard=0;
+  while(iso&&guard++<240){
+    if(to&&iso>to)break;
+    const next=ypBillAddPeriod(iso,freq,dueDay);
+    if(!next||next<=iso)break;
+    add(next);
+    iso=next;
+  }
+  out.sort();
+  return out;
+}
+function ypBillsOccRow(it,iso,today){
+  const paid=ypBillsIsPaid(it.id,iso);
+  return Object.assign({},it,{occDate:iso,showDate:iso,thisWeekDate:iso,paid:paid,overdue:!!(iso&&today&&iso<today&&!paid)});
+}
+function ypBillsOverdueOccurrences(){
+  ypBillsEnsure();
+  const today=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):ypBillFormatDate(new Date());
+  const from=ypBillsTrackFrom()||today;
+  const rows=[];
+  ypBillsRealList().forEach(it=>{
+    ypBillsOccurrencesInRange(it,from,today).forEach(iso=>{
+      if(iso<today&&!ypBillsIsPaid(it.id,iso))rows.push(ypBillsOccRow(it,iso,today));
+    });
+  });
+  rows.sort((a,b)=>String(a.occDate||'').localeCompare(String(b.occDate||''))||String(a.name||'').localeCompare(String(b.name||'')));
+  return rows;
+}
+function ypBillsThisWeekOccurrences(){
   ypBillsEnsure();
   const b=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
-  const start=b&&b.start,end=b&&b.end,today=b&&b.today;
-  const inWeek=iso=>!!(iso&&start&&end&&iso>=start&&iso<=end);
-  const due=ypBillsRealList().map(it=>{
-    const next=ypBillParseDate(it.dueDate)?it.dueDate:'';
-    const storedLast=ypBillParseDate(it.lastDueDate)?it.lastDueDate:'';
-    const dueThis=inWeek(next);
-    const lastThis=inWeek(storedLast);
-    const pastDue=!!(next&&today&&next<today);
-    const overdue=!!((storedLast&&storedLast<today&&!dueThis)||pastDue);
-    if(!dueThis&&!overdue&&!lastThis)return null;
-    const show=dueThis?next:(storedLast||next);
-    return Object.assign({},it,{showDate:show,overdue:overdue&&!dueThis,dueDate:it.dueDate,thisWeekDate:show});
-  }).filter(Boolean);
+  if(!b)return [];
+  const rows=[];
+  ypBillsRealList().forEach(it=>{
+    ypBillsOccurrencesInRange(it,b.start,b.end).forEach(iso=>{
+      if(iso>=b.today)rows.push(ypBillsOccRow(it,iso,b.today));
+    });
+  });
+  rows.sort((a,b)=>String(a.occDate||'').localeCompare(String(b.occDate||''))||String(a.name||'').localeCompare(String(b.name||'')));
+  return rows;
+}
+
+function ypBillsWeekRangeLabel(start,end){
+  const a=ypBillParseDate(start),c=ypBillParseDate(end);
+  if(!a||!c)return '';
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d1=a.getDate(),d2=c.getDate(),m1=months[a.getMonth()],m2=months[c.getMonth()];
+  if(m1===m2)return d1+'–'+d2+' '+m1;
+  return d1+' '+m1+'–'+d2+' '+m2;
+}
+function ypBillsHistoryWeeks(){
+  ypBillsEnsure();
+  const today=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):ypBillFormatDate(new Date());
+  const from=ypBillsTrackFrom()||today;
+  const cur=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
+  if(!cur)return [];
+  const weekOf=iso=>{
+    const ms=Date.parse(iso+'T12:00:00+10:00');
+    return typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(ms):null;
+  };
+  const first=(weekOf(from)||cur).start;
+  const weeks=[];
+  let start=cur.start,guard=0;
+  while(start&&start>=first&&guard++<260){
+    const wb=weekOf(start)||{start:start,end:start};
+    const items=[];
+    ypBillsRealList().forEach(it=>{
+      ypBillsOccurrencesInRange(it,wb.start,wb.end).forEach(iso=>{
+        items.push(ypBillsOccRow(it,iso,today));
+      });
+    });
+    items.sort((a,b)=>String(a.occDate||'').localeCompare(String(b.occDate||''))||String(a.name||'').localeCompare(String(b.name||'')));
+    if(items.length){
+      const paid=items.filter(x=>x.paid);
+      const total=paid.reduce((s,x)=>s+(+x.amount||0),0);
+      weeks.push({start:wb.start,end:wb.end,label:ypBillsWeekRangeLabel(wb.start,wb.end),items,paidCount:paid.length,count:items.length,total});
+    }
+    const prev=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.parse(start+'T12:00:00+10:00')-7*86400000):'';
+    if(!prev||prev>=start)break;
+    start=prev;
+  }
+  return weeks;
+}
+function ypBillsMarkPaid(id,iso,on){
+  const store=ypBillsStore();if(!store||!id||!ypBillParseDate(iso))return;
+  const paid=ypBillsPaidMap();if(!paid)return;
+  const key=ypBillsPaidKey(id,iso);
+  const it=store.items[id];
+  if(on===false){
+    delete paid[key];
+  }else{
+    const today=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):ypBillFormatDate(new Date());
+    paid[key]={paidDate:today,amount:it?Math.max(0,Math.round(+it.amount||0)):0,name:(it&&it.name)||''};
+    if(it&&it.dueDate===iso){
+      const freq=YP_BILL_FREQ[it.freq]?it.freq:'month';
+      const next=ypBillAddPeriod(iso,freq,ypBillDueDay(iso,it.dueDay));
+      if(next&&next>iso){it.lastDueDate=iso;it.dueDate=next;}
+    }
+  }
+  ypBillsSave();
+}
+function ypBillsMarkAllOverduePaid(){
+  ypBillsOverdueOccurrences().forEach(it=>ypBillsMarkPaid(it.id,it.occDate,true));
+}
+function ypBillsDueThisWeek(){
+  const today=typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):ypBillFormatDate(new Date());
+  const overdue=ypBillsOverdueOccurrences();
+  const week=ypBillsThisWeekOccurrences().filter(it=>!it.paid);
+  const due=overdue.concat(week).filter(it=>it&&!it.paid);
   due.sort((a,b)=>{
     if(!!a.overdue!==!!b.overdue)return a.overdue?-1:1;
-    return String(a.showDate||a.dueDate||'').localeCompare(String(b.showDate||b.dueDate||''));
+    return String(a.showDate||a.occDate||'').localeCompare(String(b.showDate||b.occDate||''));
   });
   return due;
 }
+
 
 
 /* ----- Bills card and editors ----- */
@@ -622,14 +771,14 @@ function ypBillsInjectCss(){
   const s=document.createElement('style');
   s.id='yp-bills-css';
   s.textContent=`
-#yp-bills,#yp-bill-due,#yp-notify-ask{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 148px;box-sizing:border-box;background:rgba(11,37,69,.28)}
+#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 148px;box-sizing:border-box;background:rgba(11,37,69,.28)}
 #yp-bill-due,#yp-notify-ask{z-index:54;padding:148px 16px 148px}
-html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{background:rgba(11,37,69,.28)}
-#yp-bills .card,#yp-bill-due .card,#yp-notify-ask .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 20px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.35);color:#14213d}
-#yp-bills .yp-listing,#yp-bill-due .yp-listing,#yp-notify-ask .yp-listing{text-align:left;max-height:calc(100dvh - 256px);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
+html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{background:rgba(11,37,69,.28)}
+#yp-bills .card,#yp-process-bills .card,#yp-bill-due .card,#yp-notify-ask .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 20px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.35);color:#14213d}
+#yp-bills .yp-listing,#yp-process-bills .yp-listing,#yp-bill-due .yp-listing,#yp-notify-ask .yp-listing{text-align:left;max-height:calc(100dvh - 256px);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 #yp-bills .hwb,#yp-bill-due .hwb,#yp-notify-ask .hwb{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
 #yp-bills .hwx,#yp-bill-due .hwx,#yp-notify-ask .hwx{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:8px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-#yp-bills .yp-close,#yp-bill-due .yp-close,#yp-notify-ask .yp-close{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
+#yp-bills .yp-close,#yp-process-bills .yp-close,#yp-bill-due .yp-close,#yp-notify-ask .yp-close{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
 #yp-bills .yp-bills-lead,#yp-bill-due .yp-bills-lead,#yp-notify-ask .yp-bills-lead{margin:0 0 14px;font:500 14px/1.45 Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-bills .yp-bills-empty{margin:8px 0 16px;font:500 15px/1.45 Inter,system-ui,sans-serif;color:#5a6780}
 #yp-bills .yp-bills-sec{margin:18px 0 8px;font:800 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
@@ -685,8 +834,232 @@ html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{bac
 .yp-bill-actions{display:flex;gap:8px;margin:4px 0 2px}
 .yp-bill-actions button{appearance:none;-webkit-appearance:none;flex:1;min-height:44px;padding:0 12px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 14px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
 .yp-bill-actions button.yp-bill-del{border-color:#b8410a;color:#b8410a}
+#yp-process-bills .yp-pay-hint{margin:8px 0 0;font:400 15px/1.5 Inter,system-ui,sans-serif;color:#b8410a;text-align:left}
+#yp-process-bills .yp-pay-sec{margin:0 0 8px}
+#yp-process-bills .yp-pay-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 10px}
+#yp-process-bills .yp-pay-title{margin:0;font:600 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
+#yp-process-bills .yp-pay-all{appearance:none;-webkit-appearance:none;flex:none;min-height:44px;padding:0 16px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:600 14px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+#yp-process-bills .yp-pay-all:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px}
+#yp-process-bills .yp-pay-row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;column-gap:12px;align-items:center;width:100%;min-height:56px;margin:0;padding:10px 0;border:0;border-bottom:1px solid #e3e8f0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;touch-action:manipulation}
+#yp-process-bills .yp-pay-row:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:8px}
+#yp-process-bills .yp-pay-tick{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin:0 8px 0 2px;border:2px solid #0a3a8c;border-radius:8px;background:#fff;color:#fff;font:700 18px/1 Inter,system-ui,sans-serif;pointer-events:none}
+#yp-process-bills .yp-pay-row[aria-pressed="true"] .yp-pay-tick{background:#2e7d32;border-color:#2e7d32}
+#yp-process-bills .yp-pay-name{min-width:0;margin:0;font:400 16px/1.35 Inter,system-ui,sans-serif;color:#14213d;text-align:left;overflow-wrap:anywhere}
+#yp-process-bills .yp-pay-meta{display:flex;flex-direction:column;align-items:flex-end;gap:1px;margin:0;text-align:right;white-space:nowrap}
+#yp-process-bills .yp-pay-when{font:400 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-process-bills .yp-pay-amt{font:700 16px/1.35 Inter,system-ui,sans-serif;color:#14213d}
+#yp-process-bills .yp-pay-empty{margin:8px 0 4px;font:400 15px/1.45 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-process-bills .yp-hist-week{margin:0 0 14px;padding:6px 8px 10px;border:1px solid rgba(20,33,61,.08);border-radius:16px;background:#f6f8fb;color:#14213d}
+#yp-process-bills .yp-hist-toggle{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;margin:0;padding:8px 10px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+#yp-process-bills .yp-hist-toggle:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:8px}
+#yp-process-bills .yp-hist-range{flex:1;min-width:0;margin:0;font:400 16px/1.35 Inter,system-ui,sans-serif;color:#14213d}
+#yp-process-bills .yp-hist-sum{flex:none;font:400 14px/1.35 Inter,system-ui,sans-serif;color:#5a6780;text-align:right;white-space:nowrap}
+#yp-process-bills .yp-hist-sum b{font-weight:700;color:#14213d}
+#yp-process-bills .yp-hist-chev{display:inline-flex;align-items:center;width:20px;margin-left:6px;color:#6b7a90;font-size:15px;line-height:1}
+#yp-process-bills .yp-hist-body{display:flex;flex-direction:column;padding:2px 4px 6px}
+#yp-process-bills .yp-hist-body[hidden],#yp-process-bills .yp-hist-week:not(.yp-open) .yp-hist-body{display:none}
+#yp-process-bills .yp-hist-item{display:grid;grid-template-columns:minmax(0,1fr) auto 28px;column-gap:10px;align-items:center;min-height:48px;padding:8px 10px;border-top:1px solid #e3e8f0}
+#yp-process-bills .yp-hist-name{min-width:0;font:400 15px/1.35 Inter,system-ui,sans-serif;color:#14213d;overflow-wrap:anywhere}
+#yp-process-bills .yp-hist-meta{display:flex;flex-direction:column;align-items:flex-end;text-align:right;white-space:nowrap}
+#yp-process-bills .yp-hist-when{font:400 13px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
+#yp-process-bills .yp-hist-amt{font:700 15px/1.35 Inter,system-ui,sans-serif;color:#14213d}
+#yp-process-bills .yp-hist-mark{width:28px;text-align:center;font:700 22px/1 Inter,system-ui,sans-serif}
+#yp-process-bills .yp-hist-tick{color:#2e7d32}
+#yp-process-bills .yp-hist-dash{color:#8a94a6;font-weight:400}
 `;
   document.head.appendChild(s);
+}
+
+let ypProcessHistOpen=null;
+function ypOpenProcessBills(){
+  ypBillsInjectCss();
+  ypBillsEnsure();
+  if(typeof ypExclusive==='function')ypExclusive('yp-process-bills');
+  if(typeof ypUseHome==='function')ypUseHome();
+  document.getElementById('yp-process-bills')?.remove();
+  const panel=document.createElement('div');
+  panel.id='yp-process-bills';
+  panel.setAttribute('role','dialog');
+  panel.setAttribute('aria-labelledby','yp-process-bills-title');
+  const card=document.createElement('div');
+  card.className='card yp-listing';
+  const shut=()=>{panel.remove();if(typeof ypUseHome==='function')ypUseHome();};
+  if(typeof ypCardHeader==='function')card.appendChild(ypCardHeader({title:'Process Bills',titleId:'yp-process-bills-title',id:'yp-process-bills-x',onClose:shut}));
+  else{const h=document.createElement('h2');h.id='yp-process-bills-title';h.textContent='Process Bills';card.appendChild(h);}
+  const hint=document.createElement('p');
+  hint.className='yp-pay-hint';
+  hint.id='yp-process-bills-hint';
+  hint.textContent="Tick each bill once you've paid it.";
+  card.appendChild(hint);
+  const list=document.createElement('div');
+  list.id='yp-process-bills-list';
+  card.appendChild(list);
+  const close=document.createElement('button');
+  close.type='button';
+  close.className='yp-close';
+  close.id='yp-process-bills-close';
+  close.textContent='Close';
+  close.addEventListener('click',shut);
+  card.appendChild(close);
+  panel.appendChild(card);
+  document.body.appendChild(panel);
+  ypProcessBillsPaint();
+  return panel;
+}
+function ypProcessBillsPaint(){
+  const list=document.getElementById('yp-process-bills-list');
+  if(!list)return;
+  const overdue=ypBillsOverdueOccurrences();
+  const week=ypBillsThisWeekOccurrences();
+  const hist=ypBillsHistoryWeeks();
+  list.innerHTML='';
+  if(overdue.length){
+    const sec=document.createElement('section');
+    sec.className='yp-pay-sec';
+    sec.id='yp-process-overdue';
+    const head=document.createElement('div');
+    head.className='yp-pay-head';
+    const title=document.createElement('h3');
+    title.className='yp-pay-title';
+    title.textContent='Overdue';
+    const all=document.createElement('button');
+    all.type='button';
+    all.className='yp-pay-all';
+    all.id='yp-process-mark-all';
+    all.textContent='Mark All Paid';
+    all.addEventListener('click',e=>{e.preventDefault();ypBillsMarkAllOverduePaid();});
+    head.append(title,all);
+    sec.appendChild(head);
+    overdue.forEach((it,i)=>sec.appendChild(ypProcessTickRow(it,'overdue',i)));
+    list.appendChild(sec);
+  }
+  const weekSec=document.createElement('section');
+  weekSec.className='yp-pay-sec';
+  weekSec.id='yp-process-week';
+  const weekHead=document.createElement('div');
+  weekHead.className='yp-pay-head';
+  const weekTitle=document.createElement('h3');
+  weekTitle.className='yp-pay-title';
+  weekTitle.textContent='This Week';
+  weekHead.appendChild(weekTitle);
+  weekSec.appendChild(weekHead);
+  if(!week.length){
+    const empty=document.createElement('p');
+    empty.className='yp-pay-empty';
+    empty.id='yp-process-week-empty';
+    empty.textContent='No bills due this week.';
+    weekSec.appendChild(empty);
+  }else week.forEach((it,i)=>weekSec.appendChild(ypProcessTickRow(it,'week',i)));
+  list.appendChild(weekSec);
+  if(hist.length){
+    const sec=document.createElement('section');
+    sec.className='yp-pay-sec';
+    sec.id='yp-process-history';
+    const head=document.createElement('div');
+    head.className='yp-pay-head';
+    const title=document.createElement('h3');
+    title.className='yp-pay-title';
+    title.textContent='Bill History';
+    head.appendChild(title);
+    sec.appendChild(head);
+    hist.forEach((wk,i)=>sec.appendChild(ypProcessHistWeek(wk,i)));
+    list.appendChild(sec);
+  }
+}
+function ypProcessTickRow(it,kind,i){
+  const row=document.createElement('button');
+  row.type='button';
+  row.className='yp-pay-row';
+  row.dataset.id=it.id;
+  row.dataset.date=it.occDate||it.showDate||'';
+  row.id='yp-process-'+kind+'-'+i;
+  const on=!!it.paid;
+  row.setAttribute('aria-pressed',on?'true':'false');
+  const name=String(it.name||'Bill').split(' · ')[0];
+  row.setAttribute('aria-label',(on?'Paid, ':'Not paid, ')+name);
+  const box=document.createElement('span');
+  box.className='yp-pay-tick';
+  box.setAttribute('aria-hidden','true');
+  box.textContent=on?'\u2713':'';
+  const lab=document.createElement('span');
+  lab.className='yp-pay-name';
+  lab.textContent=name;
+  const meta=document.createElement('span');
+  meta.className='yp-pay-meta';
+  const when=document.createElement('span');
+  when.className='yp-pay-when';
+  when.textContent=typeof ypBillWeekDateText==='function'?ypBillWeekDateText(it.occDate||it.showDate): (it.occDate||'');
+  const amt=document.createElement('span');
+  amt.className='yp-pay-amt';
+  amt.textContent=typeof ypBillWeekAmountText==='function'?ypBillWeekAmountText(it):'';
+  meta.append(when,amt);
+  row.append(box,lab,meta);
+  row.addEventListener('click',e=>{
+    e.preventDefault();
+    ypBillsMarkPaid(it.id,it.occDate||it.showDate,!on);
+  });
+  return row;
+}
+function ypProcessHistWeek(wk,i){
+  const open=ypProcessHistOpen===wk.start;
+  const row=document.createElement('div');
+  row.className='yp-hist-week yp-bill-row'+(open?' yp-open':'');
+  row.dataset.week=wk.start;
+  if(i===0)row.id='yp-process-hist-0';
+  const btn=document.createElement('button');
+  btn.type='button';
+  btn.className='yp-hist-toggle yp-bill-toggle';
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  const range=document.createElement('span');
+  range.className='yp-hist-range';
+  range.textContent=wk.label;
+  const right=document.createElement('span');
+  right.className='yp-bill-right';
+  const sum=document.createElement('span');
+  sum.className='yp-hist-sum';
+  const money=typeof ypNotifyMoney==='function'?ypNotifyMoney(wk.total):('$'+Math.round(+wk.total||0));
+  sum.append(document.createTextNode(wk.paidCount+' of '+wk.count+' Paid \u00b7 '),(()=>{const b=document.createElement('b');b.textContent=money;return b;})());
+  const chev=document.createElement('span');
+  chev.className='yp-hist-chev yp-bill-chev';
+  chev.setAttribute('aria-hidden','true');
+  chev.textContent=open?'\u25B4':'\u25BE';
+  right.append(sum,chev);
+  btn.append(range,right);
+  btn.addEventListener('click',()=>{
+    ypProcessHistOpen=open?null:wk.start;
+    ypProcessBillsPaint();
+    const el=document.querySelector('#yp-process-history [data-week="'+wk.start+'"]');
+    if(el)el.scrollIntoView({block:'nearest'});
+  });
+  const body=document.createElement('div');
+  body.className='yp-hist-body yp-bill-body';
+  body.hidden=!open;
+  (wk.items||[]).forEach(it=>{
+    const item=document.createElement('div');
+    item.className='yp-hist-item';
+    item.dataset.id=it.id;
+    item.dataset.date=it.occDate||'';
+    const name=document.createElement('span');
+    name.className='yp-hist-name';
+    name.textContent=String(it.name||'Bill').split(' \u00b7 ')[0];
+    const meta=document.createElement('span');
+    meta.className='yp-hist-meta';
+    const when=document.createElement('span');
+    when.className='yp-hist-when';
+    when.textContent=typeof ypBillWeekDateText==='function'?ypBillWeekDateText(it.occDate): (it.occDate||'');
+    const amt=document.createElement('span');
+    amt.className='yp-hist-amt';
+    amt.textContent=typeof ypBillWeekAmountText==='function'?ypBillWeekAmountText(it):'';
+    meta.append(when,amt);
+    const mark=document.createElement('span');
+    mark.className='yp-hist-mark '+(it.paid?'yp-hist-tick':'yp-hist-dash');
+    mark.setAttribute('aria-label',it.paid?'Paid':'Not paid');
+    mark.textContent=it.paid?'\u2713':'\u2013';
+    item.append(name,meta,mark);
+    body.appendChild(item);
+  });
+  row.append(btn,body);
+  return row;
 }
 function ypOpenBills(){
   ypBillsInjectCss();
@@ -1059,7 +1432,7 @@ function ypBillsRow(it){
   row.append(btn,body);
   return row;
 }
-function ypBillsRefreshOpen(){if(document.getElementById('yp-bills-list'))ypBillsPaintList();}
+function ypBillsRefreshOpen(){if(document.getElementById('yp-bills-list'))ypBillsPaintList();if(document.getElementById('yp-process-bills-list'))ypProcessBillsPaint();}
 function ypBillsToggleRemind(id,on){
   const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
   it.remind=!!on;

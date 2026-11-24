@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates127";
+window.YP_BUILD="dates128";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1184,14 +1184,14 @@ html.yp-preview #rsearch,html.yp-preview #yp-foot,html.yp-preview #yp-map-status
 html.yp-preview:not(.yp-map-on) #map{visibility:hidden}
 html.yp-home #map,html.yp-home #ypbasemap{display:none!important;visibility:hidden!important}
 html.yp-home .fab,html.yp-home #yp-search-area,html.yp-home .maplibregl-ctrl-bottom-right{display:none!important}
-html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon,html.yp-home #yp-physical,html.yp-home #yp-liquid,html.yp-home #yp-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{background:rgba(11,37,69,.28)}
+html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon,html.yp-home #yp-physical,html.yp-home #yp-liquid,html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask{background:rgba(11,37,69,.28)}
 html.yp-preview .fab{z-index:8}
 #ypbasemap{position:absolute;inset:0;z-index:2;background:#e7eef5}
 #yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
 #yp-logo img{width:88px;background:#ffffffc9;display:block}
 html.yp-preview #w3dc,html.yp-preview #map canvas#w3dc,body.ypbasemap #w3dc{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-index:5}
-#yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-coin-shop,#yp-sale-detail,#yp-pending,#yp-history,#yp-soon,#yp-apply-review,#yp-history-detail,#yp-living,#yp-away,#yp-start-fresh,#yp-payout,#yp-where-live,#yp-clock-start,#yp-physical,#yp-liquid,#yp-bills,#yp-bill-due,#yp-notify-ask{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
+#yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-coin-shop,#yp-sale-detail,#yp-pending,#yp-history,#yp-soon,#yp-apply-review,#yp-history-detail,#yp-living,#yp-away,#yp-start-fresh,#yp-payout,#yp-where-live,#yp-clock-start,#yp-physical,#yp-liquid,#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
 #yp-apply-review{z-index:52}
 #yp-agent-bg{display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;z-index:51;background:#0b2545 center/cover no-repeat}body:has(#yp-apply-review.yp-steps) #yp-agent-bg{display:block}
 body:has(#yp-apply-review.yp-clip) > header,body:has(#yp-apply-review.yp-settle-has-clip) > header{position:fixed;z-index:54}
@@ -1445,6 +1445,9 @@ html.yp-home #yp-feed:not([hidden]){display:block}
 #yp-real-week .yp-week-bill-amt{margin:0;font:700 15px/1.4 Inter,system-ui,sans-serif;color:#14213d}
 #yp-real-week .yp-week-bill-meta.yp-week-bill-overdue .yp-week-bill-when,
 #yp-real-week .yp-week-bill-meta.yp-week-bill-overdue .yp-week-bill-amt{color:#b8410a}
+#yp-real-week .yp-week-overdue-row .yp-week-bill-name{color:#b8410a}
+#yp-real-week .yp-week-process{appearance:none;-webkit-appearance:none;display:inline-block;align-self:flex-start;margin:8px 0 0;padding:8px 0;border:0;background:transparent;color:#1a5fd6;font:700 14px/1.4 Inter,system-ui,sans-serif;text-decoration:underline;cursor:pointer;touch-action:manipulation;text-align:left}
+#yp-real-week .yp-week-process:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
 #yp-game-week,#yp-real-week{box-sizing:border-box}
 
 .yp-week-pending-btn:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
@@ -4176,10 +4179,10 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="map-preview.js?v=dates127"></script>
-<script src="player-market.js?v=dates127"></script>
-<script src="car-yard.js?v=dates127"></script>
-<script src="overture-layer.js?v=dates127"></script>
-<script src="yp-notify.js?v=dates127"></script>
+<script src="map-preview.js?v=dates128"></script>
+<script src="player-market.js?v=dates128"></script>
+<script src="car-yard.js?v=dates128"></script>
+<script src="overture-layer.js?v=dates128"></script>
+<script src="yp-notify.js?v=dates128"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
