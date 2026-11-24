@@ -772,6 +772,8 @@ function ypHabitsEnsure(){
   if('freezes' in s.habits)delete s.habits.freezes;
   if('toward' in s.habits)delete s.habits.toward;
   if('maxFreezes' in s.habits)delete s.habits.maxFreezes;
+  if('badges' in s.habits)delete s.habits.badges;
+  if('badge' in s.habits)delete s.habits.badge;
   return s.habits;
 }
 function ypHabitsWeekStartOf(iso){
@@ -1016,13 +1018,6 @@ function ypOpenMoneyCheckIn(week){
   bud.appendChild(actions);
   card.appendChild(bud);
   if(rec.budget===true||rec.budget===false)paintChosen();
-  const badges=document.createElement('button');
-  badges.type='button';
-  badges.className='yp-close';
-  badges.id='yp-money-checkin-badges';
-  badges.textContent='See Your Badges';
-  badges.addEventListener('click',()=>{shut({});if(typeof ypOpenBadges==='function')ypOpenBadges();});
-  card.appendChild(badges);
   const close=document.createElement('button');
   close.type='button';
   close.className='yp-close';
@@ -1057,116 +1052,6 @@ function ypHabitsMaybePrompt(){
   ypOpenMoneyCheckIn(target);
 }
 
-const YP_BADGE_SET=[
-  {id:'first-bill',name:'First Bill Paid',hint:'Pay your first bill on time to earn this.',alt:false,svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8.5 9h7M8.5 12.5h5"/><path d="M8.5 16.5 10.2 18l3.8-4"/></svg>'},
-  {id:'streak-4',name:'4 Week Streak',hint:'Keep your on-time streak going for 4 weeks.',alt:true,svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="6.5" height="6.5" rx="1.4"/><rect x="14" y="5.5" width="6.5" height="6.5" rx="1.4"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.4"/><rect x="14" y="14" width="6.5" height="6.5" rx="1.4"/><path d="M5.5 16.6 7 18l3-3.2"/></svg>'},
-  {id:'budget-keeper',name:'Budget Keeper',hint:'Stay in budget for one week to earn this.',alt:false,svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="17" height="12" rx="2.2"/><path d="M3.5 10h17"/><circle cx="16.2" cy="14.2" r="1.3"/><path d="M8 7V6.2A2.2 2.2 0 0 1 10.2 4h3.6A2.2 2.2 0 0 1 16 6.2V7"/></svg>'},
-  {id:'organiser',name:'Bill Organiser',hint:'Add your bills so they are ready to track.',alt:true,svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M9 8.5h6M9 12h6M9 15.5h4"/></svg>'},
-  {id:'all-on-time',name:'All Bills On Time',hint:'Pay every bill on time in the same week to earn this.',alt:false,svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2.2"/></svg>'},
-  {id:'early-payer',name:'Early Payer',hint:'Pay a bill before its due date to earn this.',alt:true,svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3.5v3M16 3.5v3"/><path d="M9 15.5 11.2 17.5 15.5 13"/></svg>'}
-];
-function ypHabitsHistoryItems(){
-  const items=[];
-  const seen=new Set();
-  const add=row=>{
-    if(!row)return;
-    const key=(row.id||'')+'|'+(row.occDate||'');
-    if(seen.has(key))return;
-    seen.add(key);
-    items.push(row);
-  };
-  (ypHabitsCompletedWeeks()||[]).forEach(wb=>ypHabitsWeekItems(wb.start,wb.end).forEach(add));
-  const cur=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
-  if(cur)ypHabitsWeekItems(cur.start,cur.end).forEach(add);
-  return items;
-}
-function ypHabitsMaxStreak(){
-  let max=0,run=0;
-  (ypHabitsCompletedWeeks()||[]).forEach(wb=>{
-    const st=ypHabitsWeekReview(wb.start,wb.end);
-    if(st.empty)return;
-    if(st.good){run+=1;if(run>max)max=run;}
-    else run=0;
-  });
-  const now=ypHabitsStreakInfo();
-  if((now.streak|0)>max)max=now.streak|0;
-  return max;
-}
-function ypHabitsBadgeState(){
-  const items=ypHabitsHistoryItems();
-  const habits=ypHabitsEnsure();
-  const checks=habits&&habits.checkIns?habits.checkIns:{};
-  const firstOnTime=items.some(it=>it.onTime);
-  const early=items.some(it=>it.paid&&it.paidDate&&it.occDate&&it.paidDate<it.occDate);
-  const allOnTime=(ypHabitsCompletedWeeks()||[]).some(wb=>{
-    const st=ypHabitsWeekReview(wb.start,wb.end);
-    return !!st.good;
-  });
-  const budget=Object.keys(checks).some(k=>checks[k]&&checks[k].budget===true);
-  const organised=(typeof ypBillsRealList==='function'?ypBillsRealList():[]).length>0;
-  const earned={
-    'first-bill':firstOnTime,
-    'streak-4':ypHabitsMaxStreak()>=4,
-    'budget-keeper':budget,
-    'organiser':organised,
-    'all-on-time':allOnTime,
-    'early-payer':early
-  };
-  return YP_BADGE_SET.map(b=>Object.assign({},b,{earned:!!earned[b.id]}));
-}
-function ypOpenBadges(){
-  ypBillsInjectCss();
-  if(typeof ypBillsEnsure==='function')ypBillsEnsure();
-  if(typeof ypExclusive==='function')ypExclusive('yp-badges');
-  if(typeof ypUseHome==='function')ypUseHome();
-  document.getElementById('yp-badges')?.remove();
-  const panel=document.createElement('div');
-  panel.id='yp-badges';
-  panel.setAttribute('role','dialog');
-  panel.setAttribute('aria-labelledby','yp-badges-title');
-  const card=document.createElement('div');
-  card.className='card yp-listing';
-  const shut=()=>{panel.remove();if(typeof ypUseHome==='function')ypUseHome();};
-  if(typeof ypCardHeader==='function')card.appendChild(ypCardHeader({title:'Badges',titleId:'yp-badges-title',id:'yp-badges-x',onClose:shut}));
-  else{const h=document.createElement('h2');h.id='yp-badges-title';h.textContent='Badges';card.appendChild(h);}
-  const lead=document.createElement('p');
-  lead.className='yp-badge-lead';
-  lead.id='yp-badges-lead';
-  lead.textContent="A few badges you've earned, and a few still waiting for you.";
-  card.appendChild(lead);
-  const grid=document.createElement('div');
-  grid.className='yp-badge-grid';
-  grid.id='yp-badges-grid';
-  ypHabitsBadgeState().forEach(b=>{
-    const tile=document.createElement('div');
-    tile.className='yp-badge-tile '+(b.earned?'earned':'soon');
-    tile.id='yp-badge-'+b.id;
-    const ico=document.createElement('div');
-    ico.className='yp-badge-ico'+(b.alt?' alt':'');
-    ico.innerHTML=b.svg;
-    const name=document.createElement('h3');
-    name.textContent=b.name;
-    const tag=document.createElement('div');
-    tag.className='yp-badge-tag';
-    tag.textContent=b.earned?'Earned':'Keep Going';
-    tile.append(ico,name,tag);
-    if(!b.earned){
-      const hint=document.createElement('p');
-      hint.className='yp-badge-hint';
-      hint.textContent=b.hint;
-      tile.appendChild(hint);
-    }
-    grid.appendChild(tile);
-  });
-  card.appendChild(grid);
-  const done=document.createElement('button');
-  done.type='button';done.className='hwb';done.id='yp-badges-done';done.textContent='Done';
-  done.addEventListener('click',shut);
-  card.appendChild(done);
-  panel.appendChild(card);
-  document.body.appendChild(panel);
-  return panel;
-}
 function ypCantPayDueText(it){
   const iso=it&&(it.occDate||it.showDate||it.dueDate)||'';
   if(typeof ypBillWeekDateText==='function'&&iso){
@@ -1286,14 +1171,14 @@ function ypBillsInjectCss(){
   const s=document.createElement('style');
   s.id='yp-bills-css';
   s.textContent=`
-#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask,#yp-money-checkin,#yp-badges,#yp-cant-pay{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 148px;box-sizing:border-box;background:rgba(11,37,69,.28)}
+#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask,#yp-money-checkin,#yp-cant-pay{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 148px;box-sizing:border-box;background:rgba(11,37,69,.28)}
 #yp-bill-due,#yp-notify-ask,#yp-cant-pay{z-index:54;padding:148px 16px 148px}
-html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask,html.yp-home #yp-money-checkin,html.yp-home #yp-badges,html.yp-home #yp-cant-pay{background:rgba(11,37,69,.28)}
-#yp-bills .card,#yp-process-bills .card,#yp-bill-due .card,#yp-notify-ask .card,#yp-money-checkin .card,#yp-badges .card,#yp-cant-pay .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 20px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.35);color:#14213d}
-#yp-bills .yp-listing,#yp-process-bills .yp-listing,#yp-bill-due .yp-listing,#yp-notify-ask .yp-listing,#yp-money-checkin .yp-listing,#yp-badges .yp-listing,#yp-cant-pay .yp-listing{text-align:left;max-height:calc(100dvh - 256px);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
-#yp-bills .hwb,#yp-bill-due .hwb,#yp-notify-ask .hwb,#yp-money-checkin .hwb,#yp-badges .hwb,#yp-cant-pay .hwb{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-#yp-bills .hwx,#yp-bill-due .hwx,#yp-notify-ask .hwx,#yp-money-checkin .hwx,#yp-badges .hwx,#yp-cant-pay .hwx{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:8px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
-#yp-bills .yp-close,#yp-process-bills .yp-close,#yp-bill-due .yp-close,#yp-notify-ask .yp-close,#yp-money-checkin .yp-close,#yp-badges .yp-close,#yp-cant-pay .yp-close{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
+html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask,html.yp-home #yp-money-checkin,html.yp-home #yp-cant-pay{background:rgba(11,37,69,.28)}
+#yp-bills .card,#yp-process-bills .card,#yp-bill-due .card,#yp-notify-ask .card,#yp-money-checkin .card,#yp-cant-pay .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 20px;text-align:left;box-shadow:0 20px 50px rgba(0,0,0,.35);color:#14213d}
+#yp-bills .yp-listing,#yp-process-bills .yp-listing,#yp-bill-due .yp-listing,#yp-notify-ask .yp-listing,#yp-money-checkin .yp-listing,#yp-cant-pay .yp-listing{text-align:left;max-height:calc(100dvh - 256px);overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
+#yp-bills .hwb,#yp-bill-due .hwb,#yp-notify-ask .hwb,#yp-money-checkin .hwb,#yp-cant-pay .hwb{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+#yp-bills .hwx,#yp-bill-due .hwx,#yp-notify-ask .hwx,#yp-money-checkin .hwx,#yp-cant-pay .hwx{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;margin-top:8px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 16px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
+#yp-bills .yp-close,#yp-process-bills .yp-close,#yp-bill-due .yp-close,#yp-notify-ask .yp-close,#yp-money-checkin .yp-close,#yp-cant-pay .yp-close{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
 #yp-bills .yp-bills-lead,#yp-bill-due .yp-bills-lead,#yp-notify-ask .yp-bills-lead{margin:0 0 14px;font:500 14px/1.45 Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-bills .yp-bills-empty{margin:8px 0 16px;font:500 15px/1.45 Inter,system-ui,sans-serif;color:#5a6780}
 #yp-bills .yp-bills-sec{margin:18px 0 8px;font:800 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545}
@@ -1406,21 +1291,6 @@ html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,
 #yp-money-checkin .yp-wrap-streak{margin:12px 0 4px;padding:12px 14px;border:1px solid #e3e8f0;border-radius:16px}
 #yp-money-checkin .yp-streak-value{margin:0 0 4px;font:700 22px/1.2 Inter,system-ui,sans-serif;color:#0b2545}
 #yp-money-checkin .yp-wrap-streak .yp-pay-hint{margin:0}
-#yp-money-checkin #yp-money-checkin-badges{color:#0a3a8c;font-weight:700}
-#yp-badges .card{display:flex;flex-direction:column;max-height:calc(100dvh - 256px)}
-#yp-badges .yp-badge-lead{margin:4px 0 8px;font:400 14px/1.4 Inter,system-ui,sans-serif;color:#3d4a63}
-#yp-badges .yp-badge-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
-#yp-badges .yp-badge-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 8px 7px;border:1px solid #e3e8f0;border-radius:14px;background:#fff;min-height:0;text-align:left}
-#yp-badges .yp-badge-tile.earned{border-color:#c9d8f5;background:#f6f9ff}
-#yp-badges .yp-badge-ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#eef1f6;color:#8a95a8}
-#yp-badges .yp-badge-ico svg{width:22px;height:22px}
-#yp-badges .yp-badge-tile.earned .yp-badge-ico{background:#e8f0fd;color:#0a3a8c}
-#yp-badges .yp-badge-tile.earned .yp-badge-ico.alt{background:#fff1e6;color:#b8410a}
-#yp-badges .yp-badge-tile h3{margin:0;font:700 13px/1.2 Inter,system-ui,sans-serif;color:#0b2545}
-#yp-badges .yp-badge-tag{font:700 11px/1.2 Inter,system-ui,sans-serif;letter-spacing:.02em;color:#0a3a8c}
-#yp-badges .yp-badge-tile.soon .yp-badge-tag{color:#5a6780}
-#yp-badges .yp-badge-hint{margin:0;font:400 12px/1.35 Inter,system-ui,sans-serif;color:#5a6780}
-#yp-badges .hwb{margin-top:8px;flex:none;min-height:44px}
 #yp-process-bills .yp-pay-item{display:block;padding:0;border-bottom:1px solid #e3e8f0}
 #yp-process-bills .yp-pay-item .yp-pay-row{border-bottom:0}
 #yp-process-bills .yp-cant-pay-link{appearance:none;-webkit-appearance:none;display:block;width:100%;margin:0 0 8px;padding:0 0 10px 44px;border:0;background:none;color:#0a3a8c;font:700 14px/1.35 Inter,system-ui,sans-serif;text-align:left;cursor:pointer;min-height:36px}
