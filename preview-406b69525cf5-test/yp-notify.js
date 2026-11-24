@@ -878,6 +878,7 @@ function ypHabitsBillsSummary(review){
     const n=review.late;
     return 'You paid every bill last week, and '+n+' '+(n===1?'was':'were')+' after the due date.';
   }
+  if(!review.onTime)return 'No bills were paid on time last week. Next week is a fresh start.';
   return 'You paid '+review.onTime+' of '+review.due+' bills on time last week. Next week is a fresh start.';
 }
 function ypHabitsCheckInTarget(){
