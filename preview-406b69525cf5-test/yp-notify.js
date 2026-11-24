@@ -769,6 +769,9 @@ function ypHabitsEnsure(){
   const cur=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
   if(!ypBillParseDate(s.habits.anchorWeek))s.habits.anchorWeek=(cur&&cur.start)||(typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):'');
   if(!s.habits.checkIns||typeof s.habits.checkIns!=='object')s.habits.checkIns={};
+  if('freezes' in s.habits)delete s.habits.freezes;
+  if('toward' in s.habits)delete s.habits.toward;
+  if('maxFreezes' in s.habits)delete s.habits.maxFreezes;
   return s.habits;
 }
 function ypHabitsWeekStartOf(iso){
@@ -833,43 +836,34 @@ function ypHabitsCompletedWeeks(ms){
 function ypHabitsStreakInfo(){
   ypHabitsEnsure();
   const weeks=ypHabitsCompletedWeeks();
-  let streak=0,freezes=2,toward=0;
+  let streak=0;
   const settled=[];
   weeks.forEach(wb=>{
     const st=ypHabitsWeekReview(wb.start,wb.end);
-    if(st.empty){settled.push(Object.assign({},st,{skipped:true,usedFreeze:false}));return;}
+    if(st.empty){settled.push(Object.assign({},st,{skipped:true}));return;}
     if(st.good){
-      streak+=1;toward+=1;
-      if(toward>=4){freezes=Math.min(2,freezes+1);toward=0;}
-      settled.push(Object.assign({},st,{usedFreeze:false}));
+      streak+=1;
+      settled.push(Object.assign({},st,{reset:false}));
       return;
     }
-    if(streak>0&&freezes>0){
-      freezes-=1;
-      settled.push(Object.assign({},st,{usedFreeze:true}));
-      return;
-    }
-    streak=0;toward=0;
-    settled.push(Object.assign({},st,{reset:true,usedFreeze:false}));
+    streak=0;
+    settled.push(Object.assign({},st,{reset:true}));
   });
-  return {streak,freezes,toward,maxFreezes:2,weeks:settled};
+  const reset=streak===0&&settled.some(w=>w.reset);
+  return {streak,reset,weeks:settled};
 }
 function ypHabitsStreakLabel(info){
   info=info||ypHabitsStreakInfo();
   const n=info.streak|0;
-  if(!n)return 'Not Started Yet';
-  const weeks=n===1?'1 Week':(n+' Weeks');
-  const f=info.freezes|0;
-  if(f>0)return weeks+' · '+f+' '+(f===1?'Freeze':'Freezes');
-  return weeks;
+  if(n)return n===1?'1 Week':(n+' Weeks');
+  if(info.reset)return 'Starting Again';
+  return 'Not Started Yet';
 }
 function ypHabitsStreakHint(info){
   info=info||ypHabitsStreakInfo();
-  if(!(info.streak|0))return 'Your streak starts when every bill due in a week is paid on time.';
-  const f=info.freezes|0;
-  if(f>=2)return 'You have 2 freezes, so one missed week will not wipe this out.';
-  if(f===1)return 'You have 1 freeze left, so one missed week will not wipe this out.';
-  return 'Four weeks in a row with every bill paid on time will earn a freeze back.';
+  if(info.streak|0)return 'Every bill due in a week was paid on time.';
+  if(info.reset)return 'New streak starts this week.';
+  return 'Your streak starts when every bill due in a week is paid on time.';
 }
 function ypHabitsBillsSummary(review){
   if(!review||review.empty)return 'No bills were due last week.';
@@ -2171,7 +2165,7 @@ function ypNotifySettingsHtml(){
 function ypBillsFeedKey(){
   try{
     const st=typeof ypHabitsStreakInfo==='function'?ypHabitsStreakInfo():null;
-    return ypBillsWeekLabel()+'|s:'+(st?((st.streak|0)+':'+(st.freezes|0)):'');
+    return ypBillsWeekLabel()+'|s:'+(st?((st.streak|0)+':'+(st.reset?1:0)):'');
   }catch(e){return '';}
 }
 
