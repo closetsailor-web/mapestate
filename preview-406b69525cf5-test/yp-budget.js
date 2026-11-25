@@ -914,7 +914,7 @@ function renderBudgetList(){
 
   body.innerHTML = `<div class="yp-b-scroll" id="yp-b-scroll">
       ${summaryCardHtml(bDraft)}
-      <p class="yp-b-hint">Tap the pencil to change or remove an item.</p>
+      <p class="yp-b-hint">An honest budget reflects your real habits and numbers rather than wishful thinking.</p>
       ${groupsHtml}
       <button class="yp-b-add-cat" type="button" id="yp-b-add-cat"><span class="yp-b-plus">${PLUS_SVG}</span>Add Category</button>
     </div>
