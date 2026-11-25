@@ -1234,6 +1234,9 @@ html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,
 .yp-bill-actions{display:flex;gap:8px;margin:4px 0 2px}
 .yp-bill-actions button{appearance:none;-webkit-appearance:none;flex:1;min-height:44px;padding:0 12px;border:2px solid #0a3a8c;border-radius:999px;background:#fff;color:#0a3a8c;font:700 14px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
 .yp-bill-actions button.yp-bill-del{border-color:#b8410a;color:#b8410a}
+.yp-bill-confirm{display:flex;flex-direction:column;margin:8px 0 2px}
+.yp-bill-del-q{margin:4px 0;font:700 16px/1.3 Inter,system-ui,sans-serif;color:#14213d;text-align:left}
+.yp-bill-del-hint{margin:0 0 8px;font:400 15px/1.5 Inter,system-ui,sans-serif;color:#b8410a;text-align:left}
 #yp-process-bills .yp-pay-hint{margin:8px 0 0;font:400 15px/1.5 Inter,system-ui,sans-serif;color:#b8410a;text-align:left}
 #yp-process-bills .yp-pay-sec{margin:0 0 8px}
 #yp-process-bills .yp-pay-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 10px}
@@ -1860,33 +1863,55 @@ function ypBillsRow(it){
     });
     body.appendChild(leads);
   }
-  if(!ypBillsIsGame(it)&&it.source==='custom'){
-    const actions=document.createElement('div');
-    actions.className='yp-bill-actions';
+  if(!ypBillsIsGame(it)&&typeof ypBillsIsSetup==='function'&&ypBillsIsSetup(it)){
     if(ypBillsDeleteId===it.id){
+      const confirm=document.createElement('div');
+      confirm.className='yp-bill-confirm';
+      confirm.id=ypBillsDomId('yp-bill-delete-confirm',it.id);
+      const q=document.createElement('p');
+      q.className='yp-bill-del-q';
+      q.id=ypBillsDomId('yp-bill-delete-title',it.id);
+      q.textContent='Delete This Bill?';
+      const hint=document.createElement('p');
+      hint.className='yp-bill-del-hint';
+      hint.id=ypBillsDomId('yp-bill-delete-hint',it.id);
+      hint.textContent='This clears the amount and the due date.';
+      const actions=document.createElement('div');
+      actions.className='yp-bill-actions';
       const yes=document.createElement('button');
       yes.type='button';
       yes.className='yp-bill-del';
-      yes.textContent='Delete This Bill';
-      yes.addEventListener('click',()=>{ypBillsDeleteId=null;ypBillsDeleteCustom(it.id);});
+      yes.id=ypBillsDomId('yp-bill-delete-yes',it.id);
+      yes.textContent='Delete Bill';
+      yes.addEventListener('click',()=>{ypBillsDeleteId=null;ypBillsDelete(it.id);});
       const no=document.createElement('button');
       no.type='button';
+      no.id=ypBillsDomId('yp-bill-delete-no',it.id);
       no.textContent='Keep';
       no.addEventListener('click',()=>{ypBillsDeleteId=null;ypBillsPaintList();});
       actions.append(yes,no);
+      confirm.append(q,hint,actions);
+      body.appendChild(confirm);
     }else{
-      const edit=document.createElement('button');
-      edit.type='button';
-      edit.textContent='Edit';
-      edit.addEventListener('click',()=>{ypBillsEditId=it.id;ypBillsEditDraft=null;ypBillsDeleteId=null;ypBillsPaintList();});
+      const actions=document.createElement('div');
+      actions.className='yp-bill-actions';
+      if(it.source==='custom'){
+        const edit=document.createElement('button');
+        edit.type='button';
+        edit.id=ypBillsDomId('yp-bill-edit-open',it.id);
+        edit.textContent='Edit';
+        edit.addEventListener('click',()=>{ypBillsEditId=it.id;ypBillsEditDraft=null;ypBillsDeleteId=null;ypBillsPaintList();});
+        actions.appendChild(edit);
+      }
       const del=document.createElement('button');
       del.type='button';
       del.className='yp-bill-del';
-      del.textContent='Delete';
-      del.addEventListener('click',()=>{ypBillsDeleteId=it.id;ypBillsPaintList();});
-      actions.append(edit,del);
+      del.id=ypBillsDomId('yp-bill-delete',it.id);
+      del.textContent='Delete Bill';
+      del.addEventListener('click',()=>{ypBillsDeleteId=it.id;ypBillsOpenId=it.id;ypBillsPaintList();});
+      actions.appendChild(del);
+      body.appendChild(actions);
     }
-    body.appendChild(actions);
   }
   btn.addEventListener('click',()=>{
     ypBillsOpenId=open?null:it.id;
@@ -1989,15 +2014,82 @@ function ypBillsUpdateCustom(id,fields){
   it.dueDay=d?d.getDate():null;
   return it;
 }
+function ypBillsIsSetup(it){
+  if(!it||ypBillsIsGame(it))return false;
+  if(it.source==='custom')return true;
+  return (+it.amount>0)||!!ypBillParseDate(it.dueDate)||!!it.remind||!!it.amountUser;
+}
+function ypBillsClearPaid(id){
+  const paid=ypBillsPaidMap();
+  if(!paid||!id)return;
+  const prefix=String(id)+'|';
+  Object.keys(paid).forEach(k=>{if(k===String(id)||k.indexOf(prefix)===0)delete paid[k];});
+}
+function ypBillsClearNotify(it){
+  if(!it||!it.id)return;
+  const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:'billDue';
+  try{ypNotifyCancel(type,it.id);}catch(e){}
+  const n=typeof ypNotifyState==='function'?ypNotifyState():null;
+  if(n&&n.fired){
+    const prefix=type+':'+it.id;
+    Object.keys(n.fired).forEach(k=>{if(k===prefix||k.indexOf(prefix+':')===0)delete n.fired[k];});
+  }
+}
+function ypBillsSyncExpenseTotal(){
+  const inc=(typeof G!=='undefined'&&G&&G.income)||null;
+  if(!inc||!inc.ex)return;
+  if(typeof expMonthly==='function'){
+    try{inc.exp=Math.round(expMonthly(inc.ex)*100)/100;}catch(e){}
+  }
+}
+function ypBillsClearExpenseBudget(id){
+  if(!id||String(id).indexOf('exp:')!==0)return;
+  const k=String(id).slice(4);
+  const inc=(typeof G!=='undefined'&&G&&G.income)||null;
+  if(!inc||!inc.ex||!inc.ex.items)return;
+  delete inc.ex.items[k];
+  if(inc.ex.yearly)delete inc.ex.yearly[k];
+  ypBillsSyncExpenseTotal();
+}
+function ypBillsResetSetup(id){
+  const store=ypBillsStore();
+  const it=store&&store.items[id];
+  if(!it||ypBillsIsGame(it)||it.source==='custom')return;
+  ypBillsClearNotify(it);
+  ypBillsClearPaid(id);
+  ypBillsClearExpenseBudget(id);
+  it.amount=0;
+  delete it.amountUser;
+  delete it.freqUser;
+  it.freq=ypBillsDefaultFreq({id:it.id,source:it.source,freq:null});
+  it.dueDate=null;
+  it.dueDay=null;
+  it.lastDueDate=null;
+  it.remind=false;
+  it.asked=false;
+  it.choice=null;
+  if(ypBillsEditId===id){ypBillsEditId=null;ypBillsEditDraft=null;}
+  if(ypBillsOpenId===id)ypBillsOpenId=null;
+  if(ypBillsDeleteId===id)ypBillsDeleteId=null;
+  ypBillsSave();
+}
 function ypBillsDeleteCustom(id){
   const store=ypBillsStore();
   const it=store&&store.items[id];
   if(!it||it.source!=='custom')return;
-  const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:'billDue';
-  ypNotifyCancel(type,id);
+  ypBillsClearNotify(it);
+  ypBillsClearPaid(id);
   delete store.items[id];
   if(ypBillsEditId===id){ypBillsEditId=null;ypBillsEditDraft=null;}
+  if(ypBillsOpenId===id)ypBillsOpenId=null;
+  if(ypBillsDeleteId===id)ypBillsDeleteId=null;
   ypBillsSave();
+}
+function ypBillsDelete(id){
+  const it=ypBillsGet(id);
+  if(!it||ypBillsIsGame(it))return;
+  if(it.source==='custom')ypBillsDeleteCustom(id);
+  else ypBillsResetSetup(id);
 }
 function ypBillWeekFromDate(iso){
   if(!iso||typeof ypWallAt!=='function'||typeof CFG==='undefined')return NaN;

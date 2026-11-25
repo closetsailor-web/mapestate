@@ -734,7 +734,55 @@ function ypOpenAssetCard(id,title,fill){ypExclusive(id);if(typeof ypUseHome==='f
 function ypOpenPhysicalAssets(){const b=ypOwnedPropertyBlocks();const parts=typeof ypNetWorthParts==='function'?ypNetWorthParts():{cash:(typeof G!=='undefined'&&G)?(+G.cash||0):0,totalAssets:0};const money=typeof ypNetMoney==='function'?ypNetMoney:(n=>{n=Math.round(Number(n));return Number.isFinite(n)?((n<0?'-$':'$')+String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',')):'$0';});ypOpenAssetCard('yp-physical','Assets Breakdown',card=>{const body=document.createElement('div');body.className='yp-asset-body';const cashList=document.createElement('div');cashList.className='yp-own-list';const cashCard=document.createElement('div');cashCard.className='yp-own-card';cashCard.style.cursor='default';cashCard.setAttribute('aria-label','Cash');const cashDl=document.createElement('dl');cashDl.className='yp-own-figs';cashDl.style.margin='0';const cashFig=document.createElement('div');cashFig.className='yp-own-fig';const cashDt=document.createElement('dt');cashDt.textContent='Cash';const cashDd=document.createElement('dd');cashDd.id='yp-assets-cash';cashDd.textContent=money(parts.cash);cashFig.append(cashDt,cashDd);cashDl.appendChild(cashFig);cashCard.appendChild(cashDl);cashList.appendChild(cashCard);body.appendChild(cashList);const propHead=document.createElement('h3');propHead.className='yp-asset-group';propHead.textContent='Property';body.appendChild(propHead);const props=document.createElement('div');props.className='yp-asset-property';props.innerHTML=b.html;body.appendChild(props);const vehHead=document.createElement('h3');vehHead.className='yp-asset-group';vehHead.textContent='Vehicles';body.appendChild(vehHead);if(typeof ypRenderOwnedVehicles==='function')body.appendChild(ypRenderOwnedVehicles());else{const vehEmpty=document.createElement('div');vehEmpty.className='fin';vehEmpty.id='yp-vehicles-empty';vehEmpty.textContent="You don't own any vehicles yet.";body.append(vehEmpty);}if(typeof ypFlow==='function')body.appendChild(ypFlow([{label:'Total Assets',value:money(parts.totalAssets),id:'yp-assets-total',detail:true}]));card.appendChild(body);if(typeof ypFitOwnOcc==='function'){ypFitOwnOcc(card);requestAnimationFrame(()=>ypFitOwnOcc(card));}});}
 function ypNetWorthParts(){if(typeof ypSyncLoanBalances==='function')try{ypSyncLoanBalances();}catch(e){}const cash=(typeof G!=='undefined'&&G)?(+G.cash||0):0;let property=0,homeLoans=0,invLoans=0;const valueOf=id=>typeof value==='function'?value(id):0;if(typeof ypBuyHeld==='function')(ypBuyHeld()||[]).forEach(b=>{if(!b)return;const val=+b.estimate||+b.price||+b.agreed||0;if(b.status==='owned'){property+=val;homeLoans+=Math.max(0,typeof ypLoanOwing==='function'?ypLoanOwing(b):(+b.loan||0));}else if(b.status==='contract'){const equity=+b.payNow||0;property+=val;homeLoans+=Math.max(0,val-equity);}});if(typeof allProps==='function')for(const[id,p]of allProps()){if(!p)continue;const val=valueOf(id);if(p.status==='settling'){property+=val;invLoans+=Math.max(0,val-(+p.dep||0));}else{property+=val;invLoans+=Math.max(0,+p.loan||0);}}const vehicles=typeof ypVehicleAssetsTotal==='function'?ypVehicleAssetsTotal():0;const carLoans=typeof ypCarLoanBalance==='function'?ypCarLoanBalance():0;const loans=homeLoans+invLoans;const totalAssets=cash+property+vehicles,totalLiabilities=loans+carLoans,net=totalAssets-totalLiabilities;return {cash,property,vehicles,homeLoans,invLoans,loans,carLoans,totalAssets,totalLiabilities,net};}
 function ypNetMoney(n){n=Math.round(Number(n));if(!Number.isFinite(n))n=0;const body=typeof ypMoneyText==='function'?ypMoneyText(Math.abs(n)):(typeof fmt==='function'?fmt(Math.abs(n)):('$'+Math.abs(n).toLocaleString()));return String(body).replace(/[\u2212\u2013\u2014-]/g,'');}
-function ypOpenLiquidAssets(){const p=typeof ypNetWorthParts==='function'?ypNetWorthParts():{cash:0,property:0,loans:0,totalAssets:0,totalLiabilities:0,net:0};const money=ypNetMoney;ypOpenAssetCard('yp-liquid','Net Worth',card=>{const body=document.createElement('div');body.className='yp-asset-body';const section=(title,rows)=>{const wrap=document.createElement('section');wrap.className='yp-net-panel';const h=document.createElement('h3');h.className='yp-net-head';h.textContent=title;wrap.appendChild(h);if(typeof ypFlow==='function')wrap.appendChild(ypFlow(rows));return wrap;};if(typeof ypFlow==='function'){body.appendChild(section('Assets',[{label:'Cash',value:money(p.cash),id:'yp-net-cash'},{label:'Property',value:money(p.property),id:'yp-net-property'},{label:'Vehicles',value:money(p.vehicles||0),id:'yp-net-vehicles'},{label:'Super',value:money(0),id:'yp-net-super'},{label:'Total Assets',value:money(p.totalAssets),id:'yp-net-assets',detail:true}]));body.appendChild(section('Liabilities',[{label:'Home Loans',value:money(p.homeLoans!=null?p.homeLoans:p.loans),id:'yp-net-loans'},{label:'Investor Loans',value:money(p.invLoans||0),id:'yp-net-inv-loans'},{label:'Car Loan',value:money(p.carLoans||0),id:'yp-net-car-loan'},{label:'Personal Loan',value:money(0),id:'yp-net-personal'},{label:'Student Debt',value:money(0),id:'yp-net-student'},{label:'Total Liabilities',value:money(p.totalLiabilities),id:'yp-net-liabilities',detail:true}]));const bottom=ypFlow([{label:'Net Worth',hint:'(Assets less Liabilities)',value:money(p.net),id:'yp-net-total',detail:true}]);bottom.classList.add('yp-net-bottom');body.appendChild(bottom);}else{const t=document.createElement('p');t.textContent=money(p.net);body.appendChild(t);}card.appendChild(body);});}
+function ypNetSummaryCard(p,money){
+  money=money||ypNetMoney;
+  p=p||{};
+  const card=document.createElement('div');
+  card.className='yp-net-summary';
+  card.id='yp-net-summary';
+  const title=document.createElement('p');
+  title.className='yp-net-summary-title';
+  title.id='yp-net-summary-title';
+  title.textContent='Current Net Worth';
+  const note=document.createElement('p');
+  note.className='yp-net-summary-note';
+  note.id='yp-net-summary-note';
+  note.textContent="Debt is one person's liability, but another person's asset.";
+  const value=document.createElement('p');
+  value.className='yp-net-summary-value';
+  value.id='yp-net-summary-value';
+  value.textContent=money(p.net);
+  const bar=document.createElement('div');
+  bar.className='yp-net-summary-bar';
+  const assets=document.createElement('div');
+  assets.className='yp-net-summary-half yp-net-summary-assets';
+  const assetsVal=document.createElement('span');
+  assetsVal.className='yp-net-summary-half-val';
+  assetsVal.id='yp-net-summary-assets';
+  assetsVal.textContent=money(p.totalAssets);
+  const assetsLab=document.createElement('span');
+  assetsLab.className='yp-net-summary-half-lab';
+  assetsLab.textContent='Assets';
+  assets.append(assetsVal,assetsLab);
+  const minus=document.createElement('div');
+  minus.className='yp-net-summary-minus';
+  minus.setAttribute('aria-hidden','true');
+  minus.textContent='\u2212';
+  const liabs=document.createElement('div');
+  liabs.className='yp-net-summary-half yp-net-summary-liabs';
+  const liabsVal=document.createElement('span');
+  liabsVal.className='yp-net-summary-half-val';
+  liabsVal.id='yp-net-summary-liabilities';
+  liabsVal.textContent=money(p.totalLiabilities);
+  const liabsLab=document.createElement('span');
+  liabsLab.className='yp-net-summary-half-lab';
+  liabsLab.textContent='Liabilities';
+  liabs.append(liabsVal,liabsLab);
+  bar.append(assets,minus,liabs);
+  card.append(title,note,value,bar);
+  return card;
+}
+function ypOpenLiquidAssets(){const p=typeof ypNetWorthParts==='function'?ypNetWorthParts():{cash:0,property:0,loans:0,totalAssets:0,totalLiabilities:0,net:0};const money=ypNetMoney;ypOpenAssetCard('yp-liquid','Net Worth',card=>{const body=document.createElement('div');body.className='yp-asset-body';body.appendChild(ypNetSummaryCard(p,money));const section=(title,rows)=>{const wrap=document.createElement('section');wrap.className='yp-net-panel';const h=document.createElement('h3');h.className='yp-net-head';h.textContent=title;wrap.appendChild(h);if(typeof ypFlow==='function')wrap.appendChild(ypFlow(rows));return wrap;};if(typeof ypFlow==='function'){body.appendChild(section('Assets',[{label:'Cash',value:money(p.cash),id:'yp-net-cash'},{label:'Property',value:money(p.property),id:'yp-net-property'},{label:'Vehicles',value:money(p.vehicles||0),id:'yp-net-vehicles'},{label:'Super',value:money(0),id:'yp-net-super'},{label:'Total Assets',value:money(p.totalAssets),id:'yp-net-assets',detail:true}]));body.appendChild(section('Liabilities',[{label:'Home Loans',value:money(p.homeLoans!=null?p.homeLoans:p.loans),id:'yp-net-loans'},{label:'Investor Loans',value:money(p.invLoans||0),id:'yp-net-inv-loans'},{label:'Car Loan',value:money(p.carLoans||0),id:'yp-net-car-loan'},{label:'Personal Loan',value:money(0),id:'yp-net-personal'},{label:'Student Debt',value:money(0),id:'yp-net-student'},{label:'Total Liabilities',value:money(p.totalLiabilities),id:'yp-net-liabilities',detail:true}]));const bottom=ypFlow([{label:'Net Worth',hint:'(Assets less Liabilities)',value:money(p.net),id:'yp-net-total',detail:true}]);bottom.classList.add('yp-net-bottom');body.appendChild(bottom);}else{const t=document.createElement('p');t.textContent=money(p.net);body.appendChild(t);}card.appendChild(body);});}
 
 function ypOpenBuy(id){const rec=ypBuyFor(id);if(rec)ypOpenSaleDetail(ypBuyFeature(rec));}
 /* Deposit the player chooses: at least the lender minimum (5%), at most what Bank can cover after duty, mortgage insurance and legals. Stored on the purchase as a % (quick buttons) or dollars (typed). */
@@ -1822,10 +1870,18 @@ function ypRealWeekCard(){const card=document.createElement('section');card.clas
  if(!overdue.length&&!weekDue.length){
   const billsBtn=document.createElement('button');billsBtn.type='button';billsBtn.className='yp-week-pending-btn';billsBtn.id='yp-real-bills-btn';billsBtn.textContent='None';billsBtn.addEventListener('click',openProcess);list.appendChild(billsBtn);
  }
+ const links=document.createElement('div');
+ links.className='yp-week-bill-links';
+ links.id='yp-real-bill-links';
  const proc=document.createElement('button');
  proc.type='button';proc.className='yp-week-process';proc.id='yp-real-process-bills';proc.textContent='Process Bills';
  proc.addEventListener('click',openProcess);
- list.appendChild(proc);
+ const edit=document.createElement('button');
+ edit.type='button';edit.className='yp-week-process';edit.id='yp-real-edit-bills';edit.textContent='Edit Bills';
+ const openEdit=e=>{e.preventDefault();e.stopPropagation();if(typeof ypOpenBills==='function')ypOpenBills();};
+ edit.addEventListener('click',openEdit);
+ links.append(proc,edit);
+ list.appendChild(links);
  billsDd.appendChild(list);
  rows.append(billsDt,billsDd);
  card.appendChild(rows);

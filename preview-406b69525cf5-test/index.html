@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates135";
+window.YP_BUILD="dates136";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1446,7 +1446,7 @@ html.yp-home #yp-feed:not([hidden]){display:block}
 #yp-real-week .yp-week-bill-meta.yp-week-bill-overdue .yp-week-bill-when,
 #yp-real-week .yp-week-bill-meta.yp-week-bill-overdue .yp-week-bill-amt{color:#b8410a}
 #yp-real-week .yp-week-overdue-row .yp-week-bill-name{color:#b8410a}
-#yp-real-week .yp-week-process{appearance:none;-webkit-appearance:none;display:inline-block;align-self:flex-start;margin:8px 0 0;padding:8px 0;border:0;background:transparent;color:#1a5fd6;font:700 14px/1.4 Inter,system-ui,sans-serif;text-decoration:underline;cursor:pointer;touch-action:manipulation;text-align:left}
+#yp-real-week .yp-week-bill-links{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin:8px 0 0}#yp-real-week .yp-week-process{appearance:none;-webkit-appearance:none;display:inline-block;flex:0 1 auto;margin:0;padding:8px 0;border:0;background:transparent;color:#1a5fd6;font:700 14px/1.4 Inter,system-ui,sans-serif;text-decoration:underline;cursor:pointer;touch-action:manipulation;text-align:left;white-space:nowrap}#yp-real-week .yp-week-process#yp-real-edit-bills{text-align:right}
 #yp-real-week .yp-week-process:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px;border-radius:6px}
 #yp-game-week,#yp-real-week{box-sizing:border-box}
 
@@ -1537,6 +1537,18 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 #yp-liquid .yp-flow>div.yp-subtotal,#yp-physical .yp-flow>div.yp-subtotal{background:#eef2f8;margin:4px 0 0;padding:7px 10px;border-radius:10px;border-top:0;min-height:36px}
 #yp-liquid .yp-flow>div.yp-subtotal dt,#yp-liquid .yp-flow>div.yp-subtotal dd,#yp-physical .yp-flow>div.yp-subtotal dt,#yp-physical .yp-flow>div.yp-subtotal dd{font-weight:800;color:#0b2545}
 #yp-liquid .yp-net-panel{margin:0 0 8px;padding:10px 12px 10px;border-radius:16px;background:#f6f8fb;border:1px solid rgba(20,33,61,.08);box-shadow:0 6px 16px rgba(11,37,69,.05)}
+#yp-liquid .yp-net-summary{margin:4px 0 14px;padding:16px 12px 14px;border-radius:20px;background:#f6f8fb;border:1px solid rgba(20,33,61,.08);box-shadow:0 6px 16px rgba(11,37,69,.05);text-align:center}
+#yp-liquid .yp-net-summary-title{margin:0 0 4px;font:700 14px/1.3 Inter,system-ui,sans-serif;color:#0b2545;text-align:center}
+#yp-liquid .yp-net-summary-note{margin:0 0 10px;font:400 12px/1.4 Inter,system-ui,sans-serif;color:#5a6780;text-align:center}
+#yp-liquid .yp-net-summary-value{margin:0 0 14px;font:800 32px/1.1 Inter,system-ui,sans-serif;color:#0b2545;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+#yp-liquid .yp-net-summary-bar{position:relative;display:flex;align-items:stretch;width:100%;min-height:64px;border-radius:999px}
+#yp-liquid .yp-net-summary-half{flex:1 1 50%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;padding:10px 28px 8px;color:#fff;min-width:0}
+#yp-liquid .yp-net-summary-assets{background:#0b2545;border-radius:999px 0 0 999px}
+#yp-liquid .yp-net-summary-liabs{background:#b8410a;border-radius:0 999px 999px 0}
+#yp-liquid .yp-net-summary-half-val{font:700 15px/1.15 Inter,system-ui,sans-serif;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+#yp-liquid .yp-net-summary-half-lab{margin-top:2px;font:600 12px/1.2 Inter,system-ui,sans-serif;color:#fff}
+#yp-liquid .yp-net-summary-minus{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:#fff;color:#0b2545;border:2px solid #0b2545;display:flex;align-items:center;justify-content:center;font:700 18px/1 Inter,system-ui,sans-serif;z-index:1;box-shadow:0 2px 6px rgba(11,37,69,.2)}
+
 #yp-liquid .yp-net-bottom{margin:2px 0 0}
 #yp-liquid .yp-net-bottom .yp-flow,#yp-liquid .yp-net-bottom .yp-flow-list{margin:0}
 #yp-liquid .yp-net-bottom .yp-flow>div,#yp-liquid .yp-net-bottom .yp-flow>div.yp-subtotal{background:radial-gradient(120% 160% at 85% 0%,#1a6fff 0%,#0a3fb0 55%,#0b2545 100%);margin:0;padding:12px 14px;border-radius:16px;border:0;min-height:54px;box-shadow:0 10px 22px rgba(11,37,69,.22)}
@@ -4205,11 +4217,11 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates135"></script>
-<script src="map-preview.js?v=dates135"></script>
-<script src="player-market.js?v=dates135"></script>
-<script src="car-yard.js?v=dates135"></script>
-<script src="overture-layer.js?v=dates135"></script>
-<script src="yp-notify.js?v=dates135"></script>
+<script src="yp-paycalc.js?v=dates136"></script>
+<script src="map-preview.js?v=dates136"></script>
+<script src="player-market.js?v=dates136"></script>
+<script src="car-yard.js?v=dates136"></script>
+<script src="overture-layer.js?v=dates136"></script>
+<script src="yp-notify.js?v=dates136"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
