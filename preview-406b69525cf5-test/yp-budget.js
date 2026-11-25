@@ -48,9 +48,10 @@ const PEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 const PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 const BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
 
-/* 28 Australian categories from categories.md (Rent excluded from Housing because game rent comes from where you live). */
+/* 28 Australian categories from categories.md. Rent is a real-life Housing item; game rent still comes from the home you pick in the game. */
 const YP_BUDGET_CATS = [
   { id:'housing', name:'Housing', icon:'home', color:'c-blue', items:[
+    { id:'rent', name:'Rent', icon:'home' },
     { id:'mortgage', name:'Mortgage', icon:'home' },
     { id:'council-rates', name:'Council Rates', icon:'doc', period:'year' },
     { id:'strata-fees', name:'Strata Fees', icon:'doc' },
@@ -330,12 +331,40 @@ function normalizeV2(ex){
       items
     });
   });
-  return out;
+  return ensureHousingRent(out);
+}
+
+
+/* Real-life only: keep Rent as the first Housing item at $0 for existing saves, unless the player deleted it. Game rent is separate. */
+function ensureHousingRent(ex){
+  if(!ex || !Array.isArray(ex.groups)) return ex;
+  const housing = ex.groups.find(g=>g && g.id==='housing');
+  if(!housing) return ex;
+  housing.items = Array.isArray(housing.items) ? housing.items : [];
+  const deleted = Array.isArray(ex.deleted) ? ex.deleted : [];
+  const idx = housing.items.findIndex(it=>it && it.id==='rent');
+  if(idx === 0) return ex;
+  if(idx > 0){
+    const [rent] = housing.items.splice(idx, 1);
+    housing.items.unshift(rent);
+    return ex;
+  }
+  if(deleted.includes('rent')) return ex;
+  housing.items.unshift({
+    id: 'rent',
+    billKey: 'rent',
+    name: 'Rent',
+    icon: 'home',
+    amount: 0,
+    period: 'week',
+    custom: false
+  });
+  return ex;
 }
 
 function ypBudgetMigrateEx(rawEx, fallbackMonthlyExp){
   if(rawEx && rawEx.v === 2 && Array.isArray(rawEx.groups)){
-    return normalizeV2(rawEx);
+    return ensureHousingRent(normalizeV2(rawEx));
   }
   const ex = cloneDefaults();
   const findGroup = id => ex.groups.find(g=>g.id===id);
@@ -368,7 +397,7 @@ function ypBudgetMigrateEx(rawEx, fallbackMonthlyExp){
         });
       }
     });
-    return ex;
+    return ensureHousingRent(ex);
   }
 
   /* Legacy v1 { freq, items, yearly } */
@@ -414,7 +443,7 @@ function ypBudgetMigrateEx(rawEx, fallbackMonthlyExp){
       it.period = isYr ? 'year' : 'week';
       it.amount = isYr ? cleanNum(raw) : cleanNum(toWeekNum(raw, oldFreq));
     });
-    return ex;
+    return ensureHousingRent(ex);
   }
 
   /* Bare fallback from G.income.exp monthly lump */
@@ -427,7 +456,7 @@ function ypBudgetMigrateEx(rawEx, fallbackMonthlyExp){
       ot.amount = cleanNum(toWeekNum(mo, 'month'));
     }
   }
-  return ex;
+  return ensureHousingRent(ex);
 }
 
 function ypBudgetEnsureEx(g){
@@ -435,6 +464,7 @@ function ypBudgetEnsureEx(g){
   if(!root) return null;
   if(!root.income) return null;
   if(root.income.ex && root.income.ex.v === 2 && Array.isArray(root.income.ex.groups)){
+    ensureHousingRent(root.income.ex);
     return root.income.ex;
   }
   if(root.income.ex || (+root.income.exp > 0)){
@@ -526,6 +556,38 @@ function ypBudgetInjectCss(){
 }
 #sheet.yp-budget-sheet .yp-b-scroll::-webkit-scrollbar { display:none; }
 .yp-b-hint { margin:0 4px 10px; font-size:13px; line-height:1.4; color:#b8410a; font-weight:400; }
+
+.yp-b-sum {
+  display:grid; grid-template-columns:100px 1fr; gap:8px 14px; align-items:center;
+  background:#fff; border:0; border-radius:16px; padding:14px 14px 12px; margin:0 0 10px; box-shadow:none;
+}
+.yp-b-ring { width:100px; height:100px; display:block; }
+.yp-b-sum-copy { min-width:0; }
+.yp-b-sum-cap {
+  margin:0; font-size:11px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+  color:#5a6780; line-height:1.3;
+}
+.yp-b-sum-tot {
+  margin:6px 0 0; font-size:30px; font-weight:700; letter-spacing:-.6px; color:#0b2545;
+  line-height:1.05; font-variant-numeric:tabular-nums;
+}
+.yp-b-sum-left { margin:6px 0 0; font-size:14px; font-weight:400; line-height:1.3; color:#14213d; }
+.yp-b-sum-left b { font-weight:600; font-variant-numeric:tabular-nums; }
+.yp-b-sum-left.over, .yp-b-sum-left.over b { color:#b8410a; }
+.yp-b-legend { grid-column:1 / -1; margin-top:4px; }
+.yp-b-leg { display:flex; align-items:baseline; gap:6px; min-height:24px; font-size:15px; font-weight:400; }
+.yp-b-leg + .yp-b-leg { margin-top:2px; }
+.yp-b-sw { width:8px; height:8px; border-radius:2px; flex:none; align-self:center; }
+.yp-b-leg-name { color:#14213d; flex:none; font-weight:400; }
+.yp-b-leg-pct { color:#5a6780; font-weight:400; font-variant-numeric:tabular-nums; flex:none; }
+.yp-b-leg-lead {
+  flex:1; border-bottom:1.5px dotted #c5cdd8; min-width:8px; transform:translateY(-4px);
+}
+.yp-b-leg-amt {
+  font-weight:400; color:#14213d; font-variant-numeric:tabular-nums;
+  min-width:36px; text-align:right; flex:none;
+}
+
 .yp-b-group {
   background:#fff; border:0; border-radius:16px;
   padding:2px 4px; margin:0 0 8px; box-shadow:none;
@@ -663,6 +725,87 @@ let bOpenSet = new Set(); /* All sections start closed by default so all 28 cate
 let bDeletedBills = [];
 let bScrollTop = 0;
 
+
+/* Brand shades for the summary ring/legend. Larger slices first; greys for the rest. */
+const SUM_COLORS = ['#0b2545','#1e4fd8','#b8410a','#3b6fe0','#d4693a','#6b8eef','#e08a5c','#8aa4f2'];
+const SUM_GREYS = ['#8b95a5','#9aa3b0','#a8b0bc','#b6bdc6','#c5cbd4'];
+
+function takeHomeWeekly(){
+  try{
+    if(typeof ypRealLifeFigures === 'function'){
+      const F = ypRealLifeFigures();
+      return Math.max(0, Math.round(+F.incomeWk || 0));
+    }
+  }catch(e){}
+  return 0;
+}
+
+/* Category weekly totals already use toWeekNum (yearly ÷ 52), the shared calculation. */
+function summarySlices(ex, takeHome){
+  const rows = [];
+  (ex.groups || []).forEach(g=>{
+    const weekly = ypBudgetGroupWeekly(g);
+    if(!(weekly > 0)) return;
+    rows.push({ id:g.id, name:g.name, weekly });
+  });
+  rows.sort((a,b)=> (b.weekly - a.weekly) || String(a.name).localeCompare(String(b.name)));
+  rows.forEach((row, i)=>{
+    row.color = i < SUM_COLORS.length ? SUM_COLORS[i] : SUM_GREYS[(i - SUM_COLORS.length) % SUM_GREYS.length];
+    row.pct = takeHome > 0 ? Math.round(row.weekly / takeHome * 100) : 0;
+  });
+  return rows;
+}
+
+function ringSvg(slices, takeHome, budgetWk){
+  const r = 36, sw = 14, C = 2 * Math.PI * r;
+  const track = `<circle cx="50" cy="50" r="${r}" fill="none" stroke="#e6edf6" stroke-width="${sw}"/>`;
+  const over = takeHome <= 0 ? budgetWk > 0 : budgetWk > takeHome;
+  const basis = takeHome > 0 ? takeHome : (budgetWk > 0 ? budgetWk : 0);
+  let used = 0, arcs = '';
+  if(basis > 0){
+    slices.forEach(s=>{
+      if(used >= C - 0.001) return;
+      let len = (s.weekly / basis) * C;
+      if(used + len > C) len = C - used;
+      if(!(len > 0)) return;
+      arcs += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}" stroke-linecap="butt" stroke-dasharray="${len.toFixed(3)} ${(C-len).toFixed(3)}" stroke-dashoffset="${(-used).toFixed(3)}" transform="rotate(-90 50 50)"/>`;
+      used += len;
+    });
+    if(over && used < C - 0.05 && slices.length){
+      const gap = C - used;
+      const last = slices[Math.max(0, slices.length-1)].color;
+      arcs += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${last}" stroke-width="${sw}" stroke-linecap="butt" stroke-dasharray="${gap.toFixed(3)} ${(C-gap).toFixed(3)}" stroke-dashoffset="${(-used).toFixed(3)}" transform="rotate(-90 50 50)"/>`;
+    }
+  }
+  return `<svg class="yp-b-ring" viewBox="0 0 100 100" width="100" height="100" aria-hidden="true">${track}${arcs}</svg>`;
+}
+
+function summaryCardHtml(ex){
+  const takeHome = takeHomeWeekly();
+  const budgetWk = Math.round(ypBudgetWeeklyTotal(ex));
+  const left = takeHome - budgetWk;
+  const slices = summarySlices(ex, takeHome);
+  const leftHtml = left < 0
+    ? `<p class="yp-b-sum-left over" id="yp-b-sum-left"><b>${bFmt(Math.abs(left))}</b> over budget</p>`
+    : `<p class="yp-b-sum-left" id="yp-b-sum-left"><b>${bFmt(left)}</b> left to budget</p>`;
+  const legend = slices.map(s=>`<div class="yp-b-leg" data-gid="${esc(s.id)}" data-pct="${s.pct}">
+      <i class="yp-b-sw" style="background:${s.color}"></i>
+      <span class="yp-b-leg-name">${esc(s.name)}</span>
+      <span class="yp-b-leg-pct">${s.pct}%</span>
+      <span class="yp-b-leg-lead"></span>
+      <span class="yp-b-leg-amt">${bFmt(s.weekly)}</span>
+    </div>`).join('');
+  return `<div class="yp-b-sum" id="yp-b-sum">
+    ${ringSvg(slices, takeHome, budgetWk)}
+    <div class="yp-b-sum-copy">
+      <p class="yp-b-sum-cap">Total Planned Expenses</p>
+      <p class="yp-b-sum-tot" id="yp-b-sum-tot">${bFmt(budgetWk)}</p>
+      ${leftHtml}
+    </div>
+    <div class="yp-b-legend" id="yp-b-legend">${legend}</div>
+  </div>`;
+}
+
 function setBudgetHead(title, onBack){
   const sheet = document.getElementById('sheet');
   if(!sheet) return;
@@ -736,6 +879,7 @@ function renderBudgetList(){
   }).join('');
 
   body.innerHTML = `<div class="yp-b-scroll" id="yp-b-scroll">
+      ${summaryCardHtml(bDraft)}
       <p class="yp-b-hint">Tap the pencil to change or remove an item.</p>
       ${groupsHtml}
       <button class="yp-b-add-cat" type="button" id="yp-b-add-cat"><span class="yp-b-plus">${PLUS_SVG}</span>Add Category</button>
@@ -1096,6 +1240,8 @@ window.ypBudgetGroupWeekly = ypBudgetGroupWeekly;
 window.ypBudgetWeeklyTotal = ypBudgetWeeklyTotal;
 window.ypBudgetMonthlyTotal = ypBudgetMonthlyTotal;
 window.ypBudgetActiveItems = ypBudgetActiveItems;
+window.ypBudgetSummarySlices = summarySlices;
+window.ypBudgetTakeHomeWeekly = takeHomeWeekly;
 window.ypBudgetRender = renderBudgetList;
 window.expOpen = expOpen;
 window.expRender = renderBudgetList;
