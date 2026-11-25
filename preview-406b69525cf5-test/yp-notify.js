@@ -791,7 +791,7 @@ function ypBillsDueThisWeek(){
 
 
 
-/* ----- Weekly Money Check-in and On-Time Bills Streak ----- */
+/* ----- Weekly Money Check-in ----- */
 function ypHabitsEnsure(){
   const s=typeof ypBillsStore==='function'?ypBillsStore():null;
   if(!s)return null;
@@ -992,23 +992,6 @@ function ypOpenMoneyCheckIn(week){
     hero.append(num,note);
   }
   card.appendChild(hero);
-  const info=ypHabitsStreakInfo();
-  const streak=document.createElement('section');
-  streak.className='yp-pay-sec yp-wrap-streak';
-  streak.id='yp-money-checkin-streak';
-  const stTitle=document.createElement('h3');
-  stTitle.className='yp-pay-title';
-  stTitle.textContent='On-Time Streak';
-  const stVal=document.createElement('p');
-  stVal.className='yp-streak-value';
-  stVal.id='yp-money-checkin-streak-value';
-  stVal.textContent=ypHabitsStreakLabel(info);
-  const stHint=document.createElement('p');
-  stHint.className='yp-pay-hint';
-  stHint.id='yp-money-checkin-streak-hint';
-  stHint.textContent=ypHabitsStreakHint(info);
-  streak.append(stTitle,stVal,stHint);
-  card.appendChild(streak);
   const bud=document.createElement('section');
   bud.className='yp-pay-sec';
   bud.id='yp-money-checkin-budget';
@@ -1397,7 +1380,6 @@ function ypProcessBillsPaint(){
   const week=ypBillsThisWeekOccurrences();
   const hist=ypBillsHistoryWeeks();
   list.innerHTML='';
-  if(typeof ypProcessStreakBlock==='function')list.appendChild(ypProcessStreakBlock());
   if(overdue.length){
     const sec=document.createElement('section');
     sec.className='yp-pay-sec';
