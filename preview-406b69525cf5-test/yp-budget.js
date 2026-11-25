@@ -832,7 +832,7 @@ function summaryCardHtml(ex){
   return `<div class="yp-b-sum" id="yp-b-sum">
     ${pieSvg()}
     <div class="yp-b-sum-copy">
-      <p class="yp-b-sum-cap">Total Planned Expenses</p>
+      <p class="yp-b-sum-cap">Your Total Budget</p>
       <p class="yp-b-sum-tot" id="yp-b-sum-tot">${bFmt(budgetWk)}</p>
       ${leftHtml}
     </div>
