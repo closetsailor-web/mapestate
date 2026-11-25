@@ -558,26 +558,26 @@ function ypBudgetInjectCss(){
 .yp-b-hint { margin:0 4px 10px; font-size:13px; line-height:1.4; color:#b8410a; font-weight:400; }
 
 .yp-b-sum {
-  display:grid; grid-template-columns:100px 1fr; gap:8px 14px; align-items:center;
+  display:grid; grid-template-columns:118px 1fr; gap:2px 14px; align-items:center;
   background:#fff; border:0; border-radius:16px; padding:14px 14px 12px; margin:0 0 10px; box-shadow:none;
 }
-.yp-b-ring { width:100px; height:100px; display:block; }
+.yp-b-pie { width:118px; height:118px; display:block; overflow:visible; }
 .yp-b-sum-copy { min-width:0; }
 .yp-b-sum-cap {
-  margin:0; font-size:11px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+  margin:0; font-size:13px; font-weight:500; letter-spacing:0; text-transform:none;
   color:#5a6780; line-height:1.3;
 }
 .yp-b-sum-tot {
   margin:6px 0 0; font-size:30px; font-weight:700; letter-spacing:-.6px; color:#0b2545;
   line-height:1.05; font-variant-numeric:tabular-nums;
 }
-.yp-b-sum-left { margin:6px 0 0; font-size:14px; font-weight:400; line-height:1.3; color:#14213d; }
-.yp-b-sum-left b { font-weight:600; font-variant-numeric:tabular-nums; }
+.yp-b-sum-left { margin:6px 0 0; font-size:14px; font-weight:400; line-height:1.3; color:#b8410a; }
+.yp-b-sum-left b { font-weight:600; font-variant-numeric:tabular-nums; color:#b8410a; }
 .yp-b-sum-left.over, .yp-b-sum-left.over b { color:#b8410a; }
 .yp-b-legend { grid-column:1 / -1; margin-top:4px; }
 .yp-b-leg { display:flex; align-items:baseline; gap:6px; min-height:24px; font-size:15px; font-weight:400; }
 .yp-b-leg + .yp-b-leg { margin-top:2px; }
-.yp-b-sw { width:8px; height:8px; border-radius:2px; flex:none; align-self:center; }
+.yp-b-sw { width:8px; height:8px; border-radius:50%; flex:none; align-self:center; }
 .yp-b-leg-name { color:#14213d; flex:none; font-weight:400; }
 .yp-b-leg-pct { color:#5a6780; font-weight:400; font-variant-numeric:tabular-nums; flex:none; }
 .yp-b-leg-lead {
@@ -726,9 +726,8 @@ let bDeletedBills = [];
 let bScrollTop = 0;
 
 
-/* Brand shades for the summary ring/legend. Larger slices first; greys for the rest. */
-const SUM_COLORS = ['#0b2545','#1e4fd8','#b8410a','#3b6fe0','#d4693a','#6b8eef','#e08a5c','#8aa4f2'];
-const SUM_GREYS = ['#8b95a5','#9aa3b0','#a8b0bc','#b6bdc6','#c5cbd4'];
+/* Brand colours for live legend dots (not tied to the decorative pie). */
+const SUM_COLORS = ['#0b2545','#1e4fd8','#b8410a','#3b6fe0','#f08a24'];
 
 function takeHomeWeekly(){
   try{
@@ -750,34 +749,69 @@ function summarySlices(ex, takeHome){
   });
   rows.sort((a,b)=> (b.weekly - a.weekly) || String(a.name).localeCompare(String(b.name)));
   rows.forEach((row, i)=>{
-    row.color = i < SUM_COLORS.length ? SUM_COLORS[i] : SUM_GREYS[(i - SUM_COLORS.length) % SUM_GREYS.length];
+    row.color = SUM_COLORS[i % SUM_COLORS.length];
     row.pct = takeHome > 0 ? Math.round(row.weekly / takeHome * 100) : 0;
   });
   return rows;
 }
 
-function ringSvg(slices, takeHome, budgetWk){
-  const r = 36, sw = 14, C = 2 * Math.PI * r;
-  const track = `<circle cx="50" cy="50" r="${r}" fill="none" stroke="#e6edf6" stroke-width="${sw}"/>`;
-  const over = takeHome <= 0 ? budgetWk > 0 : budgetWk > takeHome;
-  const basis = takeHome > 0 ? takeHome : (budgetWk > 0 ? budgetWk : 0);
-  let used = 0, arcs = '';
-  if(basis > 0){
-    slices.forEach(s=>{
-      if(used >= C - 0.001) return;
-      let len = (s.weekly / basis) * C;
-      if(used + len > C) len = C - used;
-      if(!(len > 0)) return;
-      arcs += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${s.color}" stroke-width="${sw}" stroke-linecap="butt" stroke-dasharray="${len.toFixed(3)} ${(C-len).toFixed(3)}" stroke-dashoffset="${(-used).toFixed(3)}" transform="rotate(-90 50 50)"/>`;
-      used += len;
-    });
-    if(over && used < C - 0.05 && slices.length){
-      const gap = C - used;
-      const last = slices[Math.max(0, slices.length-1)].color;
-      arcs += `<circle cx="50" cy="50" r="${r}" fill="none" stroke="${last}" stroke-width="${sw}" stroke-linecap="butt" stroke-dasharray="${gap.toFixed(3)} ${(C-gap).toFixed(3)}" stroke-dashoffset="${(-used).toFixed(3)}" transform="rotate(-90 50 50)"/>`;
-    }
-  }
-  return `<svg class="yp-b-ring" viewBox="0 0 100 100" width="100" height="100" aria-hidden="true">${track}${arcs}</svg>`;
+/* Static decorative pie + coin stacks. Not linked to budget data. */
+function pieSvg(){
+  return `<svg class="yp-b-pie" viewBox="0 0 120 120" width="118" height="118" aria-hidden="true" data-decorative="true">
+<ellipse cx="64" cy="113" rx="34" ry="4.2" fill="#000000" fill-opacity=".12"/>
+<path fill="#0b2545" d="M88.98,44.57 A41.0,41.0 0 0 1 63.36,84.01 L63.36,94.01 A41.0,41.0 0 0 0 88.98,54.57 Z"/>
+<path fill="#b8410a" d="M63.36,84.01 A41.0,41.0 0 0 1 17.53,73.43 L17.53,83.43 A41.0,41.0 0 0 0 63.36,94.01 Z"/>
+<path fill="#1e4fd8" d="M17.53,73.43 A41.0,41.0 0 0 1 7.02,44.57 L7.02,54.57 A41.0,41.0 0 0 0 17.53,83.43 Z"/>
+<path fill="#0b2545" d="M48.00,46.00 L48.00,5.00 A41.0,41.0 0 0 1 88.60,40.29 Z"/>
+<path fill="#1e4fd8" d="M48.00,46.00 L88.60,40.29 A41.0,41.0 0 0 1 63.36,84.01 Z"/>
+<path fill="#f08a24" d="M48.00,46.00 L63.36,84.01 A41.0,41.0 0 0 1 17.53,73.43 Z"/>
+<path fill="#3b6fe0" d="M48.00,46.00 L17.53,73.43 A41.0,41.0 0 0 1 11.80,26.75 Z"/>
+<path fill="#b8410a" d="M48.00,46.00 L11.80,26.75 A41.0,41.0 0 0 1 48.00,5.00 Z"/>
+<circle cx="48.0" cy="46.0" r="41.0" fill="none" stroke="#0b2545" stroke-width="1.15"/>
+<path fill="#000000" fill-opacity=".13" d="M48.00,46.00 L56.52,5.90 A41.0,41.0 0 0 1 39.48,86.10 Z"/>
+<ellipse cx="78.0" cy="84.0" rx="13.6" ry="5.15" fill="#b8410a"/>
+<path fill="#b8410a" d="M64.4,80.0 A13.6,5.15 0 0 0 91.6,80.0 L91.6,84.0 A13.6,5.15 0 0 1 64.4,84.0 Z"/>
+<ellipse cx="78.0" cy="80.0" rx="13.6" ry="5.15" fill="#f08a24"/>
+<ellipse cx="78.0" cy="80.0" rx="13.05" ry="4.90" fill="none" stroke="#b8410a" stroke-width="1.7"/>
+<ellipse cx="78.0" cy="80.0" rx="10.00" ry="3.75" fill="none" stroke="#b8410a" stroke-width="0.75" opacity=".5"/>
+<ellipse cx="73.4" cy="78.7" rx="3.4" ry="1.2" fill="#ffffff" fill-opacity=".6"/>
+<ellipse cx="78.0" cy="79.0" rx="13.6" ry="5.15" fill="#b8410a"/>
+<path fill="#b8410a" d="M64.4,75.0 A13.6,5.15 0 0 0 91.6,75.0 L91.6,79.0 A13.6,5.15 0 0 1 64.4,79.0 Z"/>
+<ellipse cx="78.0" cy="75.0" rx="13.6" ry="5.15" fill="#f08a24"/>
+<ellipse cx="78.0" cy="75.0" rx="13.05" ry="4.90" fill="none" stroke="#b8410a" stroke-width="1.7"/>
+<ellipse cx="78.0" cy="75.0" rx="10.00" ry="3.75" fill="none" stroke="#b8410a" stroke-width="0.75" opacity=".5"/>
+<ellipse cx="73.4" cy="73.7" rx="3.4" ry="1.2" fill="#ffffff" fill-opacity=".6"/>
+<ellipse cx="78.0" cy="74.0" rx="13.6" ry="5.15" fill="#b8410a"/>
+<path fill="#b8410a" d="M64.4,70.0 A13.6,5.15 0 0 0 91.6,70.0 L91.6,74.0 A13.6,5.15 0 0 1 64.4,74.0 Z"/>
+<ellipse cx="78.0" cy="70.0" rx="13.6" ry="5.15" fill="#f08a24"/>
+<ellipse cx="78.0" cy="70.0" rx="13.05" ry="4.90" fill="none" stroke="#b8410a" stroke-width="1.7"/>
+<ellipse cx="78.0" cy="70.0" rx="10.00" ry="3.75" fill="none" stroke="#b8410a" stroke-width="0.75" opacity=".5"/>
+<ellipse cx="73.4" cy="68.7" rx="3.4" ry="1.2" fill="#ffffff" fill-opacity=".6"/>
+<ellipse cx="99.0" cy="87.9" rx="14.2" ry="5.35" fill="#b8410a"/>
+<path fill="#b8410a" d="M84.8,83.7 A14.2,5.35 0 0 0 113.2,83.7 L113.2,87.9 A14.2,5.35 0 0 1 84.8,87.9 Z"/>
+<ellipse cx="99.0" cy="83.7" rx="14.2" ry="5.35" fill="#f08a24"/>
+<ellipse cx="99.0" cy="83.7" rx="13.65" ry="5.10" fill="none" stroke="#b8410a" stroke-width="1.7"/>
+<ellipse cx="99.0" cy="83.7" rx="10.60" ry="3.95" fill="none" stroke="#b8410a" stroke-width="0.75" opacity=".5"/>
+<ellipse cx="94.4" cy="82.3" rx="3.4" ry="1.2" fill="#ffffff" fill-opacity=".6"/>
+<ellipse cx="99.0" cy="82.7" rx="14.2" ry="5.35" fill="#b8410a"/>
+<path fill="#b8410a" d="M84.8,78.5 A14.2,5.35 0 0 0 113.2,78.5 L113.2,82.7 A14.2,5.35 0 0 1 84.8,82.7 Z"/>
+<ellipse cx="99.0" cy="78.5" rx="14.2" ry="5.35" fill="#f08a24"/>
+<ellipse cx="99.0" cy="78.5" rx="13.65" ry="5.10" fill="none" stroke="#b8410a" stroke-width="1.7"/>
+<ellipse cx="99.0" cy="78.5" rx="10.60" ry="3.95" fill="none" stroke="#b8410a" stroke-width="0.75" opacity=".5"/>
+<ellipse cx="94.4" cy="77.2" rx="3.4" ry="1.2" fill="#ffffff" fill-opacity=".6"/>
+<ellipse cx="87.5" cy="97.5" rx="14.6" ry="5.45" fill="#b8410a"/>
+<path fill="#b8410a" d="M72.9,93.2 A14.6,5.45 0 0 0 102.1,93.2 L102.1,97.5 A14.6,5.45 0 0 1 72.9,97.5 Z"/>
+<ellipse cx="87.5" cy="93.2" rx="14.6" ry="5.45" fill="#f08a24"/>
+<ellipse cx="87.5" cy="93.2" rx="14.05" ry="5.20" fill="none" stroke="#b8410a" stroke-width="1.7"/>
+<ellipse cx="87.5" cy="93.2" rx="11.00" ry="4.05" fill="none" stroke="#b8410a" stroke-width="0.75" opacity=".5"/>
+<ellipse cx="82.9" cy="91.9" rx="3.4" ry="1.2" fill="#ffffff" fill-opacity=".6"/>
+<ellipse cx="87.5" cy="92.3" rx="14.6" ry="5.45" fill="#b8410a"/>
+<path fill="#b8410a" d="M72.9,88.0 A14.6,5.45 0 0 0 102.1,88.0 L102.1,92.3 A14.6,5.45 0 0 1 72.9,92.3 Z"/>
+<ellipse cx="87.5" cy="88.0" rx="14.6" ry="5.45" fill="#f08a24"/>
+<ellipse cx="87.5" cy="88.0" rx="14.05" ry="5.20" fill="none" stroke="#b8410a" stroke-width="1.7"/>
+<ellipse cx="87.5" cy="88.0" rx="11.00" ry="4.05" fill="none" stroke="#b8410a" stroke-width="0.75" opacity=".5"/>
+<ellipse cx="82.9" cy="86.7" rx="3.4" ry="1.2" fill="#ffffff" fill-opacity=".6"/>
+</svg>`;
 }
 
 function summaryCardHtml(ex){
@@ -796,7 +830,7 @@ function summaryCardHtml(ex){
       <span class="yp-b-leg-amt">${bFmt(s.weekly)}</span>
     </div>`).join('');
   return `<div class="yp-b-sum" id="yp-b-sum">
-    ${ringSvg(slices, takeHome, budgetWk)}
+    ${pieSvg()}
     <div class="yp-b-sum-copy">
       <p class="yp-b-sum-cap">Total Planned Expenses</p>
       <p class="yp-b-sum-tot" id="yp-b-sum-tot">${bFmt(budgetWk)}</p>
