@@ -59,8 +59,13 @@ html2, n7 = re.subn(
     r"\1" + v,
     html2,
 )
-if n1 != 1 or n2 < 1 or n3 < 1 or n4 < 1 or n5 < 1 or n6 < 1 or n7 < 1:
-    sys.exit(f"could not update index.html (YP_BUILD={n1}, map={n2}, overture={n3}, market={n4}, caryard={n5}, notify={n6}, paycalc={n7})")
+html2, n8 = re.subn(
+    r"(yp-budget\.js\?v=)[A-Za-z0-9._-]+",
+    r"\1" + v,
+    html2,
+)
+if n1 != 1 or n2 < 1 or n3 < 1 or n4 < 1 or n5 < 1 or n6 < 1 or n7 < 1 or n8 < 1:
+    sys.exit(f"could not update index.html (YP_BUILD={n1}, map={n2}, overture={n3}, market={n4}, caryard={n5}, notify={n6}, paycalc={n7}, budget={n8})")
 if html2 != html:
     html_path.write_text(html2)
 print(f"synced {v} into index.html")

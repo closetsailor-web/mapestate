@@ -1746,11 +1746,19 @@ function ypRealLifeMoney(){
   if(payWk&&!payList.length&&!cs)incomeRows.push({label:'Payments',hint:'A week',amount:payWk});
   take+=payWk;
   const budgetRows=[];
-  const ex=raw.ex&&raw.ex.items?raw.ex:null;
+  const ex=(typeof ypBudgetEnsureEx==='function'&&typeof G!=='undefined'&&G)?ypBudgetEnsureEx(G):(raw.ex&&raw.ex.v===2?raw.ex:(raw.ex&&raw.ex.items?raw.ex:null));
   let liv=0;
-  const names=(typeof YP_BILL_EXP_NAMES!=='undefined'&&YP_BILL_EXP_NAMES)||{};
-  const cats=(typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13:Object.keys(names).map(k=>[k,'',names[k]]);
-  if(ex){
+  if(ex&&ex.v===2&&typeof ypBudgetActiveItems==='function'){
+    ypBudgetActiveItems(ex).forEach(it=>{
+      if(!(it.weekly>0))return;
+      const freq=it.period==='year'?'year':'week';
+      const unit=(typeof YP_BILL_FREQ!=='undefined'&&YP_BILL_FREQ[freq]&&YP_BILL_FREQ[freq].unit)||(freq==='year'?'a year':'a week');
+      budgetRows.push({id:'exp:'+it.billKey,label:it.billName||it.name,hint:f(Math.round(it.amount))+' '+unit,amount:it.weekly});
+      liv+=it.weekly;
+    });
+  }else if(ex&&ex.items){
+    const names=(typeof YP_BILL_EXP_NAMES!=='undefined'&&YP_BILL_EXP_NAMES)||{};
+    const cats=(typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13:Object.keys(names).map(k=>[k,'',names[k]]);
     cats.forEach(row=>{
       const k=row[0];
       const rawAmt=+((ex.items&&ex.items[k])||0);

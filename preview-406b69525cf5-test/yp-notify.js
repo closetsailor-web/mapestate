@@ -322,6 +322,13 @@ function ypBillsDefaultFreq(it){
   if(it&&it.source==='expense'){
     const k=String(it.id||'').replace(/^exp:/,'');
     const ex=(typeof G!=='undefined'&&G&&G.income&&G.income.ex)||null;
+    if(ex&&ex.v===2&&Array.isArray(ex.groups)){
+      for(const g of ex.groups){
+        const hit=(g.items||[]).find(x=>x&&(x.billKey===k||x.id===k));
+        if(hit)return hit.period==='year'?'year':'week';
+      }
+      return 'week';
+    }
     if(ex&&ex.yearly&&ex.yearly[k])return 'year';
     const f=ex&&ex.freq;
     if(f==='week'||f==='weekly')return 'week';
@@ -402,7 +409,29 @@ function ypBillsUpsert(item,opts){
 }
 function ypBillsSyncFromExpenses(){
   const store=ypBillsStore();if(!store)return;
-  const ex=(typeof G!=='undefined'&&G&&G.income&&G.income.ex)||null;
+  const ex=(typeof ypBudgetEnsureEx==='function'&&typeof G!=='undefined'&&G)?ypBudgetEnsureEx(G):((typeof G!=='undefined'&&G&&G.income&&G.income.ex)||null);
+  if(ex&&ex.v===2&&Array.isArray(ex.groups)&&typeof ypBudgetActiveItems==='function'){
+    const list=ypBudgetActiveItems(ex);
+    const liveIds=new Set();
+    list.forEach(it=>{
+      const id='exp:'+it.billKey;
+      liveIds.add(id);
+      const prev=store.items[id];
+      const amt=Math.max(0,Math.round(+it.amount||0));
+      if(!(amt>0)&&!prev)return;
+      const freq=it.period==='year'?'year':'week';
+      const name=it.billName||it.name||it.id;
+      ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:amt,freq,notifyType:'billDue'},{keepFreq:true,keepAmount:!!(prev&&prev.amountUser)});
+    });
+    Object.keys(store.items).forEach(id=>{
+      if(id.indexOf('exp:')===0&&!liveIds.has(id)){
+        try{ypBillsClearNotify(store.items[id]);}catch(e){}
+        try{ypBillsClearPaid(id);}catch(e){}
+        delete store.items[id];
+      }
+    });
+    return;
+  }
   const items=ex&&ex.items||{};
   const cats=(typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13:Object.keys(YP_BILL_EXP_NAMES).map(k=>[k]);
   cats.forEach(row=>{
@@ -547,7 +576,8 @@ function ypBillsList(){
   return list;
 }
 function ypBillsRealList(){
-  const cats=(typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13.map(r=>r[0]):Object.keys(YP_BILL_EXP_NAMES);
+  const ex=(typeof G!=='undefined'&&G&&G.income&&G.income.ex)||null;
+  const cats=(ex&&ex.v===2&&typeof ypBudgetActiveItems==='function')?ypBudgetActiveItems(ex).map(it=>it.billKey):((typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13.map(r=>r[0]):Object.keys(YP_BILL_EXP_NAMES));
   const order=new Map(cats.map((k,i)=>['exp:'+k,i]));
   const real=ypBillsList().filter(it=>!ypBillsIsGame(it));
   real.sort((a,b)=>{
@@ -2046,10 +2076,32 @@ function ypBillsClearExpenseBudget(id){
   if(!id||String(id).indexOf('exp:')!==0)return;
   const k=String(id).slice(4);
   const inc=(typeof G!=='undefined'&&G&&G.income)||null;
-  if(!inc||!inc.ex||!inc.ex.items)return;
-  delete inc.ex.items[k];
-  if(inc.ex.yearly)delete inc.ex.yearly[k];
+  if(!inc||!inc.ex)return;
+  if(inc.ex.v===2&&Array.isArray(inc.ex.groups)){
+    inc.ex.groups.forEach(g=>{
+      (g.items||[]).forEach(it=>{
+        if(it&&(it.billKey===k||it.id===k))it.amount=0;
+      });
+    });
+  }else if(inc.ex.items){
+    delete inc.ex.items[k];
+    if(inc.ex.yearly)delete inc.ex.yearly[k];
+  }
   ypBillsSyncExpenseTotal();
+}
+function ypBillsDeleteBudgetItem(billKey){
+  if(!billKey)return;
+  const store=ypBillsStore();if(!store||!store.items)return;
+  const id='exp:'+billKey;
+  const it=store.items[id];
+  if(it){
+    ypBillsClearNotify(it);
+    ypBillsClearPaid(id);
+    delete store.items[id];
+  }
+  if(ypBillsEditId===id){ypBillsEditId=null;ypBillsEditDraft=null;}
+  if(ypBillsOpenId===id)ypBillsOpenId=null;
+  if(ypBillsDeleteId===id)ypBillsDeleteId=null;
 }
 function ypBillsResetSetup(id){
   const store=ypBillsStore();
