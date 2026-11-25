@@ -5,7 +5,7 @@
  * Weekly and Daily.
  *
  * Update YP_PAYCALC_RATES each 1 July from the ATO pages linked below.
- * Real-life take-home (Reality Check, My Income, Real Week) reads this engine.
+ * Real-life take-home (Reality Check, Real Life Income, Real Week) reads this engine.
  * In-game pay still uses the older helpers in index.html (incomeTax, lito,
  * taxNet, medicare, netIncome).
  */
@@ -566,10 +566,10 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
       <div class="yp-pc-sum" id="yp-pc-summary">
         <div class="yp-pc-donutwrap">${donutSvg(r)}</div>
         <div class="yp-pc-lines">
-          <div class="yp-pc-line super"><span class="lbl">Employer Super</span><span class="amt" id="yp-pc-super">${fmtMoney(sl.employerSuper)}</span></div>
           <div class="yp-pc-line"><span class="lbl">Gross Pay</span><span class="amt" id="yp-pc-gross">${fmtMoney(sl.gross)}</span></div>
           <div class="yp-pc-line tax"><span class="lbl">Income Tax</span><span class="amt" id="yp-pc-tax">${fmtMoney(sl.incomeTax)}</span></div>
           <div class="yp-pc-line med"><span class="lbl">Medicare</span><span class="amt" id="yp-pc-med">${fmtMoney(sl.medicareLevy)}</span></div>
+          <div class="yp-pc-line super"><span class="lbl">Employer Super</span><span class="amt" id="yp-pc-super">${fmtMoney(sl.employerSuper)}</span></div>
         </div>
       </div>
       <p class="yp-pc-superhint" id="yp-pc-superhint">Paid on top of your pay. Super is not take-home.</p>

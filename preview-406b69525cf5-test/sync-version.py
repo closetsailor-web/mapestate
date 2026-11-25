@@ -6,7 +6,7 @@ Usage (from this folder):
 
 Reads version.json {"v":"datesXX"} and updates index.html:
   - window.YP_BUILD
-  - map-preview.js, player-market.js, car-yard.js, overture-layer.js, yp-notify.js and yp-paycalc.js ?v= queries
+  - map-preview.js, player-market.js, car-yard.js, overture-layer.js, yp-notify.js, yp-paycalc.js, yp-budget.js and yp-income-form.js ?v= queries
 
 When pushing live, copy version.json into the live folder as well, then
 run this script there (or copy the already-synced index.html and
@@ -64,8 +64,13 @@ html2, n8 = re.subn(
     r"\1" + v,
     html2,
 )
-if n1 != 1 or n2 < 1 or n3 < 1 or n4 < 1 or n5 < 1 or n6 < 1 or n7 < 1 or n8 < 1:
-    sys.exit(f"could not update index.html (YP_BUILD={n1}, map={n2}, overture={n3}, market={n4}, caryard={n5}, notify={n6}, paycalc={n7}, budget={n8})")
+html2, n9 = re.subn(
+    r"(yp-income-form\.js\?v=)[A-Za-z0-9._-]+",
+    r"\1" + v,
+    html2,
+)
+if n1 != 1 or n2 < 1 or n3 < 1 or n4 < 1 or n5 < 1 or n6 < 1 or n7 < 1 or n8 < 1 or n9 < 1:
+    sys.exit(f"could not update index.html (YP_BUILD={n1}, map={n2}, overture={n3}, market={n4}, caryard={n5}, notify={n6}, paycalc={n7}, budget={n8}, incomeform={n9})")
 if html2 != html:
     html_path.write_text(html2)
 print(f"synced {v} into index.html")
