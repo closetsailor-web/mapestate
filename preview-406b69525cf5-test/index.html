@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates141";
+window.YP_BUILD="dates142";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1639,7 +1639,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script src="yp-budget.js?v=dates141"></script>
+<script src="yp-budget.js?v=dates142"></script>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
 const TEST_ALWAYS_FRESH=false;let TEST_SID='';
@@ -2974,9 +2974,6 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
   income(){const i=INC(),vw=i.view||'weekly';
     this.open(`<h2>Real Life</h2>
     ${ypIncomeFieldsHTML({title:'Personal Income',band:i.band,view:vw,childSupport:i.childSupport})}
-    <div class="pcard"><button class="lrow" id="exp_edit" onclick="UI.expenses('income')"><span>Budget: <b id="inc_expv">${fmt(i.exp)}</b> a month</span><i>›</i></button></div>
-    <details${i.debt?' open':''}><summary style="margin-top:10px"><b>More options</b> (optional)</summary>
-    <label for="inc_debt" style="display:block;margin:8px 0 2px">Monthly repayments on other debts (car, cards, HECS)</label><input type="text" inputmode="decimal" autocomplete="off" id="inc_debt" value="${i.debt?Math.round(i.debt*100)/100:''}" placeholder="0" oninput="incLive()"></details>
     <div id="inc_err" role="alert" style="color:#c0672b;font-size:14px;min-height:16px;margin-top:6px"></div><div class="fin" id="inc_out"></div>
     <button type="button" class="yp-paycalc-link" id="inc_paycalc" onclick="typeof ypPayCalcOpen==='function'&&ypPayCalcOpen()">Pay Calculator</button>
     <div class="cta" style="position:static;background:none"><button class="btn buy" id="inc_save" onclick="incSave(true)">Save</button></div><button class="btn sec" onclick="UI.el.classList.remove('open');document.body.classList.remove('sheetopen')">Close</button>`);this.el.classList.add('yp-income-sheet');this.el.style.zIndex=60;if(typeof ypIncomeMountBand==='function')ypIncomeMountBand(document.getElementById('inc_band'));incPayMount();incLive();},
@@ -3107,12 +3104,12 @@ function incPayToggle(p){let ids=(incPayIds||[]).slice();const on=ids.includes(p
 function incPayPaintAmts(){const box=document.getElementById('inc_pay_amts');if(!box)return;const cur=INC(),focus=document.activeElement&&document.activeElement.id&&String(document.activeElement.id).startsWith('inc_payamt_')?document.activeElement.id:null;const keep=focus&&document.getElementById(focus)?document.getElementById(focus).value:null;
   box.innerHTML=(incPayIds||[]).map(id=>{const cat=incomePayCat(id);if(!cat)return '';const v=incPayDefault(id,cur);const shown=(keep!=null&&focus==='inc_payamt_'+id)?keep:(Math.round(v*100)/100);return '<div class="inc-pay-amt"><label for="inc_payamt_'+id+'">'+esc(cat.label)+'</label><div class="money13"><span>$</span><input type="text" inputmode="decimal" autocomplete="off" id="inc_payamt_'+id+'" data-pay="'+id+'" value="'+shown+'" placeholder="0" oninput="incLive()"></div></div>';}).join('');
   if(focus&&document.getElementById(focus)){const el=document.getElementById(focus);el.focus();const n=el.value.length;try{el.setSelectionRange(n,n);}catch(e){}}}
-function incRead(){const g=id=>document.getElementById(id),cur=INC(),bi=g('inc_band')?+g('inc_band').value:cur.band,dv=numIn(g('inc_debt')?g('inc_debt').value.trim():''),csIn=g('inc_cs'),csv=csIn?numIn(csIn.value.trim()):'',err=[];
-  if(dv!==''&&!isFinite(+dv))err.push('Numbers only');else if(+dv<0)err.push('No negative amounts');else if(+dv>INC_MAX.debt)err.push('Monthly amounts capped at $50,000');
+function incRead(){const g=id=>document.getElementById(id),cur=INC(),bi=g('inc_band')?+g('inc_band').value:cur.band,debtEl=g('inc_debt'),dv=debtEl?numIn(debtEl.value.trim()):null,csIn=g('inc_cs'),csv=csIn?numIn(csIn.value.trim()):'',err=[];
+  if(dv!==null){if(dv!==''&&!isFinite(+dv))err.push('Numbers only');else if(+dv<0)err.push('No negative amounts');else if(+dv>INC_MAX.debt)err.push('Monthly amounts capped at $50,000');}
   let childSupport=cur.childSupport||0;if(csIn){if(csv!==''&&!isFinite(+csv))err.push('Numbers only');else if(+csv<0)err.push('No negative amounts');else if(+csv>5e4)err.push('Weekly amounts capped at $50,000');else childSupport=csv===''?0:Math.min(5e4,Math.round(+csv*100)/100);}
   let payments=cur.payments,payAmt=cur.payAmt||{};
   if(g('inc_pay_wrap')){payAmt={};payments=(incPayIds||[]).map(id=>{const cat=incomePayCat(id);if(!cat)return null;const inp=g('inc_payamt_'+id),raw=inp?numIn(inp.value.trim()):'';let week=incPayDefault(id,cur);if(inp){if(raw!==''&&!isFinite(+raw))err.push('Numbers only');else if(+raw<0)err.push('No negative amounts');else if(+raw>5e4)err.push('Weekly amounts capped at $50,000');else week=raw===''?cat.week:Math.min(5e4,Math.round(+raw*100)/100);}payAmt[id]=week;return{id,label:cat.label,week,kind:cat.kind};}).filter(Boolean);}
-  const raw=Object.assign({},G.income||{},{band:bi,view:(G.income&&G.income.view)||cur.view,amt:Number.isInteger(bi)?bandMid(bi):0,freq:'annual',partner:0,other:0,exp:cur.exp,debt:dv,childSupport,payments,payAmt,set:true,bandStep:PAY_BAND_STEP});
+  const raw=Object.assign({},G.income||{},{band:bi,view:(G.income&&G.income.view)||cur.view,amt:Number.isInteger(bi)?bandMid(bi):0,freq:'annual',partner:0,other:0,exp:cur.exp,debt:dv===null?cur.debt:dv,childSupport,payments,payAmt,set:true,bandStep:PAY_BAND_STEP});
   return{o:incClean(raw),raw,err};}
 let incViewSel=null;function incView(v){incViewSel=v;G.income=Object.assign({},G.income||INC(),{view:v});save();document.querySelectorAll('#inc_view button').forEach(b=>{const on=b.dataset.v===v;b.className=on?'on':'';b.setAttribute('aria-checked',on?'true':'false');});incLive();}
 const FLBL2={weekly:'a week',fortnightly:'a fortnight',monthly:'a month'};
@@ -4183,12 +4180,12 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates141"></script>
-<script src="yp-income-form.js?v=dates141"></script>
-<script src="map-preview.js?v=dates141"></script>
-<script src="player-market.js?v=dates141"></script>
-<script src="car-yard.js?v=dates141"></script>
-<script src="overture-layer.js?v=dates141"></script>
-<script src="yp-notify.js?v=dates141"></script>
+<script src="yp-paycalc.js?v=dates142"></script>
+<script src="yp-income-form.js?v=dates142"></script>
+<script src="map-preview.js?v=dates142"></script>
+<script src="player-market.js?v=dates142"></script>
+<script src="car-yard.js?v=dates142"></script>
+<script src="overture-layer.js?v=dates142"></script>
+<script src="yp-notify.js?v=dates142"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
