@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates145b";
+window.YP_BUILD="dates145g";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1639,7 +1639,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script src="yp-budget.js?v=dates145b"></script>
+<script src="yp-budget.js?v=dates145g"></script>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
 const TEST_ALWAYS_FRESH=false;let TEST_SID='';
@@ -3247,7 +3247,7 @@ function hwShow(i){i=i||0;let o=document.getElementById('hwov');if(!o){o=documen
   const n=hwNums(),start=CFG.startCash,R=(t,v,hi)=>`<div class="hwr${hi?' hi':''}"><span>${t}</span><b>${fmt(v)}</b></div>`,more=c=>Math.max(0,c-start);
    const buyHouse=()=>`<h3>Buying A House</h3>${R('Cheapest price',n.house)}${R('Deposit and fees',n.houseFees)}${R('Property Insurance',n.houseIns)}${R('Total upfront',n.houseCash)}${R('You still need',more(n.houseCash),1)}`;
    const C=[
-    `<h3>Everyone Starts With The Same</h3><div class="hwbig">${fmt(start)}</div><p>This is your savings.</p><p>${ypClockSentence()} Your money changes week by week, just as it would in real life.</p>`,
+    `<h3>Game Savings</h3><div class="hwbig">${fmt(start)}</div><p>Game savings are different to the real life savings you just entered. While you play the game, you still manage your real life budgets, bills and forecasts. You can get back to that once we get your game life underway.</p><p>One game year passes every 14 real days. Your money changes week by week, just as it would in real life.</p>`,
     buyHouse(),
    `<h3>Save Up First?</h3><p>Looks like you may have to start saving towards your first home deposit. If any are available, room share or boarding is usually the best way to save.</p><p class="hw-follow">Once you have family or friends in the game, you may choose to live with them for free.</p>`];
   const last=i>=C.length-1;
@@ -4186,12 +4186,12 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates145b"></script>
-<script src="yp-income-form.js?v=dates145b"></script>
-<script src="map-preview.js?v=dates145b"></script>
-<script src="player-market.js?v=dates145b"></script>
-<script src="car-yard.js?v=dates145b"></script>
-<script src="overture-layer.js?v=dates145b"></script>
-<script src="yp-notify.js?v=dates145b"></script>
+<script src="yp-paycalc.js?v=dates145g"></script>
+<script src="yp-income-form.js?v=dates145g"></script>
+<script src="map-preview.js?v=dates145g"></script>
+<script src="player-market.js?v=dates145g"></script>
+<script src="car-yard.js?v=dates145g"></script>
+<script src="overture-layer.js?v=dates145g"></script>
+<script src="yp-notify.js?v=dates145g"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
