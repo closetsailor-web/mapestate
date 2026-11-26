@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates143";
+window.YP_BUILD="dates144";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1639,7 +1639,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script src="yp-budget.js?v=dates143"></script>
+<script src="yp-budget.js?v=dates144"></script>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
 const TEST_ALWAYS_FRESH=false;let TEST_SID='';
@@ -2938,7 +2938,7 @@ const UI={el:document.getElementById('sheet'),body:document.getElementById('shee
       <button class="btn sec" onclick="startDev('${id}','shop',bizsel.value,${L})">Build shop & run my own business</button>
       <small>Costs: construction cost tables, tax office small business benchmarks, and ${P.label} council DA fees. Finished values are market estimates; a development can lose money where rents are low.</small></div>`;},
   bankBox(withCash){const b=bank(),r=(k,v,st)=>`<tr><td>${k}</td><td style="text-align:right;${st||''}">${v}</td></tr>`,best=LENDERS.map(L=>[L,maxPrice(L)]).sort((x,y)=>y[1]-x[1])[0],pct=x=>(x*100).toFixed(2)+'%';
-    return `<div class="fin" id="bankbox"><div id="borrowtop">${withCash?`<dl class="yp-flow"><div><dt>Savings</dt><dd>${fmt(G.cash)}</dd></div></dl><div class="bhead" style="margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase">Monthly Breakdown</div>`:''}${borrowSimple(b,'bb')}</div>
+    return `<div class="fin" id="bankbox"><div id="borrowtop">${withCash?`<dl class="yp-flow"><div><dt>Savings</dt><dd>${fmt(typeof ypBuyCash==='function'?ypBuyCash():G.cash)}</dd></div></dl><div class="bhead" style="margin:14px 0 2px;font-size:13px;font-weight:700;color:#6b7a90;letter-spacing:.04em;text-transform:uppercase">Monthly Breakdown</div>`:''}${borrowSimple(b,'bb')}</div>
     <details id="borrowdetail"><summary><b>ⓘ How the bank works this out</b></summary>
     <div class="sub" style="margin:6px 0">The bank checks two things. Can you afford the repayments? And is the loan too big for your pay? It uses the smaller answer.</div>
     <table style="width:100%;font-size:12.5px;border-collapse:collapse">
@@ -3287,7 +3287,7 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 /* v24 simple borrowing summary (age-13 reading level). Presentation only: numbers come straight from bank(). */
 function ypBankAfford(b){b=b||{};const power=+b.power||0,repay=power>0?power/annuity(CFG.rateIP,BANK.termY*12):0,boost=+b.boost||0;if(b.kind==='real'||b.ypKind==='real'){const income=(+b.net||0)/12,expenses=(+b.hem||0)+(+b.existing||0),left=b.surplus;return {income,expenses,left,power,repay,boost};}if(typeof ypGameMonthMoney==='function'){const m=ypGameMonthMoney();return {income:m.income,expenses:m.expenses,left:m.left,power,repay,boost};}const income=(+b.net||0)/12,expenses=(+b.hem||0)+(+b.existing||0),left=b.surplus;return {income,expenses,left,power,repay,boost};}
 function borrowSimple(b,pre){const a=ypBankAfford(b),L=(t,v,c)=>`<div><dt>${t}</dt><dd style="${c||''}">${v}</dd></div>`;
-  const box=a.power>0?`<div class="banswer"><div>You could borrow about</div><b id="${pre}_bp">${fmt(a.power)}</b><div class="bsub">What the bank would lend after its own checks, not your leftover money. Repayments would be about <b id="${pre}_rep">${fmt(a.repay)}</b> a month</div></div>`:`<div class="banswer banswer-no"><div>The bank can't lend you more right now</div><div class="bsub">You spend more than you earn each week. Cut costs or earn more, for example rent out a property, then check again.</div></div>`;
+  const box=typeof ypBorrowBoxHTML==='function'?ypBorrowBoxHTML({kind:'game',idPrefix:pre+'_bp'}):(a.power>0?`<div class="banswer"><div>Game Borrowing Power</div><b id="${pre}_bp">${fmt(a.power)}</b></div>`:`<div class="banswer"><div class="bhome">Save more for a deposit</div></div>`);
   return `<dl class="yp-flow">${L('Income',fmt(a.income))}${L('Expenses',fmt(a.expenses))}${L('Left over',fmt(a.left),a.left<0?'color:#c0672b':'color:#1a478a')}</dl>
   ${box}`;}
 /* v24 budget editor: one screen, used from the tutorial, Income and Profile */
@@ -4184,12 +4184,12 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates143"></script>
-<script src="yp-income-form.js?v=dates143"></script>
-<script src="map-preview.js?v=dates143"></script>
-<script src="player-market.js?v=dates143"></script>
-<script src="car-yard.js?v=dates143"></script>
-<script src="overture-layer.js?v=dates143"></script>
-<script src="yp-notify.js?v=dates143"></script>
+<script src="yp-paycalc.js?v=dates144"></script>
+<script src="yp-income-form.js?v=dates144"></script>
+<script src="map-preview.js?v=dates144"></script>
+<script src="player-market.js?v=dates144"></script>
+<script src="car-yard.js?v=dates144"></script>
+<script src="overture-layer.js?v=dates144"></script>
+<script src="yp-notify.js?v=dates144"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
