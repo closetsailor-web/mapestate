@@ -190,6 +190,8 @@
     }));
     const optsHtml = bands.map((b, k) => '<option value="' + k + '"' + (k === band ? ' selected' : '') + '>' + labelOf(k) + '</option>').join('');
     const csVal = cs ? (Math.round(cs * 100) / 100) : '';
+    const sav = opts.savings;
+    const savVal = sav ? Math.round(+sav) : '';
     const seg = ['weekly', 'fortnightly', 'monthly'].map(k =>
       '<button type="button" role="radio" data-v="' + k + '" aria-checked="' + (k === view ? 'true' : 'false') + '" onclick="incView(\'' + k + '\')">' + (k[0].toUpperCase() + k.slice(1)) + '</button>'
     ).join('');
@@ -208,6 +210,10 @@
       '<label for="inc_cs" class="sr">Child Support Received</label>' +
       '<div class="ctl money"><span class="cur">$</span><input id="inc_cs" inputmode="decimal" placeholder="0" value="' + csVal + '" aria-describedby="inc_m_cs" oninput="incLive()"></div>' +
       '<p class="msg" id="inc_m_cs">Type the amount you get each week. Leave blank if none.</p></div>' +
+      '<div class="field" id="fd-savings"><div class="inc-k" id="h-savings">Savings</div>' +
+      '<label for="inc_savings" class="sr">Savings</label>' +
+      '<div class="ctl money"><span class="cur">$</span><input id="inc_savings" inputmode="decimal" placeholder="0" value="' + savVal + '" aria-describedby="inc_m_savings" oninput="incLive()"></div>' +
+      '<p class="msg" id="inc_m_savings">Type the amount you have saved for a deposit. Leave blank if none.</p></div>' +
       '<div class="reveal" id="inc-more">' +
       '<div class="seg" id="inc_view" role="radiogroup" aria-label="Show pay per">' + seg + '</div>' +
       '<div class="conv" id="inc_conv" aria-live="polite"></div>' +
