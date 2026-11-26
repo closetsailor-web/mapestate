@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates145u";
+window.YP_BUILD="dates145x";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1289,11 +1289,14 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 #yp-living[data-yp-fin=snap] .yp-money-save .yp-money-title,#yp-living[data-yp-fin=snap] .yp-money-save .yp-money-val{color:#0d7a3e}
 #yp-living[data-yp-fin=snap] .yp-money-short .yp-money-title,#yp-living[data-yp-fin=snap] .yp-money-short .yp-money-val{color:#c4231a}
 #yp-living[data-yp-fin=snap] .yp-money-plain .yp-money-toggle{cursor:default}
+#yp-living[data-yp-fin=snap] .yp-money-group .yp-money-title{font:400 14px Inter,system-ui,sans-serif;color:#3d4a63}
+#yp-living[data-yp-fin=snap] .yp-money-group .yp-money-val{font:700 15px Inter,system-ui,sans-serif;color:#14213d}
+#yp-living[data-yp-fin=snap] .yp-money-plain .yp-money-right::after{content:"\25BE";display:inline-flex;align-items:center;justify-content:center;width:20px;font-size:15px;line-height:1;visibility:hidden;pointer-events:none}
 #yp-living[data-yp-fin=snap] p.yp-reality-plan{margin:8px 0 22px;padding:0;font:500 14px/1.4 Inter,system-ui,sans-serif;color:#b8410a;text-align:left}
 #yp-living[data-yp-fin=snap] .yp-card-head{margin-bottom:16px}
 #yp-living[data-yp-fin=snap] .banswer{margin-top:0;margin-bottom:8px}
 #yp-living[data-yp-fin=snap] .banswer.yp-week-cta{position:relative;padding:10px 12px}
-#yp-living[data-yp-fin=snap] .banswer.yp-week-cta>b{margin:2px 0 0}
+#yp-living[data-yp-fin=snap] .banswer.yp-week-cta>b{margin:2px 0 0;font-size:23px}
 #yp-living[data-yp-fin=snap] .yp-week-cta .yp-link{position:absolute;right:12px;bottom:8px;margin:0;font-size:12px;font-weight:700;line-height:1;text-decoration:underline}
 #yp-living[data-yp-fin=snap] .yp-flow-list{margin:0}
 #yp-living[data-yp-fin=snap] .yp-close,#yp-living[data-yp-fin=snap] .card>.yp-close{margin-top:16px}
@@ -1646,7 +1649,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script src="yp-budget.js?v=dates145u"></script>
+<script src="yp-budget.js?v=dates145x"></script>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
 const TEST_ALWAYS_FRESH=false;let TEST_SID='';
@@ -4192,12 +4195,12 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates145u"></script>
-<script src="yp-income-form.js?v=dates145u"></script>
-<script src="map-preview.js?v=dates145u"></script>
-<script src="player-market.js?v=dates145u"></script>
-<script src="car-yard.js?v=dates145u"></script>
-<script src="overture-layer.js?v=dates145u"></script>
-<script src="yp-notify.js?v=dates145u"></script>
+<script src="yp-paycalc.js?v=dates145x"></script>
+<script src="yp-income-form.js?v=dates145x"></script>
+<script src="map-preview.js?v=dates145x"></script>
+<script src="player-market.js?v=dates145x"></script>
+<script src="car-yard.js?v=dates145x"></script>
+<script src="overture-layer.js?v=dates145x"></script>
+<script src="yp-notify.js?v=dates145x"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
