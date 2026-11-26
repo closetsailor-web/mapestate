@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates142";
+window.YP_BUILD="dates143";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -985,7 +985,7 @@ body{-webkit-font-smoothing:antialiased}
 .sheet label{font-size:13px;color:var(--mute);font-weight:600}
 .sub{font-size:13.5px}
 .sheet table td{padding:6px 0;vertical-align:top}.sheet table td:last-child{white-space:nowrap;padding-left:12px;font-variant-numeric:tabular-nums}
-.banswer{margin-top:12px;padding:16px;border-radius:14px;box-shadow:inset 0 0 0 2px #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}.banswer.banswer-no{box-shadow:inset 0 0 0 1.5px rgba(20,33,61,.18);background:#f5f7fb}.banswer.banswer-no>div:first-child{font:700 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.banswer.banswer-no .bsub{margin-top:6px;color:#5a6780}
+.banswer{margin-top:12px;padding:16px;border-radius:14px;box-shadow:inset 0 0 0 2px #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}.banswer .bhome{font-size:13px;font-weight:400;color:var(--mute);margin:4px 0 0;line-height:1.3}.banswer .bhome .bshort{font-size:11px;font-weight:400;color:var(--mute)}.banswer .bnote{font-size:12px;font-weight:400;color:var(--mute);margin-top:4px;line-height:1.35}.banswer.banswer-no{box-shadow:inset 0 0 0 1.5px rgba(20,33,61,.18);background:#f5f7fb}.banswer.banswer-no>div:first-child{font:700 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.banswer.banswer-no .bsub{margin-top:6px;color:#5a6780}
 #borrowdetail summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--mute)}
 .seg{display:flex;gap:4px;padding:4px;background:var(--card2);border-radius:14px;margin:8px 0}.seg button{flex:1;min-height:40px;border:0;border-radius:11px;background:transparent;font:600 15px Inter,system-ui,sans-serif;color:var(--mute);cursor:pointer;transition:background .2s,color .2s}.seg button.on{background:var(--card);color:var(--txt);box-shadow:0 1px 4px rgba(11,37,69,.12)}
 .erow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}.erow>span{flex:1;min-width:0;font-size:15px}
@@ -1639,7 +1639,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script src="yp-budget.js?v=dates142"></script>
+<script src="yp-budget.js?v=dates143"></script>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
 const TEST_ALWAYS_FRESH=false;let TEST_SID='';
@@ -2139,7 +2139,11 @@ function lenderCheck(q,L,rentWk=0){const why=[],lc=loanCheck(q.loan,rentWk,0,G.c
       else why.push('A deposit big enough to fit ('+fmt(dep)+', total cash '+fmt(q2.cash)+') is more than your '+fmt(G.cash)+' cash. Choose a cheaper property, or try a home you can buy with cash. With your cash, the most you can buy here is about '+fmtK(maxPrice(L))+'.');}}
   return{ok:!why.length&&lc.ok,why:why.concat(lc.ok?[]:lc.why),b:lc.b,L,fix,q};}
 const lenderCheck2=(q,rentWk)=>loanCheck(q.loan,rentWk,0,G.cash-q.payNow).ok;
-function maxPrice(L){let lo=0,hi=8e6;for(let i=0;i<40;i++){const m=(lo+hi)/2;let ok=false;for(const f of[L.min,.2,.3,.4,.5,.6,.8,1]){if(f<L.min)continue;const q=quote(m,0,Math.ceil(m*f));if(q.cash<=G.cash&&loanCheck(q.loan,0,0,G.cash-q.payNow).ok){ok=true;break;}}if(ok)lo=m;else hi=m;}return Math.floor(lo/1000)*1000;}
+function ypBuyCash(){return typeof ypFreeCash==='function'?ypFreeCash():((typeof G!=='undefined'&&G)?(+G.cash||0):0);}
+function ypQuoteFitsBuy(q,cash){cash=cash!=null?cash:ypBuyCash();return !!(q&&q.cash<=cash&&(typeof loanCheck!=='function'||loanCheck(q.loan,0,0,cash-(+q.payNow||0)).ok));}
+function ypAffordableHome(L){L=L||(typeof curLender==='function'?curLender():{min:.05});const cash=ypBuyCash();let lo=0,hi=8e6;for(let i=0;i<40;i++){const m=(lo+hi)/2;let ok=false;for(const f of[L.min,.2,.3,.4,.5,.6,.8,1]){if(f<L.min)continue;if(ypQuoteFitsBuy(quote(m,0,Math.ceil(m*f)),cash)){ok=true;break;}}if(ok)lo=m;else hi=m;}const price=Math.floor(lo/1000)*1000;if(price<=0)return null;for(const f of[L.min,.2,.3,.4,.5,.6,.8,1]){if(f<L.min)continue;const dep=Math.ceil(price*f),q=quote(price,0,dep);if(ypQuoteFitsBuy(q,cash))return {price,dep,f,q,cash};}return null;}
+function ypBorrowPowerHome(L){L=L||(typeof curLender==='function'?curLender():{min:.05});const power=(typeof ypLoanPower==='function'&&ypLoanPower({kind:'game'})||{}).power||0;if(power<=0)return null;const min=Math.max(0,+L.min||0);let lo=0,hi=8e6;for(let i=0;i<40;i++){const m=(lo+hi)/2,q=quote(m,0,Math.ceil(m*min));if(q.loan<=power)lo=m;else hi=m;}const price=Math.floor(lo/1000)*1000;if(price<=0)return null;const dep=Math.ceil(price*min),q=quote(price,0,dep);return {price,dep,q,need:q.cash,short:q.cash>ypBuyCash()};}
+function maxPrice(L){const h=ypAffordableHome(L);return h?h.price:0;}
 function ypWeekMsCandidates(){const out=[];const add=n=>{if(n>0&&out.indexOf(n)<0)out.push(n);};if(typeof CFG!=='undefined'&&CFG&&CFG.weekMs>0)add(+CFG.weekMs);if(typeof YP_WEEK_MS==='number')add(YP_WEEK_MS);if(typeof YP_TEST_WEEK_MS==='number')add(YP_TEST_WEEK_MS);const y=typeof YP_WEEKS_PER_YEAR==='number'?YP_WEEKS_PER_YEAR:52.1775;add(Math.round(1/y*24*60*60*1000));add(Math.round(7.8/y*24*60*60*1000));return out;}
 function ypDeriveSettleWeek(b,week){week=week!=null?week:(typeof G!=='undefined'&&G?G.week|0:0);if(!b)return NaN;const owned=b.status==='owned';const ok=w=>Number.isFinite(+w)&&+w>=0&&(!owned||(+w|0)<=week);if(ok(+b.settleWeek))return +b.settleWeek|0;const fromMs=ms=>{if(!Number.isFinite(+ms))return NaN;if(typeof ypWeekFromGameMs==='function'){const w=ypWeekFromGameMs(+ms);if(ok(w))return w|0;}const cands=ypWeekMsCandidates();for(let i=0;i<cands.length;i++){const w=Math.floor(+ms/cands[i]);if(ok(w))return w|0;}return NaN;};let w=fromMs(b.settleGameMs);if(ok(w))return w;if(owned&&b.id&&typeof ypReadHistory==='function'){try{const evs=(ypReadHistory().events||[]).filter(e=>e&&e.propertyId===b.id);for(const kind of ['settled','movedIn','contract']){const ev=[...evs].reverse().find(e=>e.kind===kind);if(!ev||!Number.isFinite(+ev.gameMs))continue;const ew=fromMs(ev.gameMs);if(ok(ew))return kind==='contract'?Math.min(week,(ew|0)+Math.round(((typeof YP_SETTLE_DAYS==='number')?YP_SETTLE_DAYS:30)/7)):ew;}}catch(e){}}return NaN;}
 function ypHeaderLoanOwing(b){if(typeof ypLoanOwing==='function')return ypLoanOwing(b);if(!b)return 0;if(b.status==='contract')return Math.max(0,+b.loan||+b.loanStart||0);if(b.status!=='owned')return Math.max(0,+b.loan||0);if(Number.isFinite(+b.loanPaidToWeek))return Math.max(0,+b.loan||0);const start=Number.isFinite(+b.loanStart)&&+b.loanStart>0?+b.loanStart:Math.max(0,+b.loan||0);const sched=+b.repay>0?+b.repay:(typeof repayWk==='function'?repayWk(start,typeof CFG!=='undefined'?CFG.rateIP:0.0672):0);const rate=(typeof CFG!=='undefined'&&CFG&&Number.isFinite(+CFG.rateIP))?+CFG.rateIP:0.0672;const settle=typeof ypDeriveSettleWeek==='function'?ypDeriveSettleWeek(b):NaN;const weeks=Number.isFinite(settle)?Math.max(0,(typeof G!=='undefined'&&G?G.week|0:0)-settle):0;let bal=Math.max(0,start);for(let i=0;i<weeks&&bal>0;i++){const interest=bal*rate/52;const due=Math.min(sched>0?sched:bal+interest,bal+interest);bal=Math.max(0,bal+interest-due);}return bal;}
@@ -4180,12 +4184,12 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates142"></script>
-<script src="yp-income-form.js?v=dates142"></script>
-<script src="map-preview.js?v=dates142"></script>
-<script src="player-market.js?v=dates142"></script>
-<script src="car-yard.js?v=dates142"></script>
-<script src="overture-layer.js?v=dates142"></script>
-<script src="yp-notify.js?v=dates142"></script>
+<script src="yp-paycalc.js?v=dates143"></script>
+<script src="yp-income-form.js?v=dates143"></script>
+<script src="map-preview.js?v=dates143"></script>
+<script src="player-market.js?v=dates143"></script>
+<script src="car-yard.js?v=dates143"></script>
+<script src="overture-layer.js?v=dates143"></script>
+<script src="yp-notify.js?v=dates143"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
