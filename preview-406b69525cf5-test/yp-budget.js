@@ -763,7 +763,25 @@ button.yp-b-row.yp-b-sel {
 }
 #sheet.yp-budget-sheet .yp-b-date .yp-bill-date-ph { font:400 15px Inter,system-ui,sans-serif; left:14px; }
 #sheet.yp-budget-sheet .yp-b-date input[type=date]:focus { border-color:#0a3a8c!important; }
-#sheet.yp-budget-sheet .yp-bill-freq-select { width:100%; display:block; box-sizing:border-box; }
+#sheet.yp-budget-sheet .yp-b-rep-field { position:relative; }
+#sheet.yp-budget-sheet .yp-bill-freq-select {
+  width:100%; display:block; box-sizing:border-box; text-align:left;
+  padding-right:40px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a96a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center; background-size:18px;
+}
+.yp-b-edit.yp-b-rep-open { overflow:visible; }
+.yp-b-rep-menu {
+  position:absolute; left:0; right:0; top:100%; z-index:8; margin-top:4px;
+  background:#fff; border:1px solid #dfe5ef; border-radius:12px;
+  box-shadow:0 8px 24px rgba(11,37,69,.14); padding:4px 0; overflow:hidden;
+}
+.yp-b-rep-opt {
+  display:block; width:100%; min-height:36px; height:36px; padding:0 12px; border:0;
+  background:transparent; text-align:left; cursor:pointer;
+  font:400 14px Inter,system-ui,sans-serif; color:#14213d;
+}
+.yp-b-rep-opt[aria-selected=true] { color:#0a3a8c; }
 .yp-b-chips { display:flex; flex-wrap:wrap; gap:6px; }
 .yp-b-chip {
   min-height:32px; height:32px; padding:0 10px; border-radius:999px; border:1px solid #dfe5ef; background:#fff;
@@ -1200,8 +1218,9 @@ function openEditSheet(gid, iid){
       <div class="yp-b-field"><label for="yp-b-date">Next Payment</label>
         <div class="yp-bill-date-wrap yp-b-date"><span class="yp-bill-date-ph">Not Set</span><input id="yp-b-date" type="date" value="${esc(bill && bParseIso(bill.dueDate) ? bill.dueDate : '')}" aria-label="Next Payment"></div></div>
     </div>
-    <div class="yp-b-field"><label for="yp-b-rep">Repeat</label>
-      <select class="yp-bill-freq-select" id="yp-b-rep">${choices.map(k=>`<option value="${esc(k)}"${k===repeat?' selected':''}>${esc(B_PERIOD_LABEL[k])}</option>`).join('')}</select></div>
+    <div class="yp-b-field yp-b-rep-field"><label id="yp-b-rep-lab" for="yp-b-rep">Repeat</label>
+      <button type="button" class="yp-bill-freq-select" id="yp-b-rep" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="yp-b-rep-lab" aria-controls="yp-b-rep-list">${esc(B_PERIOD_LABEL[repeat])}</button>
+      <div class="yp-b-rep-menu" id="yp-b-rep-list" role="listbox" aria-labelledby="yp-b-rep-lab" hidden>${choices.map(k=>`<button type="button" class="yp-b-rep-opt" role="option" data-rep="${esc(k)}" aria-selected="${k===repeat?'true':'false'}">${esc(B_PERIOD_LABEL[k])}</button>`).join('')}</div></div>
     <div class="yp-b-remind"><span class="yp-b-remind-lab" id="yp-b-remind-lab">Remind Me</span><button type="button" class="switch${remind?' on':''}" id="yp-b-remind" aria-labelledby="yp-b-remind-lab" aria-pressed="${remind?'true':'false'}"></button></div>
     <div class="yp-b-chips yp-b-leads" id="yp-b-leads" role="group" aria-label="Remind Me When"${remind?'':' hidden'}>${Object.keys(leads).map(k=>`<button type="button" class="yp-b-chip" data-lead="${k}" aria-pressed="${leadSet.indexOf(k)>=0?'true':'false'}">${esc(leads[k].label)}</button>`).join('')}</div>
     <p class="yp-b-err" id="yp-b-err" role="alert"></p>
@@ -1224,11 +1243,39 @@ function openEditSheet(gid, iid){
   amtIn.addEventListener('input', ()=>{ errEl.textContent = ''; });
   if(nameIn) nameIn.addEventListener('input', ()=>{ errEl.textContent = ''; });
   const repIn = sh.querySelector('#yp-b-rep');
-  repIn.addEventListener('change', ()=>{
-    const next = repIn.value;
+  const repMenu = sh.querySelector('#yp-b-rep-list');
+  const setRepeat = next => {
+    if(B_PERIODS.indexOf(next) < 0) return;
     /* the Amount box is always per the chosen Repeat; the weekly figure is worked out on Save */
-    if(B_PERIODS.indexOf(next) >= 0) repeat = next;
+    repeat = next;
+    repIn.textContent = B_PERIOD_LABEL[next];
+    repMenu.querySelectorAll('[data-rep]').forEach(x=>x.setAttribute('aria-selected', String(x.getAttribute('data-rep') === next)));
     errEl.textContent = '';
+  };
+  const closeRepMenu = ()=>{
+    if(repMenu.hidden) return;
+    repMenu.hidden = true;
+    repIn.setAttribute('aria-expanded', 'false');
+    sh.classList.remove('yp-b-rep-open');
+  };
+  const openRepMenu = ()=>{
+    repMenu.hidden = false;
+    repIn.setAttribute('aria-expanded', 'true');
+    sh.classList.add('yp-b-rep-open');
+  };
+  repIn.addEventListener('click', ev=>{
+    ev.stopPropagation();
+    if(repMenu.hidden) openRepMenu(); else closeRepMenu();
+  });
+  repMenu.querySelectorAll('[data-rep]').forEach(b=>b.addEventListener('click', ev=>{
+    ev.stopPropagation();
+    setRepeat(b.getAttribute('data-rep'));
+    closeRepMenu();
+  }));
+  sh.addEventListener('pointerdown', ev=>{
+    if(repMenu.hidden) return;
+    if(repIn.contains(ev.target) || repMenu.contains(ev.target)) return;
+    closeRepMenu();
   });
   sw.addEventListener('click', ()=>{
     remind = !remind;
