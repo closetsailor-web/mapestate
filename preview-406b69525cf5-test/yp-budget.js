@@ -2,7 +2,12 @@
 (function(){
 'use strict';
 
-const FREQ_Y = { week:52, weekly:52, fortnight:26, fortnightly:26, month:12, monthly:12, quarter:4, year:1, yearly:1, annual:1 };
+const FREQ_Y = { week:52, weekly:52, fortnight:26, fortnightly:26, month:12, monthly:12, quarter:4, sixmonths:2, year:1, yearly:1, annual:1 };
+/* dates146a: an item's amount is per its Repeat period. Weekly figure = amount x times-a-year / 52. */
+const B_PERIODS = ['week','fortnight','month','quarter','sixmonths','year'];
+const B_PERIOD_LABEL = { week:'Weekly', fortnight:'Fortnightly', month:'Monthly', quarter:'Quarterly', sixmonths:'Every 6 Months', year:'Yearly' };
+const B_REPEAT_CHOICES = ['week','fortnight','month','quarter','year'];
+function bPeriod(p){ return B_PERIODS.indexOf(p) >= 0 ? p : 'week'; }
 const ICON_PATHS = {
   home: '<path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M9 21v-6h6v6"/>',
   doc: '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9 8.5h6M9 12h6M9 15.5h4"/>',
@@ -310,7 +315,7 @@ function normalizeV2(ex){
     const items = [];
     (g.items || []).forEach(it=>{
       if(!it || !it.id) return;
-      const period = it.period === 'year' ? 'year' : 'week';
+      const period = bPeriod(it.period);
       items.push({
         id: String(it.id),
         billKey: String(it.billKey || it.id),
@@ -476,7 +481,7 @@ function ypBudgetEnsureEx(g){
 
 function ypBudgetItemWeekly(it){
   if(!it) return 0;
-  return toWeekNum(it.amount, it.period || 'week');
+  return toWeekNum(it.amount, bPeriod(it.period));
 }
 function ypBudgetGroupWeekly(grp){
   if(!grp || !Array.isArray(grp.items)) return 0;
@@ -501,7 +506,7 @@ function ypBudgetActiveItems(ex){
         name: it.name,
         billName: it.billName || it.name,
         amount: +it.amount || 0,
-        period: it.period === 'year' ? 'year' : 'week',
+        period: bPeriod(it.period),
         weekly: wk,
         groupId: g.id,
         groupName: g.name
@@ -610,11 +615,12 @@ function ypBudgetInjectCss(){
 .yp-b-chev { width:16px; height:16px; color:#5a6780; flex:none; transition:transform .18s ease; }
 .yp-b-group.open .yp-b-chev { transform:rotate(180deg); }
 .yp-b-item {
-  display:flex; align-items:center; gap:10px; min-height:40px;
+  display:flex; align-items:flex-start; gap:10px; min-height:40px;
   padding:6px 10px; border-top:1px solid #eef1f6;
 }
 .yp-b-iico {
   width:26px; height:26px; border-radius:50%; display:grid; place-items:center; flex:none; color:#fff;
+  margin-top:2px;
 }
 .yp-b-iico svg { width:13px; height:13px; }
 .yp-b-iico.c-blue { background:#1557c0; }
@@ -632,6 +638,8 @@ function ypBudgetInjectCss(){
   color:#14213d; letter-spacing:0;
 }
 .yp-b-pill.zero { color:#5a6780; }
+.yp-b-amt { flex:none; display:flex; flex-direction:column; align-items:flex-end; gap:1px; }
+.yp-b-amt small { font-size:12px; font-weight:400; color:#5a6780; line-height:1.3; }
 .yp-b-pen {
   flex:none; width:36px; height:36px; border:0; background:none; color:#5a6780;
   display:grid; place-items:center; padding:0; margin-right:-4px; cursor:pointer;
@@ -713,6 +721,66 @@ function ypBudgetInjectCss(){
   display:flex; align-items:center; justify-content:center; width:100%; min-height:48px;
   margin-top:10px; border:1px solid #dfe5ef; border-radius:999px; background:#fff;
   color:#14213d; font:400 16px Inter,system-ui,sans-serif; cursor:pointer;
+}
+
+/* dates146a Budget and Bills: rows open a bottom edit sheet */
+#sheet.yp-budget-sheet #sheetBody { position:relative; }
+button.yp-b-row {
+  width:100%; border:0; border-top:1px solid #eef1f6; background:transparent; border-radius:0;
+  font-family:inherit; text-align:left; cursor:pointer; color:inherit; min-height:48px; padding:8px 10px;
+}
+.yp-b-items > button.yp-b-row:first-child { border-top-color:#eef1f6; }
+.yp-b-copy small.yp-b-due { display:flex; align-items:center; gap:4px; color:#5a6780; }
+.yp-b-due svg { width:12px; height:12px; flex:none; }
+#sheetBody.yp-b-editing .yp-b-foot { display:none; }
+.yp-b-scrim {
+  position:absolute; inset:0; z-index:5; background:rgba(238,241,246,.72);
+  opacity:0; transition:opacity .2s ease;
+}
+.yp-b-scrim.on { opacity:1; }
+.yp-b-group.yp-b-sel-grp { position:relative; z-index:6; background:transparent; }
+.yp-b-group.yp-b-sel-grp > .yp-b-group-h, .yp-b-group.yp-b-sel-grp .yp-b-add-in { opacity:.35; }
+.yp-b-group.yp-b-sel-grp .yp-b-row:not(.yp-b-sel) { opacity:.3; }
+button.yp-b-row.yp-b-sel {
+  position:relative; z-index:6; background:#fff; border:1.5px solid #0a3a8c; border-radius:14px;
+  opacity:1;
+}
+.yp-b-edit {
+  position:absolute; left:0; right:0; bottom:0; z-index:7; max-height:calc(100% - 76px); overflow-y:auto;
+  background:#fff; border-radius:22px 22px 0 0; box-shadow:0 -8px 24px rgba(11,37,69,.14);
+  padding:8px 16px calc(14px + var(--sab, 0px)); transform:translateY(100%); transition:transform .2s ease;
+  -webkit-overflow-scrolling:touch;
+}
+.yp-b-edit.on { transform:translateY(0); }
+.yp-b-handle { display:block; width:40px; height:4px; border-radius:2px; background:#d5dbe6; margin:0 auto 10px; }
+.yp-b-edit-title { margin:0 0 14px; text-align:center; font-size:18px; font-weight:600; color:#0b2545; line-height:1.25; }
+.yp-b-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.yp-b-pair .yp-b-field { min-width:0; }
+#sheet.yp-budget-sheet .yp-b-date input[type=date] {
+  display:block; width:100%; box-sizing:border-box; height:48px!important; min-height:48px!important;
+  padding:0 12px!important; margin:0!important; background:#f4f7fb!important; border:1px solid #dfe5ef!important;
+  border-radius:16px!important; font:400 15px Inter,system-ui,sans-serif!important; color:#14213d;
+}
+#sheet.yp-budget-sheet .yp-b-date .yp-bill-date-ph { font:400 15px Inter,system-ui,sans-serif; left:14px; }
+#sheet.yp-budget-sheet .yp-b-date input[type=date]:focus { border-color:#0a3a8c!important; }
+#sheet.yp-budget-sheet .yp-bill-freq-select { width:100%; display:block; box-sizing:border-box; }
+.yp-b-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.yp-b-chip {
+  min-height:32px; height:32px; padding:0 10px; border-radius:999px; border:1px solid #dfe5ef; background:#fff;
+  font:500 13px Inter,system-ui,sans-serif; color:#14213d; cursor:pointer;
+}
+.yp-b-chip[aria-pressed=true] { background:#0a3a8c; border-color:#0a3a8c; color:#fff; font-weight:600; }
+.yp-b-leads { margin:-2px 0 4px; }
+.yp-b-leads[hidden] { display:none; }
+.yp-b-remind { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; margin:0 0 8px; }
+.yp-b-remind-lab { font-size:16px; font-weight:600; color:#14213d; }
+#sheet.yp-budget-sheet .yp-b-remind .switch { position:relative; width:50px; height:30px; border-radius:15px; background:#d5dbe6; border:0; cursor:pointer; flex:none; }
+#sheet.yp-budget-sheet .yp-b-remind .switch::after { content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #0004; transition:left .2s; }
+#sheet.yp-budget-sheet .yp-b-remind .switch.on { background:#0a3a8c; }
+#sheet.yp-budget-sheet .yp-b-remind .switch.on::after { left:23px; }
+.yp-b-del-link {
+  display:block; width:100%; min-height:44px; margin:6px 0 0; border:0; background:none;
+  color:#5a6780; font:400 15px Inter,system-ui,sans-serif; cursor:pointer;
 }
 `;
   document.head.appendChild(st);
@@ -816,7 +884,8 @@ function pieSvg(){
 
 function summaryCardHtml(ex){
   const takeHome = takeHomeWeekly();
-  const budgetWk = Math.round(ypBudgetWeeklyTotal(ex));
+  const ownWk = bOwnBills().reduce((t, b)=>t + toWeekNum(b.amount, bPeriod(b.freq)), 0);
+  const budgetWk = Math.round(ypBudgetWeeklyTotal(ex) + ownWk);
   const left = takeHome - budgetWk;
   const slices = summarySlices(ex, takeHome);
   const leftHtml = left < 0
@@ -882,7 +951,7 @@ function renderBudgetList(){
   const body = document.getElementById('sheetBody');
   if(!sheet || !body || !bDraft) return;
   sheet.classList.add('yp-budget-sheet');
-  setBudgetHead('Budget', null);
+  setBudgetHead('Budget and Bills', null);
 
   const totalWk = ypBudgetWeeklyTotal(bDraft);
   const groupsHtml = bDraft.groups.map(g=>{
@@ -891,13 +960,12 @@ function renderBudgetList(){
     const itemsHtml = (g.items || []).map(it=>{
       const wk = ypBudgetItemWeekly(it);
       const isZero = !(wk > 0);
-      const isYr = it.period === 'year';
-      return `<div class="yp-b-item" data-gid="${esc(g.id)}" data-iid="${esc(it.id)}">
-        <div class="yp-b-iico ${esc(g.color)}${isZero?' zero':''}">${svgTag(it.icon || g.icon)}</div>
-        <div class="yp-b-copy"><strong>${esc(it.name)}</strong>${isYr?'<small>Yearly</small>':''}</div>
-        <div class="yp-b-pill${isZero?' zero':''}">${bFmt(wk)}</div>
-        <button class="yp-b-pen" type="button" data-edit-gid="${esc(g.id)}" data-edit-iid="${esc(it.id)}" aria-label="Edit ${esc(it.name)}">${PEN_SVG}</button>
-      </div>`;
+      const bill = bBillFor(it);
+      return `<button class="yp-b-item yp-b-row" type="button" data-gid="${esc(g.id)}" data-iid="${esc(it.id)}" data-open-gid="${esc(g.id)}" data-open-iid="${esc(it.id)}" aria-label="Edit ${esc(it.name)}">
+        <span class="yp-b-iico ${esc(g.color)}${isZero?' zero':''}">${svgTag(it.icon || g.icon)}</span>
+        <span class="yp-b-copy"><strong>${esc(it.name)}</strong>${bRowSub(bill)}</span>
+        ${bRowAmtHtml(bill, wk)}
+      </button>`;
     }).join('');
     return `<div class="yp-b-group ${isOpen?'open':'closed'}" data-gid="${esc(g.id)}">
       <button class="yp-b-group-h" type="button" data-toggle-gid="${esc(g.id)}" aria-expanded="${isOpen?'true':'false'}">
@@ -912,14 +980,34 @@ function renderBudgetList(){
     </div>`;
   }).join('');
 
+  const own = bOwnBills();
+  const ownWk = own.reduce((t, b)=>t + toWeekNum(b.amount, bPeriod(b.freq)), 0);
+  const ownOpen = bOpenSet.has('__own');
+  const ownHtml = own.length ? `<div class="yp-b-group ${ownOpen?'open':'closed'}" data-gid="__own">
+      <button class="yp-b-group-h" type="button" data-toggle-gid="__own" aria-expanded="${ownOpen?'true':'false'}">
+        <h3 class="yp-b-gtitle">Your Own Bills</h3>
+        <span class="yp-b-gtot">${bFmt(ownWk)}</span>
+        ${CHEV_SVG}
+      </button>
+      <div class="yp-b-items">${own.map(b=>{
+        const wk = toWeekNum(b.amount, bPeriod(b.freq));
+        const isZero = !(wk > 0);
+        return `<button class="yp-b-item yp-b-row" type="button" data-gid="__own" data-iid="${esc(b.id)}" data-open-gid="__own" data-open-iid="${esc(b.id)}" aria-label="Edit ${esc(b.name||'Bill')}">
+          <span class="yp-b-iico c-orange${isZero?' zero':''}">${svgTag('doc')}</span>
+          <span class="yp-b-copy"><strong>${esc(b.name||'Bill')}</strong>${bRowSub(b)}</span>
+          ${bRowAmtHtml(b, wk)}
+        </button>`;}).join('')}</div>
+    </div>` : '';
+
   body.innerHTML = `<div class="yp-b-scroll" id="yp-b-scroll">
       ${summaryCardHtml(bDraft)}
       <p class="yp-b-hint">An honest budget reflects your real habits and numbers rather than wishful thinking.</p>
       ${groupsHtml}
+      ${ownHtml}
       <button class="yp-b-add-cat" type="button" id="yp-b-add-cat"><span class="yp-b-plus">${PLUS_SVG}</span>Add Category</button>
     </div>
     <div class="yp-b-foot">
-      <div id="exp_tot"><span>Your Budget</span><b id="exp_total">${bFmt(totalWk)} a week</b></div>
+      <div id="exp_tot"><span>Your Budget</span><b id="exp_total">${bFmt(totalWk + ownWk)} a week</b></div>
       <button class="yp-b-cta" id="exp_save" type="button">Save Budget</button>
     </div>`;
 
@@ -940,16 +1028,17 @@ function renderBudgetList(){
       }
     });
   });
-  body.querySelectorAll('[data-edit-iid]').forEach(btn=>{
+  body.querySelectorAll('[data-open-iid]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
+      if(btn.classList.contains('yp-b-sel')){ closeEditSheet(); return; }
       if(sc) bScrollTop = sc.scrollTop;
-      openItemSheet('edit', btn.getAttribute('data-edit-gid'), btn.getAttribute('data-edit-iid'));
+      openEditSheet(btn.getAttribute('data-open-gid'), btn.getAttribute('data-open-iid'));
     });
   });
   body.querySelectorAll('[data-add-item-gid]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       if(sc) bScrollTop = sc.scrollTop;
-      openItemSheet('add', btn.getAttribute('data-add-item-gid'), null);
+      openEditSheet(btn.getAttribute('data-add-item-gid'), null);
     });
   });
   const addCatBtn = document.getElementById('yp-b-add-cat');
@@ -963,6 +1052,290 @@ function renderBudgetList(){
   if(saveBtn){
     saveBtn.addEventListener('click', ()=> window.expSave());
   }
+}
+
+
+/* ---------- dates146a: Budget and Bills (one setup screen) ---------- */
+const BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
+const B_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const B_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function bBillsReady(){ return typeof ypBillsGet === 'function' && typeof ypBillsStore === 'function' && !!ypBillsStore(); }
+function bBillFor(it){
+  try{ return bBillsReady() ? ypBillsGet('exp:' + (it.billKey || it.id)) : null; }catch(e){ return null; }
+}
+function bOwnBills(){
+  try{
+    if(!bBillsReady()) return [];
+    return Object.values(ypBillsStore().items || {}).filter(b=>b && b.source === 'custom')
+      .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+  }catch(e){ return []; }
+}
+function bParseIso(iso){
+  const m = String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? new Date(+m[1], +m[2]-1, +m[3], 12) : null;
+}
+function bToday(){
+  try{ if(typeof ypBrisbaneYmd === 'function') return ypBrisbaneYmd(Date.now()); }catch(e){}
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function bDueText(iso){
+  const d = bParseIso(iso), t = bParseIso(bToday());
+  if(!d || !t) return '';
+  const days = Math.round((d - t) / 86400000);
+  if(days === 0) return 'Due Today';
+  if(days > 0 && days < 7) return 'Due ' + B_DAYS[d.getDay()];
+  return 'Due ' + d.getDate() + ' ' + B_MONTHS[d.getMonth()];
+}
+/* Under the item name: a quiet bell and due day when a reminder is on. The cycle sits under the amount. */
+function bRowSub(bill){
+  if(bill && bill.remind && bParseIso(bill.dueDate)){
+    return `<small class="yp-b-due">${BELL_SVG}<span>${esc(bDueText(bill.dueDate))}</span></small>`;
+  }
+  return '';
+}
+/* Amount side of the row: the bill amount and its Repeat, or the weekly amount and Weekly when there is no bill yet. */
+function bRowAmtHtml(bill, weekly){
+  const has = bill && B_PERIODS.indexOf(bill.freq) >= 0;
+  const amount = has ? (+bill.amount || 0) : weekly;
+  const label = has ? (B_PERIOD_LABEL[bill.freq] || 'Weekly') : 'Weekly';
+  const isZero = !(amount > 0);
+  return `<span class="yp-b-amt"><span class="yp-b-pill${isZero?' zero':''}">${bFmt(amount)}</span><small>${esc(label)}</small></span>`;
+}
+/* Write the draft to the save without closing (Save on the edit sheet). Same steps as Save Budget. */
+function bCommitDraft(){
+  if(!bDraft) return;
+  const savedEx = JSON.parse(JSON.stringify(bDraft));
+  const mo = Math.round(ypBudgetMonthlyTotal(savedEx) * 100) / 100;
+  if(typeof G !== 'undefined' && G){
+    G.income = Object.assign({}, G.income || {}, { ex: savedEx, exp: mo, set: (G.income && G.income.set) || false, expSet: 1 });
+  }
+  if(bDeletedBills.length && typeof ypBillsDeleteBudgetItem === 'function'){
+    bDeletedBills.forEach(bk=>{ try{ ypBillsDeleteBudgetItem(bk); }catch(e){} });
+    bDeletedBills = [];
+  }
+  try{ if(typeof ypBillsSyncFromExpenses === 'function') ypBillsSyncFromExpenses(); }catch(e){}
+}
+function bAfterCommit(){
+  try{ if(typeof ypBillsSave === 'function') ypBillsSave(); else if(typeof save === 'function') save(); }catch(e){}
+  try{ if(typeof hud === 'function') hud(); }catch(e){}
+  try{ if(typeof ypSyncFeed === 'function') ypSyncFeed(); }catch(e){}
+  try{ if(typeof ypRefreshFinances === 'function') ypRefreshFinances(); }catch(e){}
+}
+/* Put the due date, repeat and reminder onto the shared bill record (G.bills). Amount comes from Budget. */
+function bWriteBill(id, f){
+  if(!bBillsReady()) return null;
+  const store = ypBillsStore();
+  let b = store.items[id];
+  if(!b && typeof ypBillsUpsert === 'function'){
+    b = ypBillsUpsert({ id, source:'expense', kind:'bill', name:f.name, amount:f.billAmount, freq:f.freq, notifyType:'billDue' });
+  }
+  if(!b) return null;
+  const d = bParseIso(f.dueDate);
+  b.freq = f.freq; b.freqUser = 1;
+  delete b.amountUser;
+  if(f.billAmount != null) b.amount = Math.max(0, Math.round(f.billAmount));
+  if(f.name) b.name = f.name;
+  b.dueDate = d ? f.dueDate : null;
+  b.dueDay = d ? d.getDate() : null;
+  const was = !!b.remind;
+  b.remind = !!f.remind;
+  b.asked = true;
+  b.choice = f.remind ? 'yes' : 'no';
+  if(Array.isArray(f.leads) && f.leads.length){ b.leads = f.leads.slice(); b.lead = f.leads[0]; }
+  if(!b.lead) b.lead = 'week';
+  if(!Array.isArray(b.leads)) b.leads = [b.lead];
+  if(!b.remind && typeof ypBillsClearNotify === 'function'){ try{ ypBillsClearNotify(b); }catch(e){} }
+  return { bill:b, turnedOn: b.remind && !was };
+}
+
+function openEditSheet(gid, iid){
+  const body = document.getElementById('sheetBody');
+  if(!body || !bDraft) return;
+  const own = gid === '__own';
+  const grp = own ? null : bDraft.groups.find(g=>g.id===gid);
+  if(!own && !grp) return;
+  const item = own ? bOwnBills().find(b=>b.id===iid) : (iid ? grp.items.find(it=>it.id===iid) : null);
+  if(iid && !item) return;
+  const isAdd = !item;
+  const bill = own ? item : (item ? bBillFor(item) : null);
+  const stored = own ? bPeriod(item.freq) : (item ? bPeriod(item.period) : 'week');
+  /* Older saves kept a bill's repeat apart from a Weekly or Yearly budget figure. Open on the bill's repeat and show the same money per that period. */
+  let repeat = stored;
+  if(!own && item && (stored === 'week' || stored === 'year') && bill && B_PERIODS.indexOf(bill.freq) >= 0 && (bill.dueDate || bill.remind || bill.freqUser)) repeat = bill.freq;
+  const weeklyNow = own ? toWeekNum(item.amount, stored) : (item ? ypBudgetItemWeekly(item) : 0);
+  const amountFor = p => p === stored ? (+(item && item.amount) || 0) : cleanNum(weeklyNow * 52 / (FREQ_Y[p] || 52));
+  const startRepeat = repeat;
+  const startAmt = item ? bFmtIn(amountFor(repeat)) : '';
+  let remind = !!(bill && bill.remind);
+  let leadSet = (typeof ypBillLeads === 'function') ? ypBillLeads(bill || {}) : [ (bill && bill.lead) || 'week' ];
+  const needName = isAdd || own || (item && item.custom);
+  const title = isAdd ? 'Add Item' : 'Edit ' + (item.name || 'Item');
+  const choices = B_REPEAT_CHOICES.slice();
+  if(repeat === 'sixmonths') choices.splice(4, 0, 'sixmonths');
+  const leads = (typeof YP_NOTIFY_LEADS !== 'undefined' && YP_NOTIFY_LEADS) || { week:{label:'A Week Before'}, '3days':{label:'3 Days Before'}, day:{label:'1 Day Before'} };
+
+  closeEditSheet(true);
+  try{ if(typeof ypBillsInjectCss === 'function') ypBillsInjectCss(); }catch(e){}
+  body.classList.add('yp-b-editing');
+  const rowSel = body.querySelector(`.yp-b-row[data-gid="${CSS.escape(gid)}"][data-iid="${CSS.escape(iid||'')}"]`);
+  if(rowSel){
+    rowSel.classList.add('yp-b-sel');
+    const grpEl = rowSel.closest('.yp-b-group'); if(grpEl) grpEl.classList.add('yp-b-sel-grp');
+    const sc = document.getElementById('yp-b-scroll');
+    if(sc){ const top = rowSel.getBoundingClientRect().top - sc.getBoundingClientRect().top; sc.scrollTop = Math.max(0, sc.scrollTop + top - 10); }
+  }
+
+  const scrim = document.createElement('div');
+  scrim.className = 'yp-b-scrim'; scrim.id = 'yp-b-scrim';
+  const sh = document.createElement('div');
+  sh.className = 'yp-b-edit'; sh.id = 'yp-b-edit';
+  sh.setAttribute('role', 'dialog'); sh.setAttribute('aria-labelledby', 'yp-b-edit-title');
+  sh.innerHTML = `<span class="yp-b-handle" aria-hidden="true"></span>
+    <h3 class="yp-b-edit-title" id="yp-b-edit-title">${esc(title)}</h3>
+    ${needName ? `<div class="yp-b-field"><label for="yp-b-name">Name</label><input class="yp-b-input" id="yp-b-name" type="text" autocomplete="off" maxlength="80" placeholder="e.g. Gym" value="${esc(item ? item.name : '')}"></div>` : ''}
+    <div class="yp-b-pair">
+      <div class="yp-b-field"><label for="yp-b-amt">Amount</label>
+        <div class="yp-b-money"><span class="cur">$</span><input id="yp-b-amt" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(startAmt)}"></div></div>
+      <div class="yp-b-field"><label for="yp-b-date">Next Payment</label>
+        <div class="yp-bill-date-wrap yp-b-date"><span class="yp-bill-date-ph">Not Set</span><input id="yp-b-date" type="date" value="${esc(bill && bParseIso(bill.dueDate) ? bill.dueDate : '')}" aria-label="Next Payment"></div></div>
+    </div>
+    <div class="yp-b-field"><label for="yp-b-rep">Repeat</label>
+      <select class="yp-bill-freq-select" id="yp-b-rep">${choices.map(k=>`<option value="${esc(k)}"${k===repeat?' selected':''}>${esc(B_PERIOD_LABEL[k])}</option>`).join('')}</select></div>
+    <div class="yp-b-remind"><span class="yp-b-remind-lab" id="yp-b-remind-lab">Remind Me</span><button type="button" class="switch${remind?' on':''}" id="yp-b-remind" aria-labelledby="yp-b-remind-lab" aria-pressed="${remind?'true':'false'}"></button></div>
+    <div class="yp-b-chips yp-b-leads" id="yp-b-leads" role="group" aria-label="Remind Me When"${remind?'':' hidden'}>${Object.keys(leads).map(k=>`<button type="button" class="yp-b-chip" data-lead="${k}" aria-pressed="${leadSet.indexOf(k)>=0?'true':'false'}">${esc(leads[k].label)}</button>`).join('')}</div>
+    <p class="yp-b-err" id="yp-b-err" role="alert"></p>
+    <button class="yp-b-cta" id="yp-b-item-save" type="button">Save</button>
+    ${isAdd ? '' : '<button class="yp-b-del-link" id="yp-b-item-del" type="button">Delete Item</button>'}`;
+  body.append(scrim, sh);
+  requestAnimationFrame(()=>{ scrim.classList.add('on'); sh.classList.add('on'); });
+
+  const nameIn = sh.querySelector('#yp-b-name');
+  const amtIn = sh.querySelector('#yp-b-amt');
+  const dateIn = sh.querySelector('#yp-b-date');
+  const dateWrap = sh.querySelector('.yp-b-date');
+  const errEl = sh.querySelector('#yp-b-err');
+  const sw = sh.querySelector('#yp-b-remind');
+  const leadsEl = sh.querySelector('#yp-b-leads');
+  const syncDate = ()=>dateWrap.classList.toggle('yp-bill-date-empty', !bParseIso(dateIn.value));
+  syncDate();
+  dateIn.addEventListener('input', syncDate);
+  dateIn.addEventListener('change', ()=>{ syncDate(); errEl.textContent = ''; });
+  amtIn.addEventListener('input', ()=>{ errEl.textContent = ''; });
+  if(nameIn) nameIn.addEventListener('input', ()=>{ errEl.textContent = ''; });
+  const repIn = sh.querySelector('#yp-b-rep');
+  repIn.addEventListener('change', ()=>{
+    const next = repIn.value;
+    /* the Amount box is always per the chosen Repeat; the weekly figure is worked out on Save */
+    if(B_PERIODS.indexOf(next) >= 0) repeat = next;
+    errEl.textContent = '';
+  });
+  sw.addEventListener('click', ()=>{
+    remind = !remind;
+    sw.classList.toggle('on', remind); sw.setAttribute('aria-pressed', String(remind));
+    leadsEl.hidden = !remind;
+    errEl.textContent = '';
+  });
+  /* any mix of lead times, including all three */
+  sh.querySelectorAll('[data-lead]').forEach(b=>b.addEventListener('click', ()=>{
+    const k = b.getAttribute('data-lead');
+    const i = leadSet.indexOf(k);
+    if(i >= 0) leadSet.splice(i, 1); else leadSet.push(k);
+    b.setAttribute('aria-pressed', String(i < 0));
+    errEl.textContent = '';
+  }));
+  scrim.addEventListener('click', ()=>closeEditSheet());
+
+  sh.querySelector('#yp-b-item-save').addEventListener('click', ()=>{
+    const nm = nameIn ? String(nameIn.value || '').trim() : (item ? item.name : '');
+    if(!nm){ errEl.textContent = 'Enter a name for this item.'; if(nameIn) nameIn.focus(); return; }
+    const r = bParse(amtIn.value);
+    if(r.e){ errEl.textContent = r.e; amtIn.focus(); return; }
+    if(toWeekNum(r.v, repeat) * 52 > 1e6){ errEl.textContent = "That's over $1 million a year. Check the number."; amtIn.focus(); return; }
+    const dueDate = bParseIso(dateIn.value) ? dateIn.value : '';
+    if(remind && !dueDate){ errEl.textContent = 'Set a due date to get a reminder.'; dateIn.focus(); return; }
+    const leadKeys = Object.keys(leads).filter(k=>leadSet.indexOf(k) >= 0);
+    if(remind && !leadKeys.length){ errEl.textContent = 'Pick at least one time to be reminded.'; return; }
+    /* Untouched amount and repeat: keep the exact figure so the weekly total does not move */
+    const untouched = item && amtIn.value === startAmt && repeat === startRepeat;
+    const amount = untouched ? amountFor(repeat) : cleanNum(r.v);
+    let res = null;
+    if(own){
+      item.name = nm;
+      res = bWriteBill(item.id, { name:nm, billAmount:amount, freq:repeat, dueDate, remind, leads: leadKeys });
+      if(res && res.bill){ res.bill.amountUser = 1; }
+    }else{
+      let it = item;
+      if(isAdd){
+        const newId = 'custom-' + slug(nm) + '-' + uid();
+        it = { id:newId, billKey:newId, name:nm, icon:grp.icon, amount:0, period:'week', custom:true };
+        grp.items.push(it);
+      }
+      it.name = nm;
+      if(it.billName) it.billName = nm;
+      it.amount = amount;
+      it.period = repeat;
+      bCommitDraft();
+      res = bWriteBill('exp:' + (it.billKey || it.id), { name: it.billName || nm, billAmount: amount, freq: repeat, dueDate, remind, leads: leadKeys });
+    }
+    bAfterCommit();
+    if(res && res.turnedOn && typeof ypNotifyOnFirstYes === 'function'){ try{ ypNotifyOnFirstYes(); }catch(e){} }
+    bOpenSet.add(gid);
+    closeEditSheet(false, true);
+  });
+  const delBtn = sh.querySelector('#yp-b-item-del');
+  if(delBtn) delBtn.addEventListener('click', ()=>{
+    if(own){
+      if(typeof ypBillsDeleteCustom === 'function') ypBillsDeleteCustom(item.id);
+    }else{
+      const idx = grp.items.findIndex(x=>x.id===item.id);
+      if(idx >= 0) grp.items.splice(idx, 1);
+      if(!item.custom){ bDraft.deleted = bDraft.deleted || []; if(!bDraft.deleted.includes(item.id)) bDraft.deleted.push(item.id); }
+      if(item.billKey) bDeletedBills.push(item.billKey);
+      bCommitDraft();
+      bAfterCommit();
+    }
+    bOpenSet.add(gid);
+    closeEditSheet(false, true);
+  });
+  setTimeout(()=>{ try{ (nameIn && isAdd ? nameIn : amtIn).focus({ preventScroll:true }); }catch(e){} }, 220);
+}
+/* Slide the sheet down and show the list again. now=true removes it straight away. */
+function closeEditSheet(now, rerender){
+  const body = document.getElementById('sheetBody');
+  const sh = document.getElementById('yp-b-edit');
+  const scrim = document.getElementById('yp-b-scrim');
+  const done = ()=>{
+    if(sh) sh.remove(); if(scrim) scrim.remove();
+    if(body){
+      body.classList.remove('yp-b-editing');
+      body.querySelectorAll('.yp-b-sel').forEach(x=>x.classList.remove('yp-b-sel'));
+      body.querySelectorAll('.yp-b-sel-grp').forEach(x=>x.classList.remove('yp-b-sel-grp'));
+    }
+    if(rerender) renderBudgetList();
+  };
+  if(!sh && !scrim){ if(rerender) renderBudgetList(); return; }
+  if(now){ done(); return; }
+  if(sh) sh.classList.remove('on');
+  if(scrim) scrim.classList.remove('on');
+  setTimeout(done, 200);
+}
+/* Open Budget and Bills on one bill (used by Bills links and due notices) */
+function ypBudgetOpenBill(billId){
+  try{
+    if(typeof UI === 'undefined' || !UI || typeof UI.expenses !== 'function') return false;
+    UI.expenses();
+    const id = String(billId || '');
+    if(!id) return true;
+    let gid = null, iid = null;
+    if(id.indexOf('custom:') === 0){ gid = '__own'; iid = id; }
+    else if(id.indexOf('exp:') === 0){
+      const k = id.slice(4);
+      (bDraft && bDraft.groups || []).forEach(g=>(g.items||[]).forEach(it=>{ if(!gid && (it.billKey === k || it.id === k)){ gid = g.id; iid = it.id; } }));
+    }
+    if(gid){ bOpenSet.add(gid); renderBudgetList(); openEditSheet(gid, iid); }
+    return true;
+  }catch(e){ return false; }
 }
 
 function openItemSheet(mode, gid, iid){
@@ -1278,6 +1651,8 @@ window.ypBudgetSummarySlices = summarySlices;
 window.ypBudgetTakeHomeWeekly = takeHomeWeekly;
 window.ypBudgetRender = renderBudgetList;
 window.expOpen = expOpen;
+window.ypBudgetOpenBill = ypBudgetOpenBill;
+window.ypBudgetPeriodLabel = B_PERIOD_LABEL;
 window.expRender = renderBudgetList;
 window.expSave = expSave;
 window.expTotal = function(d){

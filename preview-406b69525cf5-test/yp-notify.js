@@ -12,10 +12,25 @@ const YP_NOTIFY_TYPES={
   financeApproved:{label:'Finance Approved',icon:'bank',col:'#0b2545'}
 };
 const YP_NOTIFY_LEADS={
-  day:{label:'The Day Before',ms:86400000},
+  week:{label:'A Week Before',ms:7*86400000},
   '3days':{label:'3 Days Before',ms:3*86400000},
-  week:{label:'A Week Before',ms:7*86400000}
+  day:{label:'1 Day Before',ms:86400000}
 };
+/* dates146a: a bill can remind at any mix of lead times. Stored as it.leads (array); it.lead stays the first one. */
+function ypBillLeads(it){
+  const keys=Object.keys(YP_NOTIFY_LEADS);
+  const raw=it&&Array.isArray(it.leads)?it.leads:[it&&YP_NOTIFY_LEADS[it.lead]?it.lead:'week'];
+  const out=keys.filter(k=>raw.indexOf(k)>=0);
+  return out.length?out:['week'];
+}
+function ypBillsMigrateLeads(it){
+  if(!it||Array.isArray(it.leads))return false;
+  const one=YP_NOTIFY_LEADS[it.lead]?it.lead:'week';
+  it.leads=[one];
+  it.lead=one;
+  it.legacyLead=one; /* reminders fired before dates146a used a key without the lead; this lead already counts as sent */
+  return true;
+}
 const YP_BILL_FREQ={
   week:{label:'Weekly',every:'Every Week',weeks:1,unit:'a week'},
   fortnight:{label:'Fortnightly',every:'Every Fortnight',weeks:2,unit:'a fortnight'},
@@ -301,6 +316,7 @@ function ypBillsStore(){
     if(ypBillsMigrate(G.bills))G.bills.v=3;
   }
   if((G.bills.v|0)<4)ypBillsMigratePaid(G.bills);
+  Object.values(G.bills.items).forEach(it=>{if(it&&!ypBillsIsGame(it))ypBillsMigrateLeads(it);});
   if(!ypBillParseDate(G.bills.trackFrom)){
     const b=typeof ypBrisbaneWeekBounds==='function'?ypBrisbaneWeekBounds(Date.now()):null;
     G.bills.trackFrom=(b&&b.start)||(typeof ypBrisbaneYmd==='function'?ypBrisbaneYmd(Date.now()):'');
@@ -325,7 +341,7 @@ function ypBillsDefaultFreq(it){
     if(ex&&ex.v===2&&Array.isArray(ex.groups)){
       for(const g of ex.groups){
         const hit=(g.items||[]).find(x=>x&&(x.billKey===k||x.id===k));
-        if(hit)return hit.period==='year'?'year':'week';
+        if(hit)return YP_BILL_FREQ[hit.period]?hit.period:'week';
       }
       return 'week';
     }
@@ -392,6 +408,7 @@ function ypBillsUpsert(item,opts){
   if('dueDate' in item&&!(opts&&opts.keepDate))next.dueDate=ypBillParseDate(item.dueDate)?item.dueDate:null;
   if(typeof next.remind!=='boolean')next.remind=!!prev.remind;
   if(!YP_NOTIFY_LEADS[next.lead])next.lead=prev.lead&&YP_NOTIFY_LEADS[prev.lead]?prev.lead:'week';
+  if(!Array.isArray(next.leads))next.leads=Array.isArray(prev.leads)?prev.leads.slice():[next.lead];
   if(typeof next.asked!=='boolean')next.asked=!!prev.asked;
   if(next.choice!=='yes'&&next.choice!=='no')next.choice=prev.choice==='yes'||prev.choice==='no'?prev.choice:null;
   if(ypBillParseDate(item.since))next.since=item.since;
@@ -417,11 +434,17 @@ function ypBillsSyncFromExpenses(){
       const id='exp:'+it.billKey;
       liveIds.add(id);
       const prev=store.items[id];
-      const amt=Math.max(0,Math.round(+it.amount||0));
-      if(!(amt>0)&&!prev)return;
-      const freq=it.period==='year'?'year':'week';
+      const raw=Math.max(0,+it.amount||0);
+      if(!(raw>0)&&!prev)return;
+      /* dates146a: Budget is the one amount source. The bill keeps its own repeat (older saves) unless the Budget
+         item now repeats on a longer period; its amount is the Budget weekly figure per that repeat. */
+      const per=YP_BILL_FREQ[it.period]?it.period:'week';
+      const freq=(per!=='week'&&per!=='year')?per:(prev&&YP_BILL_FREQ[prev.freq]?prev.freq:per);
+      const perYear={week:52,fortnight:26,month:12,quarter:4,sixmonths:2,year:1};
+      const amt=freq===per?Math.round(raw):Math.round((+it.weekly||0)*52/(perYear[freq]||52));
       const name=it.billName||it.name||it.id;
-      ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:amt,freq,notifyType:'billDue'},{keepFreq:true,keepAmount:!!(prev&&prev.amountUser)});
+      const rec=ypBillsUpsert({id,source:'expense',kind:'bill',name,amount:amt,freq,notifyType:'billDue'});
+      if(rec)delete rec.amountUser;
     });
     Object.keys(store.items).forEach(id=>{
       if(id.indexOf('exp:')===0&&!liveIds.has(id)){
@@ -1540,6 +1563,8 @@ function ypProcessHistWeek(wk,i){
   return row;
 }
 function ypOpenBills(){
+  /* dates146a: Bills setup now lives in Budget and Bills */
+  if(typeof ypBudgetOpenBill==='function'&&ypBudgetOpenBill())return document.getElementById('sheet');
   ypBillsInjectCss();
   ypBillsEnsure();
   if(typeof ypExclusive==='function')ypExclusive('yp-bills');
@@ -1945,6 +1970,7 @@ function ypBillsToggleRemind(id,on){
 function ypBillsSetLead(id,lead){
   const it=ypBillsGet(id);if(!it||ypBillsIsGame(it)||!YP_NOTIFY_LEADS[lead])return;
   it.lead=lead;
+  it.leads=[lead];
   ypBillsSave();
 }
 function ypBillsPersist(){
@@ -2040,7 +2066,7 @@ function ypBillsClearPaid(id){
 function ypBillsClearNotify(it){
   if(!it||!it.id)return;
   const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:'billDue';
-  try{ypNotifyCancel(type,it.id);}catch(e){}
+  try{ypNotifyCancel(type,it.id);Object.keys(YP_NOTIFY_LEADS).forEach(k=>ypNotifyCancel(type,it.id+'@'+k));}catch(e){}
   const n=typeof ypNotifyState==='function'?ypNotifyState():null;
   if(n&&n.fired){
     const prefix=type+':'+it.id;
@@ -2146,8 +2172,9 @@ function ypBillDateFromWeek(week){
   }catch(e){return '';}
 }
 function ypOpenBillDue(id){
-  /* Real-life dates are edited on the Bills row. Game costs keep their game-week due date. */
+  /* Real-life dates are edited in Budget and Bills. Game costs keep their game-week due date. */
   const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
+  if(typeof ypBudgetOpenBill==='function'&&ypBudgetOpenBill(id))return;
   const safe=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape(id):String(id).replace(/"/g,'');
   const row=document.querySelector('#yp-bills [data-id="'+safe+'"] input[type=date]');
   if(row){try{row.focus();if(typeof row.showPicker==='function')row.showPicker();}catch(e){}}
@@ -2277,17 +2304,20 @@ function ypBillsScheduleAll(){
     const type=it.notifyType&&YP_NOTIFY_TYPES[it.notifyType]?it.notifyType:(it.kind==='rego'?'regoDue':'billDue');
     const key=it.id;
     ypNotifyCancel(type,key);
+    Object.keys(YP_NOTIFY_LEADS).forEach(k=>ypNotifyCancel(type,key+'@'+k));
     if(ypBillsIsGame(it)||!it.remind||!ypNotifyTypeOn(type))return;
     try{
       const occ=ypBillsOccurrence(it);
       if(!occ)return;
       const dueWall=occ.dueWall,label=occ.label;
-      const lead=(YP_NOTIFY_LEADS[it.lead]||YP_NOTIFY_LEADS.week).ms;
-      const at=dueWall-lead;
-      const when=at>Date.now()+1000?at:(dueWall>Date.now()+1000?dueWall:NaN);
-      if(!Number.isFinite(when))return;
       const msg=it.name+' is due '+label+'.';
-      ypNotifySchedule(type,key,when,YP_NOTIFY_TYPES[type].label,msg,it.id);
+      /* one device notification per chosen lead time that is still ahead */
+      let any=false;
+      ypBillLeads(it).forEach(k=>{
+        const at=dueWall-YP_NOTIFY_LEADS[k].ms;
+        if(at>Date.now()+1000){any=true;ypNotifySchedule(type,key+'@'+k,at,YP_NOTIFY_TYPES[type].label,msg,it.id);}
+      });
+      if(!any&&dueWall>Date.now()+1000)ypNotifySchedule(type,key,dueWall,YP_NOTIFY_TYPES[type].label,msg,it.id);
     }catch(e){}
   });
 }
@@ -2316,10 +2346,27 @@ function ypBillsFireOccurrence(it,iso,past){
   const rec=ypBillsOccurrence(it,iso);
   if(!rec)return false;
   if(!ypNotifyTypeOn(rec.type))return false;
-  const lead=(YP_NOTIFY_LEADS[it.lead]||YP_NOTIFY_LEADS.week).ms;
-  if(!past&&Date.now()<rec.dueWall-lead)return false;
-  const firedKey=rec.type+':'+it.id+':'+rec.occ;
-  return ypNotifyEvent(rec.type,it.name+' is due '+rec.label+'.',it.id,{key:firedKey});
+  const n=ypNotifyState();
+  const fired=(n&&n.fired)||{};
+  const base=rec.type+':'+it.id+':'+rec.occ;
+  const leads=ypBillLeads(it);
+  const keyOf=k=>base+'@'+k;
+  const sent=k=>!!fired[keyOf(k)]||(k===it.legacyLead&&!!fired[base]);
+  const msg=it.name+' is due '+rec.label+'.';
+  if(past){
+    /* a missed due date gets one notice, unless a lead-time one already went out */
+    if(fired[base]||leads.some(sent))return false;
+    return ypNotifyEvent(rec.type,msg,it.id,{key:base});
+  }
+  const now=Date.now();
+  const due=leads.filter(k=>now>=rec.dueWall-YP_NOTIFY_LEADS[k].ms);
+  if(!due.length)return false;
+  /* if several lead times are already past, send only the closest one and mark the others as sent */
+  const pick=due.reduce((a,k)=>YP_NOTIFY_LEADS[k].ms<YP_NOTIFY_LEADS[a].ms?k:a,due[0]);
+  let changed=false;
+  due.forEach(k=>{if(k!==pick&&!fired[keyOf(k)]&&n){n.fired[keyOf(k)]=1;changed=true;}});
+  if(sent(pick)){if(changed&&typeof save==='function')save();return false;}
+  return ypNotifyEvent(rec.type,msg,it.id,{key:keyOf(pick)});
 }
 function ypBillsFireDue(){
   ypBillsList().forEach(it=>ypBillsFireOccurrence(it));
