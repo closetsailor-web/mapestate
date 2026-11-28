@@ -756,13 +756,83 @@ button.yp-b-row.yp-b-sel {
 .yp-b-edit-title { margin:0 0 14px; text-align:center; font-size:18px; font-weight:600; color:#0b2545; line-height:1.25; }
 .yp-b-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .yp-b-pair .yp-b-field { min-width:0; }
-#sheet.yp-budget-sheet .yp-b-date input[type=date] {
-  display:block; width:100%; box-sizing:border-box; height:48px!important; min-height:48px!important;
-  padding:0 12px!important; margin:0!important; background:#f4f7fb!important; border:1px solid #dfe5ef!important;
-  border-radius:16px!important; font:400 15px Inter,system-ui,sans-serif!important; color:#14213d;
+#sheet.yp-budget-sheet .yp-b-date-btn {
+  -webkit-appearance:none; appearance:none;
+  display:flex!important; align-items:center!important; justify-content:flex-start!important;
+  width:100%; box-sizing:border-box;
+  height:48px!important; min-height:48px!important; max-height:48px;
+  margin:0!important; padding:0 14px!important;
+  background:#f4f7fb!important; border:1px solid #dfe5ef!important; border-radius:16px!important;
+  font:400 15px/1.2 Inter,system-ui,sans-serif!important; font-weight:400!important;
+  color:#14213d; text-align:left; cursor:pointer; gap:0;
 }
-#sheet.yp-budget-sheet .yp-b-date .yp-bill-date-ph { font:400 15px Inter,system-ui,sans-serif; left:14px; }
-#sheet.yp-budget-sheet .yp-b-date input[type=date]:focus { border-color:#0a3a8c!important; }
+#sheet.yp-budget-sheet .yp-b-date-btn:focus,
+#sheet.yp-budget-sheet .yp-b-date-btn:focus-visible { outline:none; border-color:#0a3a8c!important; }
+#sheet.yp-budget-sheet .yp-b-date-txt { display:block; line-height:1.2; }
+#sheet.yp-budget-sheet .yp-bill-date-empty .yp-b-date-txt { color:#5a6780; }
+#sheet.yp-budget-sheet .yp-b-date input[type=hidden] { display:none; }
+.yp-cal-scrim {
+  position:absolute; inset:0; z-index:40;
+  display:flex; align-items:center; justify-content:center;
+  padding:16px; box-sizing:border-box;
+  background:rgba(11,37,69,.32);
+}
+.yp-cal {
+  width:100%; max-width:320px; box-sizing:border-box;
+  background:#fff; border-radius:20px;
+  box-shadow:0 16px 40px rgba(11,37,69,.22);
+  padding:12px 12px 8px;
+}
+.yp-cal-head {
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  margin:0 0 8px;
+}
+.yp-cal-title {
+  margin:0; flex:1; text-align:center;
+  font:600 16px/1.25 Inter,system-ui,sans-serif; color:#0b2545;
+}
+.yp-cal button {
+  -webkit-appearance:none; appearance:none;
+  margin:0; box-shadow:none; font-family:Inter,system-ui,sans-serif;
+  display:flex; align-items:center; justify-content:center; gap:0;
+  cursor:pointer;
+}
+.yp-cal-nav {
+  width:40px; height:40px; min-width:40px; min-height:40px!important; flex:none;
+  padding:0!important; border:0; background:transparent; border-radius:12px!important;
+  color:#0a3a8c; font-weight:400!important;
+}
+.yp-cal-nav svg { width:20px; height:20px; display:block; }
+.yp-cal-nav:focus, .yp-cal-nav:focus-visible { outline:none; background:#eef3fb; }
+.yp-cal-dows {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:0 2px; margin:0 0 4px;
+}
+.yp-cal-dow {
+  text-align:center; font:500 11px Inter,system-ui,sans-serif; color:#5a6780;
+  padding:4px 0; letter-spacing:0;
+}
+.yp-cal-grid {
+  display:grid; grid-template-columns:repeat(7,1fr); gap:2px;
+}
+.yp-cal-day {
+  width:100%; aspect-ratio:1; height:auto!important; min-height:0!important;
+  padding:0!important; border:2px solid transparent; background:transparent;
+  border-radius:50%!important; font:400 15px/1 Inter,system-ui,sans-serif!important;
+  font-weight:400!important; color:#14213d;
+}
+.yp-cal-day.is-out { color:#8a96a8; }
+.yp-cal-day.is-today { border-color:#f47b20; }
+.yp-cal-day.is-sel { background:#0a3a8c!important; border-color:#0a3a8c; color:#fff; font-weight:600!important; }
+.yp-cal-day.is-today.is-sel { border-color:#f47b20; }
+.yp-cal-day:focus, .yp-cal-day:focus-visible { outline:none; }
+.yp-cal-day:not(.is-sel):active { background:#eef3fb; }
+.yp-cal-clear {
+  display:block; width:100%; min-height:44px!important; height:44px!important;
+  margin:6px 0 0!important; padding:0!important; border:0;
+  background:transparent; border-radius:12px!important;
+  color:#5a6780; font:400 15px Inter,system-ui,sans-serif!important; font-weight:400!important;
+  cursor:pointer;
+}
 #sheet.yp-budget-sheet .yp-b-rep-field { position:relative; }
 #sheet.yp-budget-sheet .yp-bill-freq-select {
   width:100%; display:block; box-sizing:border-box; text-align:left;
@@ -1097,6 +1167,126 @@ function bToday(){
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
+const B_MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function bFmtShortDate(iso){
+  const d = bParseIso(iso);
+  return d ? (d.getDate() + ' ' + B_MONTHS[d.getMonth()] + ' ' + d.getFullYear()) : '';
+}
+function bIsoYmd(y, m, day){
+  return y + '-' + String(m + 1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+}
+function ypCloseDateCal(doc){
+  doc = doc || document;
+  const el = doc.getElementById('yp-cal-scrim');
+  if(el) el.remove();
+}
+function ypSyncDateField(dateIn, dateWrap, dateBtn){
+  const d = bParseIso(dateIn && dateIn.value);
+  if(dateWrap) dateWrap.classList.toggle('yp-bill-date-empty', !d);
+  const txt = dateBtn && dateBtn.querySelector('.yp-b-date-txt');
+  if(txt) txt.textContent = d ? bFmtShortDate(dateIn.value) : 'Not Set';
+}
+function ypBindDateField(opts){
+  opts = opts || {};
+  const dateIn = opts.dateIn, dateWrap = opts.dateWrap, dateBtn = opts.dateBtn, errEl = opts.errEl;
+  const host = opts.host;
+  const paint = ()=>ypSyncDateField(dateIn, dateWrap, dateBtn);
+  paint();
+  if(dateBtn){
+    dateBtn.addEventListener('click', e=>{
+      e.preventDefault();
+      ypOpenDateCal({
+        host: host,
+        value: dateIn && dateIn.value,
+        onPick: iso=>{
+          if(dateIn) dateIn.value = iso || '';
+          paint();
+          if(errEl) errEl.textContent = '';
+        }
+      });
+    });
+  }
+  return paint;
+}
+function ypOpenDateCal(opts){
+  opts = opts || {};
+  const host = opts.host;
+  if(!host) return;
+  const doc = host.ownerDocument || document;
+  ypCloseDateCal(doc);
+  const parsed = bParseIso(opts.value);
+  let viewY = (parsed || bParseIso(bToday()) || new Date()).getFullYear();
+  let viewM = (parsed || bParseIso(bToday()) || new Date()).getMonth();
+  const selected = parsed ? opts.value : '';
+  const todayIso = bToday();
+  const scrim = doc.createElement('div');
+  scrim.id = 'yp-cal-scrim';
+  scrim.className = 'yp-cal-scrim';
+  const cal = doc.createElement('div');
+  cal.className = 'yp-cal';
+  cal.setAttribute('role', 'dialog');
+  cal.setAttribute('aria-modal', 'true');
+  cal.setAttribute('aria-label', 'Choose Next Payment');
+  scrim.appendChild(cal);
+  const CHEV_L = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+  const CHEV_R = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+  const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  function close(){ ypCloseDateCal(doc); if(typeof opts.onClose === 'function') opts.onClose(); }
+  function pick(iso){ if(typeof opts.onPick === 'function') opts.onPick(iso); close(); }
+  function paint(){
+    const first = new Date(viewY, viewM, 1);
+    const start = (first.getDay() + 6) % 7; /* Monday first, for Australia */
+    const dim = new Date(viewY, viewM + 1, 0).getDate();
+    const prevDim = new Date(viewY, viewM, 0).getDate();
+    let cells = '';
+    for(let i = 0; i < 42; i++){
+      let y = viewY, m = viewM, day, out = false;
+      if(i < start){ m = viewM - 1; if(m < 0){ m = 11; y -= 1; } day = prevDim - start + i + 1; out = true; }
+      else if(i >= start + dim){ day = i - start - dim + 1; m = viewM + 1; if(m > 11){ m = 0; y += 1; } out = true; }
+      else day = i - start + 1;
+      const iso = bIsoYmd(y, m, day);
+      const cls = ['yp-cal-day'];
+      if(out) cls.push('is-out');
+      if(iso === todayIso) cls.push('is-today');
+      if(iso === selected) cls.push('is-sel');
+      cells += '<button type="button" class="'+cls.join(' ')+'" data-iso="'+iso+'" aria-label="'+bFmtShortDate(iso)+'"'+(iso===selected?' aria-current="date"':'')+'>'+day+'</button>';
+    }
+    cal.innerHTML =
+      '<div class="yp-cal-head">'+
+        '<button type="button" class="yp-cal-nav" data-dir="-1" aria-label="Previous Month">'+CHEV_L+'</button>'+
+        '<h3 class="yp-cal-title">'+B_MONTHS_FULL[viewM]+' '+viewY+'</h3>'+
+        '<button type="button" class="yp-cal-nav" data-dir="1" aria-label="Next Month">'+CHEV_R+'</button>'+
+      '</div>'+
+      '<div class="yp-cal-dows">'+DOW.map(d=>'<span class="yp-cal-dow">'+d+'</span>').join('')+'</div>'+
+      '<div class="yp-cal-grid">'+cells+'</div>'+
+      '<button type="button" class="yp-cal-clear">Clear Date</button>';
+    const focusSel = cal.querySelector('.yp-cal-day.is-sel') || cal.querySelector('.yp-cal-day.is-today') || cal.querySelector('.yp-cal-day:not(.is-out)');
+    if(focusSel) try{ focusSel.focus({ preventScroll:true }); }catch(e){}
+  }
+  scrim.addEventListener('click', e=>{ if(e.target === scrim) close(); });
+  cal.addEventListener('click', e=>{
+    const nav = e.target.closest('.yp-cal-nav');
+    if(nav){
+      const dir = +nav.getAttribute('data-dir') || 0;
+      viewM += dir;
+      if(viewM < 0){ viewM = 11; viewY -= 1; }
+      if(viewM > 11){ viewM = 0; viewY += 1; }
+      paint();
+      return;
+    }
+    const day = e.target.closest('.yp-cal-day');
+    if(day){ pick(day.getAttribute('data-iso') || ''); return; }
+    if(e.target.closest('.yp-cal-clear')) pick('');
+  });
+  const onKey = e=>{
+    if(e.key === 'Escape'){ e.stopPropagation(); e.preventDefault(); doc.removeEventListener('keydown', onKey, true); close(); }
+  };
+  doc.addEventListener('keydown', onKey, true);
+  const _close = close;
+  close = function(){ doc.removeEventListener('keydown', onKey, true); ypCloseDateCal(doc); if(typeof opts.onClose === 'function') opts.onClose(); };
+  host.appendChild(scrim);
+  paint();
+}
 function bDueText(iso){
   const d = bParseIso(iso), t = bParseIso(bToday());
   if(!d || !t) return '';
@@ -1215,8 +1405,8 @@ function openEditSheet(gid, iid){
     <div class="yp-b-pair">
       <div class="yp-b-field"><label for="yp-b-amt">Amount</label>
         <div class="yp-b-money"><span class="cur">$</span><input id="yp-b-amt" type="text" inputmode="decimal" autocomplete="off" placeholder="0" value="${esc(startAmt)}"></div></div>
-      <div class="yp-b-field"><label for="yp-b-date">Next Payment</label>
-        <div class="yp-bill-date-wrap yp-b-date"><span class="yp-bill-date-ph">Not Set</span><input id="yp-b-date" type="date" value="${esc(bill && bParseIso(bill.dueDate) ? bill.dueDate : '')}" aria-label="Next Payment"></div></div>
+      <div class="yp-b-field"><label for="yp-b-date-btn">Next Payment</label>
+        <div class="yp-bill-date-wrap yp-b-date"><input type="hidden" id="yp-b-date" value="${esc(bill && bParseIso(bill.dueDate) ? bill.dueDate : '')}"><button type="button" class="yp-b-date-btn" id="yp-b-date-btn" aria-haspopup="dialog" aria-label="Next Payment"><span class="yp-b-date-txt">Not Set</span></button></div></div>
     </div>
     <div class="yp-b-field yp-b-rep-field"><label id="yp-b-rep-lab" for="yp-b-rep">Repeat</label>
       <button type="button" class="yp-bill-freq-select" id="yp-b-rep" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="yp-b-rep-lab" aria-controls="yp-b-rep-list">${esc(B_PERIOD_LABEL[repeat])}</button>
@@ -1236,10 +1426,8 @@ function openEditSheet(gid, iid){
   const errEl = sh.querySelector('#yp-b-err');
   const sw = sh.querySelector('#yp-b-remind');
   const leadsEl = sh.querySelector('#yp-b-leads');
-  const syncDate = ()=>dateWrap.classList.toggle('yp-bill-date-empty', !bParseIso(dateIn.value));
-  syncDate();
-  dateIn.addEventListener('input', syncDate);
-  dateIn.addEventListener('change', ()=>{ syncDate(); errEl.textContent = ''; });
+  const dateBtn = sh.querySelector('#yp-b-date-btn');
+  const syncDate = ypBindDateField({ dateIn, dateWrap, dateBtn, errEl, host: document.getElementById('sheet') || document.body });
   amtIn.addEventListener('input', ()=>{ errEl.textContent = ''; });
   if(nameIn) nameIn.addEventListener('input', ()=>{ errEl.textContent = ''; });
   const repIn = sh.querySelector('#yp-b-rep');
@@ -1300,7 +1488,7 @@ function openEditSheet(gid, iid){
     if(r.e){ errEl.textContent = r.e; amtIn.focus(); return; }
     if(toWeekNum(r.v, repeat) * 52 > 1e6){ errEl.textContent = "That's over $1 million a year. Check the number."; amtIn.focus(); return; }
     const dueDate = bParseIso(dateIn.value) ? dateIn.value : '';
-    if(remind && !dueDate){ errEl.textContent = 'Set a due date to get a reminder.'; dateIn.focus(); return; }
+    if(remind && !dueDate){ errEl.textContent = 'Set a due date to get a reminder.'; (dateBtn||dateIn).focus(); return; }
     const leadKeys = Object.keys(leads).filter(k=>leadSet.indexOf(k) >= 0);
     if(remind && !leadKeys.length){ errEl.textContent = 'Pick at least one time to be reminded.'; return; }
     /* Untouched amount and repeat: keep the exact figure so the weekly total does not move */
@@ -1349,6 +1537,7 @@ function openEditSheet(gid, iid){
 }
 /* Slide the sheet down and show the list again. now=true removes it straight away. */
 function closeEditSheet(now, rerender){
+  ypCloseDateCal(document);
   const body = document.getElementById('sheetBody');
   const sh = document.getElementById('yp-b-edit');
   const scrim = document.getElementById('yp-b-scrim');
@@ -1701,6 +1890,10 @@ window.expOpen = expOpen;
 window.ypBudgetOpenBill = ypBudgetOpenBill;
 window.ypBudgetPeriodLabel = B_PERIOD_LABEL;
 window.ypBudgetInjectCss = ypBudgetInjectCss; /* dates158: the onboarding income card reuses these row and sheet styles */
+window.ypOpenDateCal = ypOpenDateCal;
+window.ypCloseDateCal = ypCloseDateCal;
+window.ypBindDateField = ypBindDateField;
+window.ypFmtShortDate = bFmtShortDate;
 window.expRender = renderBudgetList;
 window.expSave = expSave;
 window.expTotal = function(d){
