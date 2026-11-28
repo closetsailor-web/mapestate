@@ -844,14 +844,24 @@ function ypPayDownApplyLump(id,amt){
  amt=Math.round(+amt||0);
  if(!(amt>0))return {ok:false,why:'Enter an amount.'};
  if(amt>cap)return {ok:false,why:'You can pay up to '+(typeof ypMoneyText==='function'?ypMoneyText(cap):('$'+cap))+'.'};
+ const M=typeof ypMoneyText==='function'?ypMoneyText:(n=>'$'+Math.round(+n||0).toLocaleString('en-AU'));
+ const sched=Math.max(0,Math.round(typeof ypBuyRepaySched==='function'?ypBuyRepaySched(rec):(+rec.repay||0)));
+ const rate=typeof ypLoanRate==='function'?ypLoanRate():0.0672;
+ const beforeWeeks=typeof ypLoanWeeksLeft==='function'?ypLoanWeeksLeft(owing,sched,rate):0;
  rec.loan=Math.max(0,owing-amt);
  if(typeof G!=='undefined'&&G){if(!Number.isFinite(+rec.loanPaidToWeek))rec.loanPaidToWeek=G.week|0;else rec.loanPaidToWeek=G.week|0;G.cash=Math.max(0,(+G.cash||0)-amt);}
  if(!(rec.loan>0)){rec.loan=0;rec.repay=0;rec.extraRepayWk=0;}
  if(typeof ypSaveBuy==='function')ypSaveBuy(rec);
- if(typeof log==='function')log('Paid '+(typeof ypMoneyText==='function'?ypMoneyText(amt):('$'+amt))+' off the loan on '+(typeof ypBuyName==='function'?ypBuyName(id):(id||'your home')),-amt);
- if(typeof toast==='function')toast('Paid '+(typeof ypMoneyText==='function'?ypMoneyText(amt):('$'+amt))+' off the loan.');
+ if(typeof log==='function')log('Paid '+M(amt)+' off the loan on '+(typeof ypBuyName==='function'?ypBuyName(id):(id||'your home')),-amt);
  ypPayDownRefresh();
- return {ok:true,rec};
+ const owingNow=Math.max(0,Math.round(typeof ypLoanOwing==='function'?ypLoanOwing(rec):(+rec.loan||0)));
+ const cash=ypPayDownCashOnHand();
+ const afterWeeks=typeof ypLoanWeeksLeft==='function'?ypLoanWeeksLeft(owingNow,sched,rate):0;
+ const saved=Number.isFinite(beforeWeeks)&&Number.isFinite(afterWeeks)?Math.max(0,beforeWeeks-afterWeeks):0;
+ const rows=[{label:'Paid',value:M(amt)},{label:'New Loan Balance',value:M(owingNow)},{label:'Cash On Hand',value:M(cash)}];
+ if(saved>0&&owingNow>0&&typeof ypLoanWeeksPhrase==='function')rows.push({label:'Time Saved',value:ypLoanWeeksPhrase(saved)});
+ if(typeof ypOpenPayDownResult==='function')ypOpenPayDownResult({rec,title:owingNow>0?'Loan Paid Down':'Loan Paid Off',rows});
+ return {ok:true,rec,paid:amt,owing:owingNow,cash,timeSaved:saved};
 }
 function ypPayDownApplyExtra(id,amt){
  ypPayDownRefresh();
@@ -864,16 +874,34 @@ function ypPayDownApplyExtra(id,amt){
  const prev=Math.max(0,Math.round(+rec.extraRepayWk||0));
  rec.extraRepayWk=amt;
  if(!(ypLoanOwing(rec)>0)){rec.extraRepayWk=0;}
+ const extra=Math.max(0,Math.round(+rec.extraRepayWk||0));
  if(typeof ypSaveBuy==='function')ypSaveBuy(rec);
- if(amt>0){
-  if(typeof log==='function')log('Set an extra '+(typeof ypMoneyText==='function'?ypMoneyText(amt):('$'+amt))+' a week on the loan for '+(typeof ypBuyName==='function'?ypBuyName(id):(id||'your home')));
-  if(typeof toast==='function')toast(prev>0?('Extra payment changed to '+(typeof ypMoneyText==='function'?ypMoneyText(amt):('$'+amt))+' a week.'):('Extra '+(typeof ypMoneyText==='function'?ypMoneyText(amt):('$'+amt))+' a week added.'));
+ const M=typeof ypMoneyText==='function'?ypMoneyText:(n=>'$'+Math.round(+n||0).toLocaleString('en-AU'));
+ if(extra>0){
+  if(typeof log==='function')log('Set an extra '+M(extra)+' a week on the loan for '+(typeof ypBuyName==='function'?ypBuyName(id):(id||'your home')));
  }else{
   if(typeof log==='function')log('Stopped the extra weekly payment on the loan for '+(typeof ypBuyName==='function'?ypBuyName(id):(id||'your home')));
-  if(typeof toast==='function')toast('Extra weekly payment stopped.');
  }
  ypPayDownRefresh();
- return {ok:true,rec};
+ const sched=Math.max(0,Math.round(typeof ypBuyRepaySched==='function'?ypBuyRepaySched(rec):(+rec.repay||0)));
+ const weekly=sched+extra;
+ const cash=ypPayDownCashOnHand();
+ const owingNow=Math.max(0,Math.round(typeof ypLoanOwing==='function'?ypLoanOwing(rec):(+rec.loan||0)));
+ if(typeof ypOpenPayDownResult==='function'){
+  if(extra>0){
+   ypOpenPayDownResult({rec,title:prev>0?'Extra Payment Changed':'Extra Payment Set',rows:[
+    {label:'Extra Each Week',value:M(extra)},
+    {label:'New Weekly Repayment',value:M(weekly)},
+    {label:'Cash On Hand',value:M(cash)}
+   ],note:'This comes out of your cash each game week.'});
+  }else{
+   ypOpenPayDownResult({rec,title:'Extra Payment Stopped',rows:[
+    {label:'New Weekly Repayment',value:M(weekly)},
+    {label:'Cash On Hand',value:M(cash)}
+   ],note:'The extra weekly payment has been stopped.'});
+  }
+ }
+ return {ok:true,rec,extra,prev,weekly,cash,owing:owingNow};
 }
 function ypPayDownApplyPayout(id){
  ypPayDownRefresh();
@@ -882,13 +910,73 @@ function ypPayDownApplyPayout(id){
  const {owing,cash,cap}=ypPayDownCap(rec);
  if(!(owing>0))return {ok:false,why:'This loan is already paid out.'};
  if(cash<owing)return {ok:false,why:'You need '+(typeof ypMoneyText==='function'?ypMoneyText(owing-cash):('$'+(owing-cash)))+' more to pay this off.',need:owing-cash};
+ const paid=owing;
  rec.loan=0;rec.repay=0;rec.extraRepayWk=0;
- if(typeof G!=='undefined'&&G){rec.loanPaidToWeek=G.week|0;G.cash=Math.max(0,(+G.cash||0)-owing);}
+ if(typeof G!=='undefined'&&G){rec.loanPaidToWeek=G.week|0;G.cash=Math.max(0,(+G.cash||0)-paid);}
  if(typeof ypSaveBuy==='function')ypSaveBuy(rec);
- if(typeof log==='function')log('Paid out the loan on '+(typeof ypBuyName==='function'?ypBuyName(id):(id||'your home'))+' for '+(typeof ypMoneyText==='function'?ypMoneyText(owing):('$'+owing)),-owing);
- if(typeof toast==='function')toast('Loan paid out.');
+ const M=typeof ypMoneyText==='function'?ypMoneyText:(n=>'$'+Math.round(+n||0).toLocaleString('en-AU'));
+ if(typeof log==='function')log('Paid out the loan on '+(typeof ypBuyName==='function'?ypBuyName(id):(id||'your home'))+' for '+M(paid),-paid);
  ypPayDownRefresh();
- return {ok:true,rec};
+ const cashNow=ypPayDownCashOnHand();
+ if(typeof ypOpenPayDownResult==='function')ypOpenPayDownResult({rec,title:'Loan Paid Off',rows:[
+  {label:'Paid',value:M(paid)},
+  {label:'Loan Balance',value:M(0)},
+  {label:'Cash On Hand',value:M(cashNow)}
+ ]});
+ return {ok:true,rec,paid,owing:0,cash:cashNow};
+}
+
+function ypPayDownCashOnHand(){
+ return Math.max(0,Math.round(typeof ypFreeCash==='function'?ypFreeCash():((typeof G!=='undefined'&&G)?(+G.cash||0):0)));
+}
+function ypOpenPayDownResult(opts){
+ opts=opts||{};
+ const rec=opts.rec||null;
+ document.getElementById('yp-paydown-result')?.remove();
+ if(typeof ypExclusive==='function')ypExclusive('yp-paydown-result');
+ const panel=document.createElement('div');
+ panel.id='yp-paydown-result';
+ panel.setAttribute('role','dialog');
+ panel.setAttribute('aria-labelledby','yp-paydown-result-title');
+ const onClose=()=>{
+  try{if(rec&&rec.id&&typeof ypOpenBuy==='function')ypOpenBuy(rec.id);}catch(e){}
+ };
+ if(typeof ypMountRecordCard==='function'){
+  const card=ypMountRecordCard(panel,{
+   title:opts.title||'Loan Paid Down',
+   titleId:'yp-paydown-result-title',
+   closeId:'yp-paydown-result-x',
+   closeBtnId:'yp-paydown-result-close',
+   rows:opts.rows||[],
+   onClose
+  });
+  if(opts.note){
+   const p=document.createElement('p');
+   p.className='yp-limit';
+   p.id='yp-paydown-result-note';
+   p.textContent=opts.note;
+   const btn=card&&card.querySelector('.yp-close');
+   if(btn)card.insertBefore(p,btn);
+   else if(card)card.appendChild(p);
+  }
+  const btn=card&&card.querySelector('.yp-close');
+  if(btn)btn.textContent='Close';
+ }else{
+  const card=document.createElement('div');
+  card.className='card yp-listing';
+  const h=document.createElement('h2');
+  h.id='yp-paydown-result-title';
+  h.textContent=opts.title||'Loan Paid Down';
+  card.appendChild(h);
+  if(typeof ypFlow==='function')card.appendChild(ypFlow(opts.rows||[]));
+  if(opts.note){const p=document.createElement('p');p.className='yp-limit';p.textContent=opts.note;card.appendChild(p);}
+  const close=document.createElement('button');
+  close.type='button';close.className='yp-close';close.id='yp-paydown-result-close';close.textContent='Close';
+  close.addEventListener('click',()=>{panel.remove();onClose();});
+  card.appendChild(close);panel.appendChild(card);
+ }
+ document.body.appendChild(panel);
+ return panel;
 }
 function ypMountPayDown(card,rec){
  if(!card||!rec)return;
@@ -947,7 +1035,7 @@ function ypMountPayDown(card,rec){
     btn.textContent='Pay Out Loan';
     btn.addEventListener('click',()=>{
      const r=ypPayDownApplyPayout(fresh.id);
-     if(r&&r.ok){try{ypOpenBuy(fresh.id);}catch(e){ypMountPayDown(card,ypBuyFor(fresh.id)||fresh);}}
+     if(r&&r.ok){if(!document.getElementById('yp-paydown-result')){try{ypOpenBuy(fresh.id);}catch(e){ypMountPayDown(card,ypBuyFor(fresh.id)||fresh);}}}
     });
     body.appendChild(btn);
    }
@@ -1007,7 +1095,7 @@ function ypMountPayDown(card,rec){
    let r=null;
    if(tab==='lump')r=ypPayDownApplyLump(fresh.id,Math.min(amt,cap));
    else r=ypPayDownApplyExtra(fresh.id,Math.min(amt,cap));
-   if(r&&r.ok){try{ypOpenBuy(fresh.id);}catch(e){ypMountPayDown(card,ypBuyFor(fresh.id)||fresh);}}
+   if(r&&r.ok){if(!document.getElementById('yp-paydown-result')){try{ypOpenBuy(fresh.id);}catch(e){ypMountPayDown(card,ypBuyFor(fresh.id)||fresh);}}}
   });
   body.append(result,btn);draw();
  };
@@ -1290,7 +1378,7 @@ function ypRunCatchUpAway(){if(typeof G==='undefined'||!G||window.__ypCatchUpDon
 function ypCardHeader(opts){opts=opts||{};const head=document.createElement('header');head.className='yp-card-head';const titles=document.createElement('div');titles.className='yp-card-titles';if(opts.kicker){const eye=document.createElement('p');eye.className='yp-kicker';eye.textContent=opts.kicker;titles.appendChild(eye);}const h=document.createElement('h2');if(opts.titleId)h.id=opts.titleId;if(opts.codeFor)h.appendChild(ypPropertyIdLabel(opts.codeFor,{target:opts.codeTarget,onClick:opts.codeClick}));else h.textContent=opts.title||'';titles.appendChild(h);if(opts.onClose){const btn=document.createElement('button');btn.type='button';btn.className='yp-x';if(opts.id)btn.id=opts.id;btn.setAttribute('aria-label','Close');btn.textContent='\u2715';btn.addEventListener('click',event=>{if(event){event.preventDefault();event.stopPropagation();}opts.onClose(event);});head.append(titles,btn);}else head.append(titles);return head;}
 function ypHeaderDismiss(head,onClose,id){if(!head||head.querySelector('.yp-x'))return;const kicker=head.querySelector('.yp-kicker');const titleEl=head.querySelector('h2,h3');const codeEl=head.querySelector('[data-yp-code]');const fresh=ypCardHeader({title:titleEl?titleEl.textContent:(head.textContent||''),kicker:kicker?kicker.textContent:'',codeFor:codeEl&&codeEl.dataset.ypCode||'',onClose,id,titleId:titleEl&&titleEl.id});head.className=fresh.className;head.replaceChildren(...fresh.childNodes);}
 let ypSoloLock=0;
-function ypDialogNodes(){const ids=['yp-history','yp-history-detail','yp-living','yp-apply-review','yp-rent-detail','yp-sale-detail','yp-coin-shop','yp-rent-list','yp-pending','yp-soon','yp-where','yp-prop','yp-property-menu','yp-section-menu','listings','hwov','yp-away','yp-start-fresh','yp-payout','yp-where-live','yp-clock-start','yp-list-sale','yp-manage-sale','yp-seller-offer','yp-seller-counter','yp-buyer-reply','yp-list-rent','yp-manage-rent','yp-rent-app','yp-offer-room','yp-board-invite','yp-board-request','yp-boarder-view','yp-physical','yp-liquid','yp-car-yard-intro','yp-car-yard','yp-car-detail','yp-car-pay','yp-car-finance','yp-car-bought','yp-bills','yp-process-bills','yp-bill-due','yp-notify-ask','yp-paycalc','yp-money-checkin','yp-cant-pay'];const nodes=[];ids.forEach(id=>{const el=document.getElementById(id);if(el)nodes.push(el);});const sheet=document.getElementById('sheet');if(sheet&&sheet.classList.contains('open'))nodes.push(sheet);const drawer=document.getElementById('drawer');if(drawer&&drawer.classList.contains('open'))nodes.push(drawer);return nodes;}
+function ypDialogNodes(){const ids=['yp-history','yp-history-detail','yp-living','yp-apply-review','yp-rent-detail','yp-sale-detail','yp-coin-shop','yp-rent-list','yp-pending','yp-soon','yp-where','yp-prop','yp-property-menu','yp-section-menu','listings','hwov','yp-away','yp-start-fresh','yp-payout','yp-where-live','yp-clock-start','yp-paydown-result','yp-list-sale','yp-manage-sale','yp-seller-offer','yp-seller-counter','yp-buyer-reply','yp-list-rent','yp-manage-rent','yp-rent-app','yp-offer-room','yp-board-invite','yp-board-request','yp-boarder-view','yp-physical','yp-liquid','yp-car-yard-intro','yp-car-yard','yp-car-detail','yp-car-pay','yp-car-finance','yp-car-bought','yp-bills','yp-process-bills','yp-bill-due','yp-notify-ask','yp-paycalc','yp-money-checkin','yp-cant-pay'];const nodes=[];ids.forEach(id=>{const el=document.getElementById(id);if(el)nodes.push(el);});const sheet=document.getElementById('sheet');if(sheet&&sheet.classList.contains('open'))nodes.push(sheet);const drawer=document.getElementById('drawer');if(drawer&&drawer.classList.contains('open'))nodes.push(drawer);return nodes;}
 function ypHideDialog(el){if(!el)return;if(el.id==='sheet'){const ui=ypGameUI();if(ui&&ui.close)ui.close();return;}if(el.id==='drawer'){const ui=ypGameUI();if(ui&&ui.menu)ui.menu(false);return;}if(el.id==='listings'&&typeof listClose==='function'){listClose();return;}if(el.id==='yp-property-menu'||el.id==='yp-section-menu')document.documentElement.classList.remove('yp-menu-open');if(el.id==='yp-rent-detail')clearInterval(ypAppTimer);if(el.parentNode)el.remove();}
 function ypHideToast(){const t=document.getElementById('toast');if(!t)return;t.classList.remove('show','big');}function ypExclusive(keepId){if(ypSoloLock)return;ypSoloLock=1;try{ypHideToast();ypDialogNodes().forEach(el=>{if(el.id!==keepId)ypHideDialog(el);});}finally{ypSoloLock=0;}if(typeof ypSyncDialogScrollLock==='function')ypSyncDialogScrollLock();}
 function ypDialogScrollable(el){if(el&&el.nodeType!==1)el=el.parentElement;while(el&&el!==document.body&&el!==document.documentElement){if(el.nodeType===1){const s=getComputedStyle(el),oy=s.overflowY||s.overflow;if((oy==='auto'||oy==='scroll'||oy==='overlay')&&el.scrollHeight>el.clientHeight+1)return el;}el=el.parentElement;}return null;}

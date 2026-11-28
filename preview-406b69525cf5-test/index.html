@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates154";
+window.YP_BUILD="dates155";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -1174,14 +1174,14 @@ html.yp-preview #rsearch,html.yp-preview #yp-foot,html.yp-preview #yp-map-status
 html.yp-preview:not(.yp-map-on) #map{visibility:hidden}
 html.yp-home #map,html.yp-home #ypbasemap{display:none!important;visibility:hidden!important}
 html.yp-home .fab,html.yp-home #yp-search-area,html.yp-home .maplibregl-ctrl-bottom-right{display:none!important}
-html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon,#yp-savings,html.yp-home #yp-physical,html.yp-home #yp-liquid,html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask,html.yp-home #yp-money-checkin,html.yp-home #yp-cant-pay{background:rgba(11,37,69,.28)}
+html.yp-home #yp-history,html.yp-home #yp-history-detail,html.yp-home #yp-living,html.yp-home #yp-pending,html.yp-home #yp-soon,#yp-savings,html.yp-home #yp-physical,html.yp-home #yp-liquid,html.yp-home #yp-bills,html.yp-home #yp-process-bills,html.yp-home #yp-bill-due,html.yp-home #yp-notify-ask,html.yp-home #yp-money-checkin,html.yp-home #yp-cant-pay,html.yp-home #yp-paydown-result{background:rgba(11,37,69,.28)}
 html.yp-preview .fab{z-index:8}
 #ypbasemap{position:absolute;inset:0;z-index:2;background:#e7eef5}
 #yp-logo{position:absolute;left:8px;bottom:6px;z-index:3}
 #yp-logo img{width:88px;background:#ffffffc9;display:block}
 html.yp-preview #w3dc,html.yp-preview #map canvas#w3dc,body.ypbasemap #w3dc{display:none!important;visibility:hidden!important;pointer-events:none!important}
 body.ypbasemap #map .maplibregl-ctrl-attrib{font-size:10px;max-width:70vw;z-index:5}
-#yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-coin-shop,#yp-sale-detail,#yp-pending,#yp-history,#yp-soon,#yp-savings,#yp-apply-review,#yp-history-detail,#yp-living,#yp-away,#yp-start-fresh,#yp-payout,#yp-where-live,#yp-clock-start,#yp-physical,#yp-liquid,#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask,#yp-money-checkin,#yp-cant-pay{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
+#yp-where,#yp-prop,#yp-rent-list,#yp-rent-detail,#yp-coin-shop,#yp-sale-detail,#yp-pending,#yp-history,#yp-soon,#yp-savings,#yp-apply-review,#yp-history-detail,#yp-living,#yp-away,#yp-start-fresh,#yp-payout,#yp-where-live,#yp-clock-start,#yp-physical,#yp-liquid,#yp-bills,#yp-process-bills,#yp-bill-due,#yp-notify-ask,#yp-money-checkin,#yp-cant-pay,#yp-paydown-result{position:fixed;top:0;left:0;right:0;width:100%;height:100dvh;max-height:100dvh;z-index:48;display:flex;align-items:center;justify-content:center;overflow:hidden;overscroll-behavior:none;touch-action:pan-y;padding:148px 16px 108px;background:rgba(11,37,69,.28);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#14213d}
 #yp-apply-review{z-index:52}
 #yp-agent-bg{display:none;position:fixed;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;z-index:51;background:#0b2545 center/cover no-repeat}body:has(#yp-apply-review.yp-steps) #yp-agent-bg{display:block}
 body:has(#yp-apply-review.yp-clip) > header,body:has(#yp-apply-review.yp-settle-has-clip) > header{position:fixed;z-index:54}
@@ -1233,9 +1233,9 @@ body:has(#yp-apply-review.yp-clip) #yp-agent-bg,body:has(#yp-apply-review.yp-set
 #yp-living .yp-step-foot{flex:none;display:flex;flex-direction:column;align-items:stretch;background:#fff;padding-top:8px}
 
 
-#yp-history-detail,#yp-living,#yp-payout,#yp-where-live,#yp-clock-start{z-index:54}
-#yp-where .card,#yp-prop .card,#yp-rent-list .card,#yp-rent-detail .card,#yp-coin-shop .card,#yp-sale-detail .card,#yp-apply-review .card,#yp-history-detail .card,#yp-living .card,#yp-payout .card,#yp-away .card,#yp-pending .card,#yp-history .card,#yp-soon .card,#yp-savings .card,#yp-start-fresh .card,#yp-where-live .card,#yp-clock-start .card,#yp-property-menu .card,#yp-section-menu .card,#yp-physical .card,#yp-liquid .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 24px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);max-height:calc(100dvh - 256px);overflow:auto;margin:0}
-#yp-where p:not(.yp-kicker),#yp-where-status,#yp-prop p:not(.yp-kicker),#yp-rent-list p:not(.yp-kicker),#yp-rent-detail p:not(.yp-kicker):not(.yp-approval),#yp-sale-detail p:not(.yp-kicker):not(.yp-approval),#yp-apply-review p:not(.yp-kicker):not(.yp-approval),#yp-history-detail p:not(.yp-kicker):not(.yp-approval),#yp-living p:not(.yp-kicker):not(.yp-approval),#yp-payout p:not(.yp-kicker):not(.yp-approval),#yp-away p:not(.yp-kicker):not(.yp-approval),#yp-start-fresh p:not(.yp-kicker):not(.yp-approval),#yp-where-live p:not(.yp-kicker):not(.yp-approval),#yp-clock-start p:not(.yp-kicker):not(.yp-approval){margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
+#yp-history-detail,#yp-living,#yp-payout,#yp-where-live,#yp-clock-start,#yp-paydown-result{z-index:54}
+#yp-where .card,#yp-prop .card,#yp-rent-list .card,#yp-rent-detail .card,#yp-coin-shop .card,#yp-sale-detail .card,#yp-apply-review .card,#yp-history-detail .card,#yp-living .card,#yp-payout .card,#yp-away .card,#yp-pending .card,#yp-history .card,#yp-soon .card,#yp-savings .card,#yp-start-fresh .card,#yp-where-live .card,#yp-clock-start .card,#yp-paydown-result .card,#yp-property-menu .card,#yp-section-menu .card,#yp-physical .card,#yp-liquid .card{background:#fff;border-radius:24px;width:min(440px,100%);max-width:440px;padding:0 22px 24px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);max-height:calc(100dvh - 256px);overflow:auto;margin:0}
+#yp-where p:not(.yp-kicker),#yp-where-status,#yp-prop p:not(.yp-kicker),#yp-rent-list p:not(.yp-kicker),#yp-rent-detail p:not(.yp-kicker):not(.yp-approval),#yp-sale-detail p:not(.yp-kicker):not(.yp-approval),#yp-apply-review p:not(.yp-kicker):not(.yp-approval),#yp-history-detail p:not(.yp-kicker):not(.yp-approval),#yp-living p:not(.yp-kicker):not(.yp-approval),#yp-payout p:not(.yp-kicker):not(.yp-approval),#yp-away p:not(.yp-kicker):not(.yp-approval),#yp-start-fresh p:not(.yp-kicker):not(.yp-approval),#yp-where-live p:not(.yp-kicker):not(.yp-approval),#yp-clock-start p:not(.yp-kicker):not(.yp-approval),#yp-paydown-result p:not(.yp-kicker):not(.yp-approval){margin:0 0 10px;font-size:14.5px;line-height:1.35;font-weight:400;color:#5a6780;text-align:center}
 #yp-list-search{position:absolute;left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));top:calc(var(--sat) + 88px);z-index:46;display:flex;align-items:center;gap:10px;max-width:440px;margin:0 auto;min-height:48px;padding:0 16px;border:0;border-radius:999px;background:#fff;color:#14213d;box-shadow:0 6px 18px rgba(11,37,69,.22);font:700 16px Inter,system-ui,sans-serif;text-align:left;cursor:pointer}
 #yp-list-search svg{width:22px;height:22px;flex:none;color:#0a3a8c}
 #yp-list-search-text{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1249,12 +1249,12 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 #yp-where-town:focus,#yp-where-town:focus-visible{outline:none;border-color:#0a3a8c;box-shadow:0 0 0 4px rgba(10,58,140,.15)}
 #yp-where #yp-where-move{margin-top:10px}
 #yp-chosen-note{position:absolute;left:50%;top:calc(142px + var(--sat));transform:translateX(-50%);z-index:6;margin:0;max-width:min(440px,92vw);padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.95);color:#14213d;font:600 14px Inter,system-ui,sans-serif;text-align:center;pointer-events:none}
-#yp-where .hwb,#yp-prop .hwb,#yp-rent-list .hwb,#yp-rent-detail .hwb,#yp-coin-shop .hwb,#yp-sale-detail .hwb,#yp-apply-review .hwb,#yp-history-detail .hwb,#yp-payout .hwb,#yp-living .hwb,#yp-where-live .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}#yp-where-live .hwx{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer;padding:10px 14px}
+#yp-where .hwb,#yp-prop .hwb,#yp-rent-list .hwb,#yp-rent-detail .hwb,#yp-coin-shop .hwb,#yp-sale-detail .hwb,#yp-apply-review .hwb,#yp-history-detail .hwb,#yp-payout .hwb,#yp-living .hwb,#yp-where-live .hwb,#yp-paydown-result .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}#yp-where-live .hwx{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;border:0;background:none;color:#5a6780;font:600 15px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer;padding:10px 14px}
 #yp-where #yp-where-close{min-height:54px;padding:0 16px;font-size:17px;font-weight:700;box-shadow:0 10px 22px rgba(196,71,11,.32)}
 #yp-where .hwx,#yp-prop .hwx,#yp-rent-list .hwx,#yp-rent-detail .hwx,#yp-coin-shop .hwx,#yp-sale-detail .hwx,#yp-apply-review .hwx{background:none;border:0;color:#5a6780;min-height:44px;min-width:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer;padding:10px 14px}
 #yp-where .hwb:focus,#yp-where .hwb:focus-visible,#yp-where .hwx:focus,#yp-where .hwx:focus-visible,#yp-prop button:focus,#yp-prop button:focus-visible,#yp-rent-list button:focus,#yp-rent-detail button:focus,#yp-sale-detail button:focus{outline:3px solid #0a3a8c;outline-offset:3px}
-#yp-rent-detail #yp-coin-shop .yp-listing,.yp-listing,#yp-sale-detail .yp-listing,#yp-apply-review .yp-listing,#yp-history-detail .yp-listing,#yp-living .yp-listing,#yp-payout .yp-listing,#yp-away .yp-listing,#yp-where-live .yp-listing,#yp-clock-start .yp-listing{text-align:left;max-width:440px;max-height:min(78dvh,calc(100dvh - 160px));overflow:auto;margin:0 auto}
-#yp-rent-detail .yp-listing p:not(.yp-kicker),#yp-sale-detail .yp-listing p:not(.yp-kicker),#yp-apply-review .yp-listing p:not(.yp-kicker),#yp-history-detail .yp-listing p:not(.yp-kicker),#yp-living .yp-listing p:not(.yp-kicker),#yp-fixture-board .yp-listing p:not(.yp-kicker){text-align:left}
+#yp-rent-detail #yp-coin-shop .yp-listing,.yp-listing,#yp-sale-detail .yp-listing,#yp-apply-review .yp-listing,#yp-history-detail .yp-listing,#yp-living .yp-listing,#yp-payout .yp-listing,#yp-away .yp-listing,#yp-where-live .yp-listing,#yp-clock-start .yp-listing,#yp-paydown-result .yp-listing{text-align:left;max-width:440px;max-height:min(78dvh,calc(100dvh - 160px));overflow:auto;margin:0 auto}
+#yp-rent-detail .yp-listing p:not(.yp-kicker),#yp-sale-detail .yp-listing p:not(.yp-kicker),#yp-apply-review .yp-listing p:not(.yp-kicker),#yp-history-detail .yp-listing p:not(.yp-kicker),#yp-living .yp-listing p:not(.yp-kicker),#yp-fixture-board .yp-listing p:not(.yp-kicker),#yp-paydown-result .yp-listing p:not(.yp-kicker){text-align:left}
 .yp-listing .yp-price{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:2px;margin:16px 0 6px;color:#0b2545}
 .yp-listing .yp-amt{font:800 34px/1.05 Inter,system-ui,sans-serif;letter-spacing:-.5px;min-width:0;max-width:100%}
 .yp-listing .yp-per{margin-left:0;font:700 16px Inter,system-ui,sans-serif;color:#5a6780;white-space:nowrap}
@@ -1368,7 +1368,7 @@ html.yp-home #yp-list-search,html[data-yp-kind="family"] #yp-list-search{display
 #yp-pending #yp-pending-empty,.yp-empty-msg{display:block;width:100%;text-align:center;margin:16px 0 20px;padding:0}.yp-empty-msg{color:#5a6780}#yp-pending #yp-pending-empty{font-size:16px;margin-top:24px}.yp-empty-msg{font-size:16px}.yp-flow dd{white-space:nowrap}#sheetBody .yp-empty-msg{margin-top:0}
 #yp-pending .yp-row-meta,#yp-history .yp-row-meta,#yp-pending .yp-row-price,#yp-history .yp-row-price{font:500 13px Inter,system-ui,sans-serif;color:#3d4a63}
 #yp-pending .hwb,#yp-history .hwb,#yp-soon .hwb,#yp-savings .hwb{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
-#yp-history .yp-close,#yp-history-detail .yp-close,#yp-living .yp-close,#yp-away .yp-close,#yp-clock-start .yp-close,#yp-start-fresh .yp-cancel{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#0a3a8c;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
+#yp-history .yp-close,#yp-history-detail .yp-close,#yp-living .yp-close,#yp-away .yp-close,#yp-clock-start .yp-close,#yp-paydown-result .yp-close,#yp-start-fresh .yp-cancel{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#0a3a8c;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
 #yp-start-fresh .yp-danger{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b42318;color:#fff;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}#yp-payout .yp-close{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:2px solid #0b2545;border-radius:999px;background:#fff;color:#0b2545;font:700 16px Inter,system-ui,sans-serif;margin-top:8px;cursor:pointer}
 html.yp-preview nav button{transition:none}
 #yp-property-menu .card,#yp-section-menu .card{position:absolute;left:0;top:0;width:max-content;min-width:248px;max-width:min(280px,calc(100vw - 16px));text-align:left;overflow:visible}
@@ -1384,7 +1384,7 @@ html.yp-preview #yp-fresh-note{position:absolute!important;top:calc(var(--sat) +
 html.yp-preview #toast{z-index:82!important;left:50%!important;right:auto!important;width:max-content;max-width:min(340px,calc(100vw - 24px));transform:translateX(-50%)!important;text-align:center}
 html.yp-preview #toast.show{transform:translateX(-50%)!important}
 #yp-pending .hwx,#yp-history .hwx,#yp-property-menu .hwx,#yp-section-menu .hwx,#yp-soon .hwx,#yp-savings .hwx{background:none;border:0;color:#5a6780;min-height:44px;font:600 15px Inter,system-ui,sans-serif;cursor:pointer}
-#yp-history-detail .yp-flow dt,#yp-living .yp-flow dt,#bankbox .yp-flow dt{font-weight:400}
+#yp-history-detail .yp-flow dt,#yp-living .yp-flow dt,#yp-paydown-result .yp-flow dt,#bankbox .yp-flow dt{font-weight:400}
 #yp-apply-review .yp-flow dt{flex:none;white-space:nowrap}
 #yp-apply-review .yp-flow .yp-hint{white-space:normal}
 #yp-apply-review .yp-flow dd{min-width:0}
@@ -1682,7 +1682,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script src="yp-budget.js?v=dates154"></script>
+<script src="yp-budget.js?v=dates155"></script>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
 const TEST_ALWAYS_FRESH=false;let TEST_SID='';
@@ -4228,12 +4228,12 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates154"></script>
-<script src="yp-income-form.js?v=dates154"></script>
-<script src="map-preview.js?v=dates154"></script>
-<script src="player-market.js?v=dates154"></script>
-<script src="car-yard.js?v=dates154"></script>
-<script src="overture-layer.js?v=dates154"></script>
-<script src="yp-notify.js?v=dates154"></script>
+<script src="yp-paycalc.js?v=dates155"></script>
+<script src="yp-income-form.js?v=dates155"></script>
+<script src="map-preview.js?v=dates155"></script>
+<script src="player-market.js?v=dates155"></script>
+<script src="car-yard.js?v=dates155"></script>
+<script src="overture-layer.js?v=dates155"></script>
+<script src="yp-notify.js?v=dates155"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
