@@ -93,6 +93,7 @@
 #sheet.yp-income-sheet{width:100%;max-width:none}
 #sheet.yp-income-sheet #sheetBody{padding:28px 24px 24px}
 .inc-fields .reveal{animation:none}
+.inc-fields .yp-paycalc-link,button.yp-paycalc-link{appearance:none;-webkit-appearance:none;border:0;background:none;padding:0;margin:8px 0 16px;color:#0a3a8c;font:700 14px/1.3 Inter,system-ui,sans-serif;cursor:pointer;text-decoration:underline;display:block;width:100%;text-align:center}
 `;
 
   function injectCss() {

@@ -291,6 +291,7 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
 #yp-paycalc .yp-pc-foot{flex:none;padding:8px 0 0;background:#fff;position:relative;z-index:2}
 #yp-paycalc .yp-pc-done{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:700 17px Inter,system-ui,sans-serif;cursor:pointer;touch-action:manipulation;box-shadow:0 10px 22px rgba(184,65,10,.32)}
 #yp-paycalc .yp-pc-done:focus-visible{outline:3px solid #0a3a8c;outline-offset:2px}
+#yp-paycalc #yp-paycalc-setpay{margin-top:0;margin-bottom:8px}
 #yp-paycalc .yp-pc-one{background:#f4f7fb;border:1px solid #dfe5ef;border-radius:18px;padding:10px;margin:0 0 8px}
 #yp-paycalc .yp-pc-top{display:grid;grid-template-columns:1.15fr .85fr;gap:8px;margin:0 0 8px}
 #yp-paycalc .yp-pc-field{margin:0 0 10px;min-width:0}
@@ -731,6 +732,13 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
     card.appendChild(body);
     const foot = document.createElement('div');
     foot.className = 'yp-pc-foot';
+    const setPay = document.createElement('button');
+    setPay.type = 'button';
+    setPay.className = 'btn sec';
+    setPay.id = 'yp-paycalc-setpay';
+    setPay.textContent = 'Set Pay';
+    setPay.addEventListener('click', ev => { ev.preventDefault(); ypPayCalcSetPay(); });
+    foot.appendChild(setPay);
     const done = document.createElement('button');
     done.type = 'button';
     done.className = 'yp-pc-done';
@@ -744,11 +752,69 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
       if (ev.target === panel) { shut(); return; }
       onClick(ev);
     });
+    if (document.getElementById('flow')) panel.style.zIndex = '10050';
     document.body.appendChild(panel);
     paint();
     return panel;
   }
 
+
+  function ypPayCalcBandIndex(yearlyGross) {
+    const g = Math.max(0, +yearlyGross || 0);
+    if (typeof bandOf === 'function') return bandOf(g);
+    const bands = (typeof PAY_BANDS !== 'undefined' && PAY_BANDS) || [];
+    for (let i = bands.length - 1; i >= 0; i--) if (g >= bands[i][0]) return i;
+    return 0;
+  }
+  function ypPayCalcApplyToIncome(yearlyGross, freq) {
+    const idx = ypPayCalcBandIndex(yearlyGross);
+    const fr = document.getElementById('flowframe');
+    const doc = fr && (fr.contentDocument || (fr.contentWindow && fr.contentWindow.document));
+    const win = fr && fr.contentWindow;
+    const onboarding = !!(doc && doc.getElementById('band') && (doc.getElementById('f-income') || doc.getElementById('s-income') || doc.getElementById('h-income')));
+    if (onboarding) {
+      const sel = doc.getElementById('band');
+      if (sel && idx != null) {
+        sel.value = String(idx);
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      const fmap = { weekly: 'week', fortnightly: 'fortnight', monthly: 'month' };
+      if (win && win.P && win.P.income && fmap[freq]) {
+        win.P.income.freq = fmap[freq];
+        if (typeof win.renderIncome === 'function') win.renderIncome();
+      }
+      return;
+    }
+    const sel = document.getElementById('inc_band');
+    if (sel && idx != null) {
+      sel.value = String(idx);
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      if (typeof incLive === 'function') incLive();
+    }
+    if (typeof G !== 'undefined' && G && G.income && typeof G.income === 'object' && idx != null) {
+      G.income.band = idx;
+      if (typeof bandMid === 'function') G.income.amt = bandMid(idx);
+      if (freq === 'weekly' || freq === 'fortnightly' || freq === 'monthly') G.income.view = freq;
+      if (typeof save === 'function') save();
+      if (typeof hud === 'function') hud();
+      if (typeof incLive === 'function' && document.getElementById('inc_band')) incLive();
+    }
+  }
+  function ypPayCalcSetPay() {
+    if (!state) return;
+    if (state.exact) {
+      const amt = state.amount === '' || state.amount == null ? NaN : +state.amount;
+      if (!isFinite(amt) || amt < 0) return;
+    }
+    const r = resultOf();
+    const yearly = r && (r.yearlyGross != null ? r.yearlyGross : 0);
+    const freq = state.freq;
+    shut();
+    ypPayCalcApplyToIncome(yearly, freq);
+  }
+
+  root.ypPayCalcSetPay = ypPayCalcSetPay;
+  root.ypPayCalcApplyToIncome = ypPayCalcApplyToIncome;
   root.ypPayCalcOpen = ypPayCalcOpen;
   root.ypOpenPayCalc = ypPayCalcOpen;
   root.ypPayCalcClose = shut;
