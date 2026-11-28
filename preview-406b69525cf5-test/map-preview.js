@@ -118,9 +118,12 @@ const YP_MAP_REQUEST={cache:'no-store',credentials:'omit'};
 
 function ypShouldHideLabel(layer){
  if(!layer||layer.type!=='symbol')return false;
- const name=(String(layer.id||'')+' '+String(layer['source-layer']||layer.sourceLayer||'')).toLowerCase();
+ const id=String(layer.id||'');
+ if(id.indexOf('yp-')===0)return false;
+ const name=(id+' '+String(layer['source-layer']||layer.sourceLayer||'')).toLowerCase();
  if(/housenumber|house.?number|poi|point.?of.?interest|shop|business/.test(name))return true;
  if(/road[_ -]?label|road[_ -]?name|street[_ -]?(name|label)|transportation[_ -]?name/.test(name))return true;
+ if(/\b(place|settlement|suburb|neighbourhood|neighborhood|locality|town|village|hamlet|city)([_-]?label|s)?\b/.test(name))return true;
  return false;
 }
 function ypSuburbKey(name){return String(name||'').normalize('NFKC').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();}
@@ -130,10 +133,10 @@ function ypSuburbKey(name){return String(name||'').normalize('NFKC').toLowerCase
    and over (16%). If area is not available yet, the home is treated as 3 beds.
    The 3-bed inland price is the suburb's existing median game estimate
    (data/suburb-medians.json, from the pre-dates31 estimate on each footprint).
-   Bargara's median is $528,000. Bedroom ratios are set so a 5-bed inland home
+   Seaglass's median is $528,000. Bedroom ratios are set so a 5-bed inland home
    in a suburb at that level is $750,000, and a beachfront home is exactly
    twice the inland price for the same suburb and bedrooms ($1,500,000 for a
-   5-bed beachfront in Bargara). Near the water uses a smaller 1.35 sale
+   5-bed beachfront in Seaglass). Near the water uses a smaller 1.35 sale
    premium. Weekly rent uses the same bedroom and suburb scaling, with a
    gentler water premium so rental yield is lower on premium homes.
    Water distance is measured live from the home's footprint to OpenStreetMap
@@ -348,12 +351,15 @@ function ypDisplaySuburb(rental){return (rental&&ypOfficialSuburb(rental.footpri
 function ypReviewLocation(rental){return ypDisplaySuburb(rental);}
 function ypAreaSearch(place){const key=ypSuburbKey((place&&(place.stockKey||place.label))||'');return key.indexOf('searched area')===0||ypSuburbKey((place&&place.label)||'')==='this area';}
 function ypCodedLocality(name){const want=ypSuburbKey((typeof ypSuburbText==='function'&&ypSuburbText(name))||name);if(!want||!ypCodeLocalities)return '';for(const loc of Object.values(ypCodeLocalities)){const n=loc&&typeof loc==='object'?(loc.locality||''):loc;if(n&&ypSuburbKey(n)===want)return String(n);}return '';}
-function ypSuburbFromMap(lon,lat){if(typeof ypMap==='undefined'||!ypMap||typeof ypMap.queryRenderedFeatures!=='function'||typeof ypMap.getStyle!=='function'||!Number.isFinite(+lon)||!Number.isFinite(+lat))return '';let layers=[];try{layers=((ypMap.getStyle()||{}).layers||[]).filter(layer=>{const blob=(String(layer.id||'')+' '+String(layer['source-layer']||layer.sourceLayer||'')).toLowerCase();if(/road|street|housenumber|poi|address|building|water|park|landuse/.test(blob))return false;return /suburb|neighbourhood|neighborhood|place|locality|settlement/.test(blob);}).map(layer=>layer.id);}catch(e){return '';}if(!layers.length)return '';let features=[];try{features=ypMap.queryRenderedFeatures(undefined,{layers})||[];}catch(e){return '';}let best='',bestD=Infinity;for(const feature of features){const props=feature&&feature.properties||{};const cls=String(props.class||props.type||props.place_type||'').toLowerCase();if(/city|town|municipality|state|country/.test(cls))continue;if(cls&&!/suburb|neighbourhood|neighborhood|quarter|locality|village|hamlet/.test(cls))continue;const name=ypCodedLocality(props.name_en||props['name:en']||props.name||'');if(!name)continue;const point=feature.geometry&&feature.geometry.type==='Point'?feature.geometry.coordinates:null;if(!point||!Number.isFinite(+point[0])||!Number.isFinite(+point[1]))continue;const dist=ypDistanceM(+lon,+lat,+point[0],+point[1]);if(dist<=4000&&dist<bestD){bestD=dist;best=name;}}return best;}
+function ypPointInRing(lon,lat,ring){let inr=false;for(let i=0,k=ring.length-1;i<ring.length;k=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[k][0],yj=ring[k][1];if(((yi>lat)!==(yj>lat))&&(lon<(xj-xi)*(lat-yi)/((yj-yi)||1e-16)+xi))inr=!inr;}return inr;}
+function ypGeomContains(lon,lat,geom){if(!geom)return false;const typ=geom.type,coords=geom.coordinates||[];if(typ==='Polygon')return ypPointInRing(lon,lat,coords[0]||[]);if(typ==='MultiPolygon'){for(const poly of coords){if(ypPointInRing(lon,lat,poly[0]||[]))return true;}}return false;}
+function ypSuburbAt(lon,lat){if(!Number.isFinite(+lon)||!Number.isFinite(+lat))return '';lon=+lon;lat=+lat;const areas=ypSuburbAreas||[];for(const f of areas){if(ypGeomContains(lon,lat,f.geometry))return (f.properties&&f.properties.name)||'';}if(ypLocalPlaces&&ypLocalPlaces.length){let best='',bestD=Infinity;for(const p of ypLocalPlaces){const d=ypDistanceM(lon,lat,+p.lon,+p.lat);if(d<bestD){bestD=d;best=p.locality;}}if(bestD<=8000)return best;}return '';}
+function ypSuburbFromMap(lon,lat){return ypSuburbAt(lon,lat);}
 function ypApplySuburb(name){if(!ypCodeLocalities){ypCodeShard('localities');return;}const suburb=ypCodedLocality(name);const c=typeof window!=='undefined'?window.__ypListCentre:null;if(!suburb||!c||ypAreaSearch(c))return;const keyName=ypSuburbKey(c.stockKey||c.label);c.locality=suburb;c.label=suburb;window.__ypListCentre=c;const store=ypReadStock();store.rentals.forEach(r=>{if(r.suburbKey===keyName){r.placeLabel=suburb;r.locality=suburb;}});ypWriteStock(store);ypSaveCentre();if(typeof ypSyncHeader==='function')ypSyncHeader();ypRefreshSuburbText();}
 function ypRefreshSuburbText(){const detail=document.getElementById('yp-rent-detail');if(detail&&detail.dataset.ypId){const rental=(ypReadStock().rentals||[]).find(r=>r.id===detail.dataset.ypId);const place=detail.querySelector('.yp-place');if(place&&rental)place.textContent=ypDisplaySuburb(rental);}const review=document.getElementById('yp-apply-review');if(review&&review.dataset.ypId){const rental=(ypReadStock().rentals||[]).find(r=>r.id===review.dataset.ypId);const loc=document.getElementById('yp-review-location');if(loc&&rental)loc.textContent=ypDisplaySuburb(rental);}const history=document.getElementById('yp-history');if(history)history.querySelectorAll('.yp-rent-row').forEach(row=>{const meta=row.querySelector('.yp-row-meta');const id=String(row.dataset.key||'').split('|')[0];const rental=(ypReadStock().rentals||[]).find(r=>r.id===id);if(meta&&rental)meta.textContent=ypDisplaySuburb(rental);});if(document.getElementById('yp-rent-list')&&typeof ypRenderAreaList==='function')ypRenderAreaList();}
 function ypSelectionKey(centre){if(!centre)return '';if(centre.stockKey)return 'sk:'+ypSuburbKey(centre.stockKey);if(Number.isFinite(+centre.lon)&&Number.isFinite(+centre.lat))return 'll:'+(+centre.lon).toFixed(4)+','+(+centre.lat).toFixed(4);return '';}
 const ypSuburbAsked=new Set();
-function ypAskSuburbOnce(lon,lat){const centre=typeof window!=='undefined'?window.__ypListCentre:null;const key=ypSelectionKey(centre)||('ll:'+(+lon).toFixed(4)+','+(+lat).toFixed(4));if(!key||ypSuburbAsked.has(key))return;const fromMap=ypSuburbFromMap(lon,lat);if(fromMap){ypSuburbAsked.add(key);ypApplySuburb(fromMap);return;}if(!(ypGeoKey||(typeof window!=='undefined'&&window.ypGeoKey)))return;ypSuburbAsked.add(key);const token=++ypNameToken;ypResolveSearchName(lon,lat,token);}
+function ypAskSuburbOnce(lon,lat){const centre=typeof window!=='undefined'?window.__ypListCentre:null;const key=ypSelectionKey(centre)||('ll:'+(+lon).toFixed(4)+','+(+lat).toFixed(4));if(!key||ypSuburbAsked.has(key))return;const apply=()=>{const fromMap=ypSuburbFromMap(lon,lat);if(fromMap){ypSuburbAsked.add(key);ypApplySuburb(fromMap);}};if(ypSuburbAreas||ypLocalPlaces){apply();return;}ypSuburbAsked.add(key);Promise.all([ypLoadSuburbAreas(),ypLoadLocalPlaces()]).then(()=>{ypSuburbAsked.delete(key);apply();});}
 function ypEnsureSuburbName(rental){if(ypKnownSuburb(rental))return;const centre=typeof window!=='undefined'?window.__ypListCentre:null;if(!centre||!Number.isFinite(+centre.lon)||!Number.isFinite(+centre.lat))return;ypAskSuburbOnce(+centre.lon,+centre.lat);}
 function ypTenancyLengthLabel(){const lease=typeof G!=='undefined'&&G?G.lease:null;let months=lease?+lease.months:NaN;if(months!==3&&months!==6&&months!==12)months=typeof G!=='undefined'&&G?+G.statusLease:NaN;if(months!==3&&months!==6&&months!==12)months=12;return months+' months';}
 function ypClockAt(gameMs){const clock=ypReadClock();if(!Number.isFinite(+gameMs))return clock;const weekMs=ypWeekMs(clock);clock.week=Math.floor(+gameMs/weekMs);clock.acc=+gameMs-clock.week*weekMs;return clock;}
@@ -460,6 +466,18 @@ function ypMigrateWithdrawnRental(rental){if(!rental||rental.status!=='withdrawn
 function ypReadStock(){try{const o=JSON.parse(localStorage.getItem(YP_STOCK_KEY)||'null');if(!o||o.version!==1||!Array.isArray(o.rentals))return ypFreshStock();let changed=false;o.rentals.forEach(r=>{if(ypMigrateWithdrawnRental(r))changed=true;});if(changed)ypWriteStock(o);return o;}catch(e){return ypFreshStock();}}
 function ypWriteStock(store){try{localStorage.setItem(YP_STOCK_KEY,JSON.stringify(store));}catch(e){}}
 function ypApplyLabelPolicy(map){const layers=map&&map.getStyle&&map.getStyle()&&map.getStyle().layers||[];for(const layer of layers){if(ypShouldHideLabel(layer)){try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}}}}
+function ypEnsureSuburbLabels(map){
+ if(!map||typeof map.getSource!=='function'||!map.getStyle||!map.getStyle())return;
+ try{
+  if(!map.getSource('yp-suburb-labels'))map.addSource('yp-suburb-labels',{type:'geojson',data:'data/codes/labels.geojson'});
+  if(!map.getLayer('yp-suburb-label')){
+   const sample=((map.getStyle()||{}).layers||[]).find(l=>l.layout&&l.layout['text-font']);
+   const textFont=sample?sample.layout['text-font']:['Open Sans Regular'];
+   map.addLayer({id:'yp-suburb-label',type:'symbol',source:'yp-suburb-labels',minzoom:8,layout:{'text-field':['get','name'],'text-size':['interpolate',['linear'],['zoom'],8,10,11,11,14,13],'text-font':textFont,'text-optional':true,'text-allow-overlap':false,'text-padding':2,'text-variable-anchor':['center','top','bottom','left','right']},paint:{'text-color':'#14213d','text-halo-color':'#ffffff','text-halo-width':1.2}});
+  }
+ }catch(e){}
+ ypApplyLabelPolicy(map);
+}
 function ypRentMode(){return !window.__ypListKind||window.__ypListKind==='rent';}
 function ypListedRentals(place){return place&&ypRentMode()?ypRadiusList(ypReadStock(),place).items:[];}
 function ypSyncListingHomes(items){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-listing-homes'))return;const features=[];for(const rental of items||[]){if(!rental.footprintId||!rental.geometry)continue;features.push({type:'Feature',properties:{id:rental.id,footprintId:rental.footprintId},geometry:rental.geometry});}ypMap.getSource('yp-listing-homes').setData({type:'FeatureCollection',features});const anchor=ypMap.getLayer('ypb-selected-fill')?'ypb-selected-fill':null;const stack=['yp-listing-fill','yp-listing-line','yp-rental-shadow','yp-rental-point'];try{stack.forEach(id=>{if(!ypMap.getLayer(id))return;if(anchor)ypMap.moveLayer(id,anchor);else ypMap.moveLayer(id);});}catch(e){}}
@@ -483,7 +501,7 @@ function ypEligibleRentals(place){ypRentalPoolPending=false;const features=windo
 function ypOverlayPartsReady(){const view=window.__ygView;return !!(window.__ygParts&&view&&!view.error&&!view.wide&&Number.isFinite(+view.chunks));}
 function ypApplyPlacePins(){const place=window.__ypListCentre;if(!place)return;if(!ypRentMode()){ypSyncRentalMarkers();return;}const key=ypSuburbKey(place.stockKey||place.label);const pool=ypEligibleRentals(place);const chosen=ypSpreadSites(pool,10);const rows=(ypReadStock().rentals||[]).filter(r=>r.suburbKey===key);const locked=rows.some(r=>r.status&&r.status!=='available');const partsReady=ypOverlayPartsReady();const pending=!!ypRentalPoolPending||!partsReady;const sig=pending?'':(chosen.map(h=>h.footprintId).join('|')||'none');const stable=!!sig&&ypFootHold.key===key&&sig===ypFootHold.sig&&(chosen.length>=10||partsReady)&&!pending;ypFootHold={key,sig};window.__ypRentalPool={suburb:ypSearchedSuburb(place),eligible:pool.length,shown:chosen.length,pending,locked,stable,partsReady};if(!locked&&rows.length&&rows.some(r=>r.pool!=='eligible-v2')){const store=ypReadStock();store.rentals=store.rentals.filter(r=>r.suburbKey!==key||r.owner==='player'||(r.status&&r.status!=='available'));ypWriteStock(store);}if(!locked&&stable){const store=ypReadStock();try{ypWriteStock(ypEnsureSuburbStock(store,place,chosen));}catch(e){}}ypSyncRentalMarkers();const listed=ypListedRentals(place);if(listed.length||(stable&&chosen.length)||pending)document.getElementById('yp-chosen-note')?.remove();else if((stable||partsReady)&&!chosen.length)ypShowAreaNote('No mapped homes were available inside this 2 km area, so no rental pins were placed.');}
 let ypNameToken=0;
-async function ypResolveSearchName(lon,lat,token){const key=ypGeoKey||window.ypGeoKey||'';if(!key)return;try{const url=new URL('https://api.geoapify.com/v1/geocode/reverse');url.search=new URLSearchParams({lat:String(lat),lon:String(lon),type:'locality',format:'json',limit:'1',apiKey:key});const response=await fetch(url.href,{...YP_MAP_REQUEST});if(!response.ok||token!==ypNameToken)return;const data=await response.json();const p=(data.results||[])[0];if(!p||p.housenumber||token!==ypNameToken)return;const name=ypSuburbText(p.suburb||p.district||p.city||'');if(!name)return;const c=window.__ypListCentre;if(!c||Math.abs(+c.lon-lon)>0.0002||Math.abs(+c.lat-lat)>0.0002)return;ypApplySuburb(name);}catch(e){}}
+async function ypResolveSearchName(lon,lat,token){return;}
 function ypSearchArea(){
  if(!ypMap||typeof ypMap.getCenter!=='function'){ypShowAreaNote('The map is not ready, so Search Area did not move the 2 km centre.');return;}
  let raw;try{raw=ypMap.getCenter();}catch(e){ypShowAreaNote('The map centre could not be read, so Search Area did not move the 2 km centre.');return;}
@@ -721,7 +739,7 @@ function ypOwnEndDo(id,kind,ref){const p=ypOwnFindOccupant(id,kind,ref);if(!p||!
 function ypTenantHomeCardHtml(){if(typeof ypLiveOwnedId==='function'&&ypLiveOwnedId())return '';const on=typeof ypActivePlayerLease==='function'?ypActivePlayerLease():null;if(!on||!on.lease)return '';const r=on.rental||null,L=on.lease,id=(r&&(r.footprintId||r.id))||L.id;if(!id)return '';const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);const rent=Math.round(+L.rent||+(r&&r.weeklyRent)||0);const sub=(r&&typeof ypDisplaySuburb==='function'?ypDisplaySuburb(r):(typeof ypOfficialSuburb==='function'?ypOfficialSuburb(id):''))||'';const code=typeof ypPublicCode==='function'?ypPublicCode(id):(typeof ypPropertyIdCode==='function'?ypPropertyIdCode(id):id);const coded=/^[A-Z]{3}-\d{4}$/.test(code||'');const openId=r&&r.id||id;const foot=rent>0?`<p class="yp-own-repay">Rent ${esc(typeof ypMoneyText==='function'?ypMoneyText(rent):('$'+rent))} a week</p>`:'';return `<article class="yp-own-card yp-own-row" data-yp-rent="${esc(openId)}" role="button" tabindex="0" onclick="ypGameUI().close();typeof ypOpenRentalDetail==='function'&&ypOpenRentalDetail('${esc(openId)}')"><div class="yp-own-head"><div class="yp-own-sub">${esc(sub||'Your rental')}</div><span class="yp-own-go" aria-hidden="true">›</span></div><p class="yp-own-id">Property ID: ${esc(coded?code:'…')}</p><p class="yp-own-meta"><span class="yp-own-type">Residential</span> <span class="yp-own-occ">You Live Here</span></p>${foot}</article>`;}
 
 function ypBuyRows(status){const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);let waiting=false;ypSyncLoanBalances();const rows=ypBuyHeld().filter(b=>!status||b.status===status).map(b=>{const code=ypPropertyIdCode(b.id);const coded=/^[A-Z]{3}-\d{4}$/.test(code);const sub=ypOfficialSuburb(b.id);if(!coded||!sub)waiting=true;const owned=b.status==='owned';const price=+b.price||+b.agreed||+b.estimate||0;const value=+b.estimate||price;const loan=ypLoanOwing(b);const equity=owned?value-loan:(+b.payNow||0);const type=YP_FEED_TYPES[b.tone]||'Building';const occ=typeof ypOwnOccupancy==='function'?ypOwnOccupancy(b):'';const listed=typeof ypOwnListingStatus==='function'?ypOwnListingStatus(b):'';const repay=loan>0?(typeof ypBuyRepayDue==='function'?ypBuyRepayDue(b):ypWeeklyRepay(b)):0;const loanLabel=loan>0?ypBuyAmt(loan):'Owned Outright';const figItems=[{lab:'Value',val:ypBuyAmt(value)},{lab:'Amount Owing',val:loanLabel},{lab:'Equity',val:ypBuyAmt(equity)}];if(repay>0)figItems.push({lab:'Loan Repayment',val:(typeof ypMoneyText==='function'?ypMoneyText(repay):('$'+Math.round(+repay)))+' a week'});const figs=figItems.map(f=>`<div class="yp-own-fig"><dt>${esc(f.lab)}</dt><dd>${esc(f.val)}</dd></div>`).join('');return `<article class="yp-own-card yp-own-row" data-yp-own="${esc(b.id)}" role="button" tabindex="0" onclick="ypGameUI().close();ypOpenBuy('${b.id}')"><div class="yp-own-head"><div class="yp-own-sub">${esc(sub||'Your property')}</div><span class="yp-own-go" aria-hidden="true">›</span></div><p class="yp-own-id">Property ID: ${esc(coded?code:'…')}</p><p class="yp-own-meta"><span class="yp-own-type">${esc(type)}</span>${occ?` <span class="yp-own-occ">${esc(occ)}</span>`:''}${listed?` <span class="yp-own-liststat">${esc(listed)}</span>`:''}</p><dl class="yp-own-figs">${figs}</dl></article>`;});if(waiting){ypCodeShard('localities');ypBuyHeld().forEach(b=>{const g=ypCodeBuilding(b.id);if(g)ypCodeShard(g.slice(4,6));});ypOwnRowsWait=true;}return rows;}
-/* My Properties is plain HTML, so when the code and suburb data arrive, draw it again (old saves showed 'your property, Bundaberg Region' until then) */
+/* My Properties is plain HTML, so when the code and suburb data arrive, draw it again (old saves showed a leftover region label until then) */
 let ypOwnRowsWait=false;document.addEventListener('yp-codes',()=>{if(!ypOwnRowsWait)return;ypOwnRowsWait=false;if(document.querySelector('.yp-own-row')&&ypGameUI())setTimeout(()=>{if(!document.querySelector('.yp-own-row'))return;if(document.getElementById('yp-physical')&&typeof ypOpenPhysicalAssets==='function')ypOpenPhysicalAssets();else ypGameUI().mine();},0);});
 function ypOwnedPropertyBlocks(){const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);const ps=typeof allProps==='function'?allProps():[];const settling=ps.filter(([,p])=>p&&p.status==='settling'),settled=ps.filter(([,p])=>!(p&&p.status==='settling')),yWait=typeof ypBuyRows==='function'?ypBuyRows('contract'):[],yOwn=typeof ypBuyRows==='function'?ypBuyRows('owned'):[],n=settling.length+settled.length+yWait.length+yOwn.length;
  const lotList=items=>items.length?`<ul class="list">${items.map(([i,p])=>{const l=lot(i),g=GEN[cityOf(i)];return `<li onclick="goMine('${i}')"><span class="dot" style="background:#f47b20"></span><div class="n"><div>${esc(l.addr.replace(/^Lot [^,]+, /,''))}, ${esc(subName(l,g))}</div><small>${esc(g.city.name)} · ${p.dev&&p.dev.stage==='done'?BUILD[p.dev.kind].label:TYPES[l.type].label} · ${fmtK(value(i))} · ${p.status==='settling'?(typeof ypGameWeekLabel==='function'&&Number.isFinite(+p.settleWk)?'Settles '+ypGameWeekLabel(p.settleWk):'Settles Week '+(p.settleWk|0)):cfTxt(cashflow(i,p.repay))}</small></div>›</li>`;}).join('')}</ul>`:'';
@@ -963,7 +981,18 @@ const YP_SUBURB_CREDIT='<a href="https://www.data.qld.gov.au/dataset/locality-bo
 function ypCodeBuilding(id){id=String(id||'');if(id.startsWith('ypb-'))return id;const r=(ypReadStock().rentals||[]).find(x=>x&&x.id===id);return r&&String(r.footprintId||'').startsWith('ypb-')?String(r.footprintId):'';}
 function ypCodeShard(name){if(!ypCodeShards.has(name))ypCodeShards.set(name,fetch('data/codes/'+name+'.json').then(r=>{if(!r.ok)throw new Error(r.status);return r.json();}).then(o=>{ypCodeShards.set(name,o);if(name==='localities')ypCodeLocalities=o.prefixes||{};document.dispatchEvent(new Event('yp-codes'));},()=>{ypCodeShards.set(name,{c:{},prefixes:{}});}));return ypCodeShards.get(name);}
 function ypOfficialSuburb(id){const code=ypPublicCode(id);if(!/^[A-Z]{3}-\d{4}$/.test(code))return '';if(!ypCodeLocalities){ypCodeShard('localities');return '';}const loc=ypCodeLocalities[code.slice(0,3)];return loc?loc.locality:'';}
-document.addEventListener('yp-codes',()=>{document.querySelectorAll('[data-yp-code]').forEach(el=>{el.textContent=ypPublicCode(el.dataset.ypCode);});if(typeof ypRefreshSuburbText==='function')ypRefreshSuburbText();if(window.__ypListCentre&&typeof ypApplyPlacePins==='function')ypApplyPlacePins();});
+function ypIsGameSuburb(name){const want=ypSuburbKey((typeof ypSuburbText==='function'&&ypSuburbText(name))||name);if(!want||!ypCodeLocalities)return false;for(const loc of Object.values(ypCodeLocalities)){if(loc&&ypSuburbKey(loc.locality)===want)return true;}return false;}
+function ypClearStaleName(obj,keys){if(!obj||typeof obj!=='object'||!ypCodeLocalities)return false;let ch=false;keys.forEach(k=>{const v=obj[k];if(!v)return;if(ypAreaSearch({label:v}))return;if(ypIsGameSuburb(v))return;delete obj[k];ch=true;});return ch;}
+function ypSanitizeSavedNames(){
+ if(!ypCodeLocalities)return;
+ try{const store=ypReadStock();let ch=false;(store.rentals||[]).forEach(r=>{if(ypClearStaleName(r,['locality','placeLabel']))ch=true;});if(ch)ypWriteStock(store);}catch(e){}
+ try{if(window.__ypListCentre&&ypClearStaleName(window.__ypListCentre,['locality','label','stockKey'])){if(typeof ypSaveCentre==='function')ypSaveCentre();}}catch(e){}
+ try{if(window.__ypPlace)ypClearStaleName(window.__ypPlace,['locality','label']);}catch(e){}
+ try{if(typeof G!=='undefined'&&G&&G.placeName&&!ypIsGameSuburb(G.placeName)&&!ypAreaSearch({label:G.placeName})){delete G.placeName;if(typeof save==='function')save();}}catch(e){}
+ if(typeof ypRefreshSuburbText==='function')ypRefreshSuburbText();
+ if(typeof ypSyncListSearch==='function')ypSyncListSearch();
+}
+document.addEventListener('yp-codes',()=>{document.querySelectorAll('[data-yp-code]').forEach(el=>{el.textContent=ypPublicCode(el.dataset.ypCode);});ypSanitizeSavedNames();if(typeof ypRefreshSuburbText==='function')ypRefreshSuburbText();if(window.__ypListCentre&&typeof ypApplyPlacePins==='function')ypApplyPlacePins();});
 try{localStorage.removeItem((window.__ypPreviewNs||'yp.')+'publicCodes');}catch(e){}/* old per-device numbering, replaced by data/codes */
 ypCodeShard('localities');try{(ypReadStock().rentals||[]).forEach(r=>ypPublicCode(r.id));}catch(e){}/* warm the codes a player is most likely to see */
 function ypGoToProperty(r){if(r)ypOpenProperty(r.footprintId||r.id,{lon:r.lon,lat:r.lat});}
@@ -1389,7 +1418,7 @@ function ypInstallBottomNav(){const nav=document.querySelector('nav');if(!nav||n
  ypMap.addControl(new maplibregl.NavigationControl({showCompass:false}));
  ypMap.addControl(new maplibregl.AttributionControl({compact:false,customAttribution:(tiles?'<a href="https://www.maptiler.com/copyright/">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>':'Pins only. Basemap tiles were not loaded.')+' '+YP_SUBURB_CREDIT}));
  ypMap.on('error',()=>{if(ypMapFailed)return;ypMapFailed=true;ypFoot('Map resource error (details suppressed). Check the key, allowed origins, quota or network, then reload. No buildings were invented.');});
- const applyLabels=()=>ypApplyLabelPolicy(ypMap);
+ const applyLabels=()=>ypEnsureSuburbLabels(ypMap);
  ypMap.on('style.load',applyLabels);
  ypMap.on('load',()=>{
   if(ypTilesHold)ypAbortMapRequests();
@@ -1489,11 +1518,45 @@ function ypShowWherePopup(){
 }
 function ypCloseWhere(){const el=document.getElementById('yp-where');if(el)el.remove();}
 /* Shared town and suburb search for the Listings maps (For Sale, Auctions, For Rent, Room Share; Boarding has none).
-   Our own suburbs (data/codes/localities.json + centres.json) match instantly from 2 letters. Only when none match, Geoapify is asked from 3 letters after a short pause (postcodes, other towns); an older request is cancelled when you keep typing. */
+   Search is over game suburb names, councils and property codes only. */
 var YP_SEARCH_WAIT=200;
-var ypLocalPlaces=null,ypLocalLoading=null;
-function ypLoadLocalPlaces(){if(ypLocalPlaces)return Promise.resolve(ypLocalPlaces);if(ypLocalLoading)return ypLocalLoading;ypLocalLoading=Promise.all([Promise.resolve(ypCodeShard('localities')),fetch('data/codes/centres.json').then(r=>r.ok?r.json():{c:{}}).catch(()=>({c:{}}))]).then(([,centres])=>{const table=ypCodeLocalities||{};const c=centres&&centres.c||{};const twice={};Object.keys(c).forEach(k=>{const t=table[k];if(t)twice[t.locality]=(twice[t.locality]||0)+1;});ypLocalPlaces=Object.keys(c).filter(k=>table[k]).map(k=>{const t=table[k];const lga=twice[t.locality]>1?' ('+String(t.lga||'').replace(/ Regional$/,'')+')':'';return {locality:t.locality,label:t.locality+lga+', Queensland, Australia',lon:+c[k][0],lat:+c[k][1],n:+c[k][2]||0,local:true};});return ypLocalPlaces;}).catch(()=>{ypLocalLoading=null;return [];});return ypLocalLoading;}
-function ypLocalMatches(text){const q=ypSuburbKey(text);if(q.length<2||/^\d+$/.test(q)||!ypLocalPlaces)return [];return ypLocalPlaces.map(p=>{const k=ypSuburbKey(p.locality);return {p,rank:k.startsWith(q)?0:k.split(' ').some(w=>w.startsWith(q))?1:-1};}).filter(x=>x.rank>=0).sort((a,b)=>a.rank-b.rank||b.p.n-a.p.n).slice(0,6).map(x=>x.p);}
+var ypLocalPlaces=null,ypLocalLoading=null,ypCodeLookup=null,ypSuburbAreas=null;
+function ypLoadCodeLookup(){if(ypCodeLookup)return Promise.resolve(ypCodeLookup);return fetch('data/codes/lookup.json').then(r=>r.ok?r.json():{c:{}}).then(o=>{ypCodeLookup=o.c||{};return ypCodeLookup;}).catch(()=>({}));}
+function ypLoadSuburbAreas(){if(ypSuburbAreas)return Promise.resolve(ypSuburbAreas);return fetch('data/codes/areas.geojson').then(r=>r.ok?r.json():{features:[]}).then(g=>{ypSuburbAreas=g.features||[];return ypSuburbAreas;}).catch(()=>[]);}
+function ypLoadLocalPlaces(){if(ypLocalPlaces)return Promise.resolve(ypLocalPlaces);if(ypLocalLoading)return ypLocalLoading;ypLocalLoading=Promise.all([Promise.resolve(ypCodeShard('localities')),fetch('data/codes/centres.json').then(r=>r.ok?r.json():{c:{}}).catch(()=>({c:{}})),ypLoadCodeLookup(),ypLoadSuburbAreas()]).then(([,centres])=>{const table=ypCodeLocalities||{};const c=centres&&centres.c||{};ypLocalPlaces=Object.keys(c).filter(k=>table[k]).map(k=>{const t=table[k];const council=t.council||'';return {locality:t.locality,council,prefix:k,label:council?t.locality+', '+council:t.locality,lon:+c[k][0],lat:+c[k][1],n:+c[k][2]||0,local:true};});return ypLocalPlaces;}).catch(()=>{ypLocalLoading=null;return [];});return ypLocalLoading;}
+function ypParseTypedCode(text){const m=String(text||'').trim().toUpperCase().match(/^([A-Z]{3})(?:-?(\d{1,4}))?$/);if(!m)return null;return {prefix:m[1],num:m[2]?parseInt(m[2],10):0};}
+function ypLocalMatches(text){
+ const raw=String(text||'').trim();
+ const q=ypSuburbKey(raw);
+ const out=[];
+ const typed=ypParseTypedCode(raw);
+ if(typed&&ypLocalPlaces){
+  const place=ypLocalPlaces.find(p=>p.prefix===typed.prefix);
+  if(place){
+   if(typed.num>0&&ypCodeLookup&&ypCodeLookup[typed.prefix]&&ypCodeLookup[typed.prefix][typed.num-1]){
+    const id=ypCodeLookup[typed.prefix][typed.num-1];
+    const code=typed.prefix+'-'+String(typed.num).padStart(4,'0');
+    out.push({locality:place.locality,council:place.council,prefix:place.prefix,label:code+' · '+place.label,lon:place.lon,lat:place.lat,n:place.n,local:true,footprintId:id,code,zoom:16});
+   }else{
+    out.push(Object.assign({},place,{label:place.prefix+' · '+place.label}));
+   }
+  }
+ }
+ if(q.length>=2&&!/^\d+$/.test(q)&&ypLocalPlaces){
+  ypLocalPlaces.map(p=>{
+   const k=ypSuburbKey(p.locality),c=ypSuburbKey(p.council||'');
+   let rank=-1;
+   if(k===q||p.prefix===raw.toUpperCase())rank=0;
+   else if(k.startsWith(q))rank=1;
+   else if(k.split(' ').some(w=>w.startsWith(q)))rank=2;
+   else if(c.startsWith(q))rank=3;
+   return {p,rank};
+  }).filter(x=>x.rank>=0).sort((a,b)=>a.rank-b.rank||b.p.n-a.p.n).forEach(x=>{
+   if(!out.some(o=>o.prefix===x.p.prefix&&!o.footprintId))out.push(x.p);
+  });
+ }
+ return out.slice(0,8);
+}
 function ypWireWhere(){
  const input=document.getElementById('yp-where-town'),box=document.getElementById('yp-where-suggestions'),status=document.getElementById('yp-where-status');
  if(!input||input.dataset.wired)return;input.dataset.wired='1';
@@ -1517,21 +1580,9 @@ function ypWireWhere(){
   local=ypLocalMatches(text);draw();
   if(text.length<2){status.textContent=text?'Keep typing…':'';return;}
   if(local.length){status.textContent='';return;}
-  let params;try{params=autocompleteQuery('area',text,null,'Australia');}catch(e){status.textContent=local.length?'':(text.length<3?'Keep typing…':e.message);return;}
-  const key=ypGeoKey||window.ypGeoKey||'';
-  if(!key){status.textContent=local.length?'':'Search is not available right now.';return;}
-  const token=gate.next();
-  status.textContent='Searching…';
-  timer=setTimeout(async()=>{try{
-   const response=await fetch(geocodeUrl(params,key).href,{...YP_MAP_REQUEST,signal:token.signal});
-   if(!response.ok)throw Error('bad');
-   const data=await response.json();
-   if(!gate.current(token.version))return;
-   remote=pilotSuggest.areas(data,'Australia',/^\d{4}$/.test(text)?text:null);
-   draw();
-   status.textContent=items.length?'':'No matching town or suburb. Check the spelling.';
-  }catch{if(gate.current(token.version))status.textContent=local.length?'':'Suggestions are unavailable. Check your connection and try again.';}},YP_SEARCH_WAIT);
+  status.textContent=text.length<2?'Keep typing…':'No matching suburb or property code.';
  }
+
  input.addEventListener('keydown',e=>{
   if((e.key==='ArrowDown'||e.key==='ArrowUp')&&items.length){e.preventDefault();active=e.key==='ArrowDown'?(active+1)%items.length:(active-1+items.length)%items.length;paint();return;}
   if(e.key==='Enter'&&items.length){e.preventDefault();ypChooseTown(items[active>=0?active:0]);}
@@ -1556,8 +1607,8 @@ function ypShowChosen(label,moved){
 function ypChooseTown(item){
  const lon=Number(item&&item.lon),lat=Number(item&&item.lat);
  if(!Number.isFinite(lon)||!Number.isFinite(lat)||Math.abs(lon)>180||Math.abs(lat)>90){const status=document.getElementById('yp-where-status');if(status)status.textContent='That suggestion has no map centre, so it was not selected. Choose another suggestion.';return;}
- const label=item.label||item.name||'Chosen place';
- const locality=ypVerifiedLocality(item);
+ const label=item.locality||ypVerifiedLocality(item)||item.label||item.name||'Chosen place';
+ const locality=item.locality||ypVerifiedLocality(item);
  window.__ypPlace={label,lon,lat,center:[lon,lat]};if(locality)window.__ypPlace.locality=locality;
  window.__ypListCentre={label,lon,lat,stockKey:label};if(locality)window.__ypListCentre.locality=locality;
  if(typeof G!=='undefined'&&G&&!G.homeChosen)G.placeName=label;
@@ -1565,9 +1616,12 @@ function ypChooseTown(item){
  ypSyncHeader();
  ypCloseWhere();
  ypMountSearchArea();
- ypCentreChosen();
+ const z=Number(item.zoom);
+ if(ypMap&&Number.isFinite(z)){try{ypMap.jumpTo({center:[lon,lat],zoom:z});}catch(e){ypCentreChosen();}}
+ else ypCentreChosen();
  ypApplyPlacePins();
  ypSyncRadius();
+ if(item.footprintId&&typeof ypOpenProperty==='function'){try{ypOpenProperty(item.footprintId,{lon,lat});}catch(e){}}
 }
 if(typeof weekTick==='function'&&!weekTick.__ypRent){const origWeek=weekTick;const wrapped=function(){const board=typeof G!=='undefined'&&G&&G.clockOn&&!G.homeChosen&&!(G.lease&&G.lease.id)&&typeof NOHOME_BOARD==='number'?NOHOME_BOARD:0;const out=origWeek.apply(this,arguments);try{ypSettleSampleWeek(board);}catch(e){}try{ypChargeBuyWeek();}catch(e){}try{if(typeof ypChargeCarLoans==='function')ypChargeCarLoans();}catch(e){}try{ypSyncOverlap();}catch(e){}try{ypWarnShortfall();}catch(e){}try{setTimeout(ypRefreshFinances,0);}catch(e){}return out;};wrapped.__ypRent=1;weekTick=wrapped;}
 function ypDeriveLeaseStart(lease,rental,week){week=week!=null?week:(typeof G!=='undefined'&&G?G.week|0:0);const picks=[];const add=(w,pri)=>{if(Number.isFinite(+w)&&+w>=0&&+w<=week)picks.push({w:+w|0,pri});};if(rental&&rental.startWeek!=null&&Number.isFinite(+rental.startWeek)&&+rental.startWeek>=0)add(rental.startWeek,1);if(typeof ypReadHistory==='function'){try{const ids={};[lease&&lease.id,rental&&rental.id,rental&&rental.footprintId].forEach(id=>{if(id)ids[id]=1;});const evs=(ypReadHistory().events||[]).filter(e=>e&&ids[e.propertyId]);const ev=[...evs].reverse().find(e=>e.kind==='confirmed')||[...evs].reverse().find(e=>e.kind==='movedIn')||[...evs].reverse().find(e=>e.kind==='accepted');if(ev&&Number.isFinite(+ev.gameMs)){let w=typeof ypWeekFromGameMs==='function'?ypWeekFromGameMs(+ev.gameMs):NaN;if(!(Number.isFinite(w)&&w>=0&&w<=week)&&typeof ypWeekMsCandidates==='function'){ypWeekMsCandidates().some(ms=>{const x=Math.floor(+ev.gameMs/ms);if(x>=0&&x<=week){w=x;return true;}});}if(Number.isFinite(w))add(w,2);}}catch(e){}}if(rental&&Number.isFinite(+rental.appliedGameMs)){let w=typeof ypWeekFromGameMs==='function'?ypWeekFromGameMs(+rental.appliedGameMs):NaN;if(!(Number.isFinite(w)&&w>=0&&w<=week)&&typeof ypWeekMsCandidates==='function'){ypWeekMsCandidates().some(ms=>{const x=Math.floor(+rental.appliedGameMs/ms);if(x>=0&&x<=week){w=x;return true;}});}if(Number.isFinite(w)&&w>0)add(w,3);}if(lease&&lease.start!=null&&Number.isFinite(+lease.start)&&+lease.start>=0)add(lease.start,4);if(!picks.length)return lease&&Number.isFinite(+lease.start)?(+lease.start|0):(rental&&Number.isFinite(+rental.startWeek)?(+rental.startWeek|0):0);picks.sort((a,b)=>a.pri-b.pri);return picks[0].w;}
