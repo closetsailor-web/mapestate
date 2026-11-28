@@ -1700,6 +1700,7 @@ window.ypBudgetRender = renderBudgetList;
 window.expOpen = expOpen;
 window.ypBudgetOpenBill = ypBudgetOpenBill;
 window.ypBudgetPeriodLabel = B_PERIOD_LABEL;
+window.ypBudgetInjectCss = ypBudgetInjectCss; /* dates158: the onboarding income card reuses these row and sheet styles */
 window.expRender = renderBudgetList;
 window.expSave = expSave;
 window.expTotal = function(d){

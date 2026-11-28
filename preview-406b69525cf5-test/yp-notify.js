@@ -6,6 +6,7 @@
 const YP_NOTIFY_TYPES={
   billDue:{label:'Bill Due',icon:'bell',col:'#b8410a'},
   regoDue:{label:'Rego Due',icon:'car',col:'#b8410a'},
+  incomeDue:{label:'Payment Coming In',icon:'dollar',col:'#164ea3'},
   houseSettling:{label:'House Settling',icon:'key',col:'#0b2545'},
   houseSettled:{label:'House Settled',icon:'key',col:'#f47b20'},
   rentalApproved:{label:'Rental Approved',icon:'dollar',col:'#164ea3'},
@@ -203,6 +204,13 @@ function ypNotifyCancel(type,key){
 /* ----- Bills data ----- */
 function ypBillsIsGame(it){
   return !!(it&&(it.source==='game'||String(it.id||'').indexOf('game:')===0));
+}
+/* dates158: money coming in (Oz Gov Payments, Child Support, Other Income) uses the same reminder records and engine as bills, with its own wording. These records stay out of the bill lists (see ypBillsRealList). */
+function ypBillsIsIncome(it){
+  return !!(it&&(it.source==='income'||String(it.id||'').indexOf('inc:')===0));
+}
+function ypBillsRemindText(it,label){
+  return ypBillsIsIncome(it)?it.name+' is coming in '+label+'.':it.name+' is due '+label+'.';
 }
 function ypBillParseDate(iso){
   const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -529,9 +537,56 @@ function ypBillsEnsure(){
   ypBillsSyncFromExpenses();
   ypBillsSyncFromCars();
   ypBillsClearGameReminders();
+  ypIncomeRemindersPrune();
   ypBillsRollDues();
   try{ypHabitsEnsure();}catch(e){}
   return ypBillsList();
+}
+/* A reminder for money coming in only lives while that payment is still on Real Life Income. */
+function ypIncomeRemindersPrune(){
+  const store=ypBillsStore();if(!store||!store.items)return;
+  const inc=(typeof G!=='undefined'&&G&&G.income)||{};
+  const ids=new Set((Array.isArray(inc.payments)?inc.payments:[]).map(p=>p&&String(p.id)));
+  let changed=false;
+  Object.keys(store.items).forEach(id=>{
+    const it=store.items[id];
+    if(!ypBillsIsIncome(it))return;
+    const pid=id.slice(4);
+    const live=pid==='child-support'?(+inc.childSupport>0):ids.has(pid);
+    if(live)return;
+    try{ypBillsClearNotify(it);}catch(e){}
+    delete store.items[id];changed=true;
+  });
+  if(changed&&typeof save==='function')save();
+}
+/* Replace the income reminders with the ones chosen on Choose Your Income. rows: [{id,name,amount,freq,dueDate,remind,leads}] */
+function ypIncomeRemindersSet(rows){
+  const store=ypBillsStore();if(!store)return 0;
+  Object.keys(store.items).forEach(id=>{
+    const it=store.items[id];
+    if(!ypBillsIsIncome(it))return;
+    try{ypBillsClearNotify(it);}catch(e){}
+    delete store.items[id];
+  });
+  let on=0;
+  (Array.isArray(rows)?rows:[]).forEach(r=>{
+    if(!r||!r.id||!r.name)return;
+    const dueDate=ypBillParseDate(r.dueDate)?r.dueDate:null;
+    if(!dueDate&&!r.remind)return;
+    const rec=ypBillsUpsert({id:'inc:'+r.id,source:'income',kind:'income',name:String(r.name),amount:r.amount,freq:r.freq,dueDate,notifyType:'incomeDue'});
+    if(!rec)return;
+    const d=ypBillParseDate(dueDate);
+    rec.dueDay=d?d.getDate():null;
+    rec.remind=!!(r.remind&&dueDate);
+    rec.asked=true;
+    rec.choice=rec.remind?'yes':'no';
+    const leads=Array.isArray(r.leads)?r.leads.filter(k=>YP_NOTIFY_LEADS[k]):[];
+    rec.leads=leads.length?leads:['week'];
+    rec.lead=rec.leads[0];
+    if(rec.remind)on++;
+  });
+  if(typeof save==='function')save();
+  return on;
 }
 function ypBillsRollDues(){
   const store=ypBillsStore();if(!store)return;
@@ -602,7 +657,7 @@ function ypBillsRealList(){
   const ex=(typeof G!=='undefined'&&G&&G.income&&G.income.ex)||null;
   const cats=(ex&&ex.v===2&&typeof ypBudgetActiveItems==='function')?ypBudgetActiveItems(ex).map(it=>it.billKey):((typeof EXP13!=='undefined'&&Array.isArray(EXP13))?EXP13.map(r=>r[0]):Object.keys(YP_BILL_EXP_NAMES));
   const order=new Map(cats.map((k,i)=>['exp:'+k,i]));
-  const real=ypBillsList().filter(it=>!ypBillsIsGame(it));
+  const real=ypBillsList().filter(it=>!ypBillsIsGame(it)&&!ypBillsIsIncome(it));
   real.sort((a,b)=>{
     const ae=a.source==='expense',be=b.source==='expense';
     if(ae&&be){
@@ -2174,6 +2229,7 @@ function ypBillDateFromWeek(week){
 function ypOpenBillDue(id){
   /* Real-life dates are edited in Budget and Bills. Game costs keep their game-week due date. */
   const it=ypBillsGet(id);if(!it||ypBillsIsGame(it))return;
+  if(ypBillsIsIncome(it)){try{if(typeof UI!=='undefined'&&UI&&typeof UI.income==='function')UI.income();}catch(e){}return;}
   if(typeof ypBudgetOpenBill==='function'&&ypBudgetOpenBill(id))return;
   const safe=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape(id):String(id).replace(/"/g,'');
   const row=document.querySelector('#yp-bills [data-id="'+safe+'"] input[type=date]');
@@ -2310,7 +2366,7 @@ function ypBillsScheduleAll(){
       const occ=ypBillsOccurrence(it);
       if(!occ)return;
       const dueWall=occ.dueWall,label=occ.label;
-      const msg=it.name+' is due '+label+'.';
+      const msg=ypBillsRemindText(it,label);
       /* one device notification per chosen lead time that is still ahead */
       let any=false;
       ypBillLeads(it).forEach(k=>{
@@ -2352,7 +2408,7 @@ function ypBillsFireOccurrence(it,iso,past){
   const leads=ypBillLeads(it);
   const keyOf=k=>base+'@'+k;
   const sent=k=>!!fired[keyOf(k)]||(k===it.legacyLead&&!!fired[base]);
-  const msg=it.name+' is due '+rec.label+'.';
+  const msg=ypBillsRemindText(it,rec.label);
   if(past){
     /* a missed due date gets one notice, unless a lead-time one already went out */
     if(fired[base]||leads.some(sent))return false;

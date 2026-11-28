@@ -379,6 +379,56 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
     return '$' + v.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  function rawPayAmount(s) {
+    if (s == null || s === '') return '';
+    let raw = String(s).replace(/[^\d.]/g, '');
+    const dot = raw.indexOf('.');
+    if (dot >= 0) raw = raw.slice(0, dot + 1) + raw.slice(dot + 1).replace(/\./g, '');
+    return raw;
+  }
+
+  function fmtPayAmount(s) {
+    const raw = rawPayAmount(s);
+    if (raw === '') return '';
+    const dot = raw.indexOf('.');
+    let intPart = dot < 0 ? raw : raw.slice(0, dot);
+    const decPart = dot < 0 ? null : raw.slice(dot + 1);
+    intPart = intPart.replace(/^0+(?=\d)/, '');
+    const intFmt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (dot < 0) return intFmt;
+    return intFmt + '.' + decPart;
+  }
+
+  function parsePayAmount(s) {
+    if (s == null || s === '') return NaN;
+    const raw = rawPayAmount(s);
+    if (raw === '' || raw === '.') return NaN;
+    const n = +raw;
+    return n;
+  }
+
+  function applyPayAmountInput(el) {
+    const old = el.value;
+    const start = el.selectionStart == null ? old.length : el.selectionStart;
+    const keep = rawPayAmount(old.slice(0, start)).length;
+    const formatted = fmtPayAmount(old);
+    el.value = formatted;
+    let pos = formatted.length;
+    if (keep === 0) {
+      pos = 0;
+    } else {
+      let count = 0;
+      for (let i = 0; i < formatted.length; i++) {
+        if (/[\d.]/.test(formatted[i])) {
+          count++;
+          if (count >= keep) { pos = i + 1; break; }
+        }
+      }
+    }
+    try { el.setSelectionRange(pos, pos); } catch (e) {}
+    return rawPayAmount(formatted);
+  }
+
   function bandList() {
     if (typeof PAY_BANDS !== 'undefined' && PAY_BANDS && PAY_BANDS.length) return PAY_BANDS;
     const out = [];
@@ -430,7 +480,7 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
     if (!state) return null;
     const includesSuper = !!state.includesSuper;
     if (state.exact) {
-      const amt = state.amount === '' || state.amount == null ? NaN : +state.amount;
+      const amt = parsePayAmount(state.amount);
       if (!isFinite(amt) || amt < 0) return ypPayCalc({ yearlyGross: 0, includesSuper });
       if (state.period === 'hourly') {
         const hours = isFinite(+state.hours) ? +state.hours : 38;
@@ -543,7 +593,7 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
             <label for="yp-pc-amt">${amountLabel(state.period)}</label>
             <div class="yp-pc-ctl yp-pc-money">
               <span class="cur">$</span>
-              <input id="yp-pc-amt" inputmode="decimal" autocomplete="off" aria-label="${amountLabel(state.period)}" value="${state.amount}">
+              <input id="yp-pc-amt" inputmode="decimal" autocomplete="off" aria-label="${amountLabel(state.period)}" value="${fmtPayAmount(state.amount)}">
             </div>
           </div>
           <div class="yp-pc-field">
@@ -612,7 +662,7 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
     const amt = document.getElementById('yp-pc-amt');
     if (amt) {
       amt.addEventListener('input', ev => {
-        state.amount = ev.target.value;
+        state.amount = applyPayAmountInput(ev.target);
         /* Update figures without rebuilding the focused field. */
         refreshFigures();
       });
@@ -803,7 +853,7 @@ html.yp-home #yp-paycalc{background:rgba(11,37,69,.28)}
   function ypPayCalcSetPay() {
     if (!state) return;
     if (state.exact) {
-      const amt = state.amount === '' || state.amount == null ? NaN : +state.amount;
+      const amt = parsePayAmount(state.amount);
       if (!isFinite(amt) || amt < 0) return;
     }
     const r = resultOf();

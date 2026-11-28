@@ -152,6 +152,15 @@
       others + ' · ' + moneyText(F.yearly) + ' a year<br><small>This is what lands in your account after tax and Medicare. Pay before tax: ' + moneyText(gross) + ' a year' + midNote + '.</small>' + extra;
   }
 
+  /* dates158: one weekly-equivalent for money that repeats (Weekly, Fortnightly, Monthly, Quarterly, Every 6 Months, Yearly).
+     Same maths as Budget and Bills (toWeekNum), rounded to cents. */
+  const INCOME_PER_YEAR = { week: 52, weekly: 52, fortnight: 26, fortnightly: 26, month: 12, monthly: 12, quarter: 4, sixmonths: 2, year: 1, yearly: 1, annual: 1 };
+  function incomeWeekly(amount, freq) {
+    const a = +amount || 0;
+    if (!(a > 0)) return 0;
+    return Math.round(a * (INCOME_PER_YEAR[freq] || 52) / 52 * 100) / 100;
+  }
+
   /* Push the shared engine into the start-of-game iframe so Choose Your Income
      and the in-game modal cannot drift. */
   function shareCalc(win) {
@@ -168,6 +177,7 @@
     if (typeof ypPayCalc === 'function') win.ypPayCalc = ypPayCalc;
     win.ypRealBandGross = bandGross;
     win.ypIncomeFigures = figures;
+    win.ypIncomeWeekly = incomeWeekly;
     win.netYear = function (g) { return figures(g).yearly; };
     win.bandIncome = function (band, f) {
       if (!band) return 0;
@@ -303,6 +313,7 @@
   }
   root.ypRealBandGross = bandGross;
   root.ypIncomeFigures = figures;
+  root.ypIncomeWeekly = incomeWeekly;
   root.ypIncomeConvHTML = convHTML;
   root.ypIncomeFieldsHTML = fieldsHTML;
   root.ypIncomeMountBand = mountBand;
