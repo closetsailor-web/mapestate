@@ -8,7 +8,7 @@
    from this folder. That writes the same id into YP_BUILD and the
    map-preview.js / overture-layer.js ?v= queries so phones load the new files.
    Live also needs its own version.json (same id) when you copy this folder across. */
-window.YP_BUILD="dates151";
+window.YP_BUILD="dates154";
 (function(){
   var KEY="yp.boot.reloaded";
   function visible(){return document.visibilityState!=="hidden";}
@@ -859,6 +859,8 @@ svg.leaflet-image-layer.leaflet-interactive path {
 		}
 	}
 #rsearch:focus-within~#hint{display:none!important}
+
+
 </style>
 <meta name="application-name" content="Your Plot"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="apple-mobile-web-app-title" content="Your Plot"><meta name="theme-color" content="#0b2545">
 <script>/* Leaflet 1.9.4 (BSD-2-Clause) inlined */
@@ -985,7 +987,7 @@ body{-webkit-font-smoothing:antialiased}
 .sheet label{font-size:13px;color:var(--mute);font-weight:600}
 .sub{font-size:13.5px}
 .sheet table td{padding:6px 0;vertical-align:top}.sheet table td:last-child{white-space:nowrap;padding-left:12px;font-variant-numeric:tabular-nums}
-.banswer{margin-top:12px;padding:16px;border-radius:14px;box-shadow:inset 0 0 0 2px #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}.banswer .bhome{font-size:13px;font-weight:400;color:var(--mute);margin:4px 0 0;line-height:1.3}.banswer .bhome .bshort{font-size:11px;font-weight:400;color:var(--mute)}.banswer .bnote{font-size:12px;font-weight:400;color:var(--mute);margin-top:4px;line-height:1.35}.banswer.banswer-no{box-shadow:inset 0 0 0 1.5px rgba(20,33,61,.18);background:#f5f7fb}.banswer.banswer-no>div:first-child{font:700 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.banswer.banswer-no .bsub{margin-top:6px;color:#5a6780}
+.banswer{margin-top:12px;padding:16px;border-radius:14px;box-shadow:inset 0 0 0 2px #f26b1d;background:#fff4ec;text-align:left}.banswer>div:first-child{font-size:13px;color:var(--mute);font-weight:600}.banswer>b{display:block;font-size:30px;letter-spacing:-.5px;margin:2px 0 4px;color:#f26b1d}.banswer .bsub{font-size:14px;color:var(--mute)}.banswer .bsub b{color:var(--txt)}.banswer .bhome{font-size:13px;font-weight:400;color:var(--mute);margin:4px 0 0;line-height:1.3}.banswer .bhome .bshort{font-size:11px;font-weight:400;color:var(--mute)}.banswer .bnote{font-size:12px;font-weight:400;color:var(--mute);margin-top:4px;line-height:1.35}.banswer .bwarn{color:#c0672b}.banswer.banswer-no{box-shadow:inset 0 0 0 1.5px rgba(20,33,61,.18);background:#f5f7fb}.banswer.banswer-no>div:first-child{font:700 15px/1.3 Inter,system-ui,sans-serif;color:#14213d}.banswer.banswer-no .bsub{margin-top:6px;color:#5a6780}
 #borrowdetail summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--mute)}
 .seg{display:flex;gap:4px;padding:4px;background:var(--card2);border-radius:14px;margin:8px 0}.seg button{flex:1;min-height:40px;border:0;border-radius:11px;background:transparent;font:600 15px Inter,system-ui,sans-serif;color:var(--mute);cursor:pointer;transition:background .2s,color .2s}.seg button.on{background:var(--card);color:var(--txt);box-shadow:0 1px 4px rgba(11,37,69,.12)}
 .erow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}.erow>span{flex:1;min-width:0;font-size:15px}
@@ -1645,6 +1647,31 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 
 /* dates99: Game Budget and Reality Check scroll inside the card on iOS so Weekly Savings and Close are reachable */#yp-living[data-yp-fin] .card.yp-listing{overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;max-height:calc(var(--vh,1dvh)*100 - 256px);max-height:calc(100dvh - 256px - var(--sat,0px) - var(--sab,0px))}#yp-living[data-yp-fin] .card.yp-listing>.yp-close{flex:none}
 /* dates99: the same 12px gap between stacked action buttons on every card */#yp-sale-detail .yp-step-foot>button+button,#yp-rent-detail .yp-step-foot>button+button,#yp-apply-review .yp-step-foot button+button,#yp-board-request .yp-step-foot button+button,.yp-market-steps .yp-step-foot button+button,#yp-boarder-view .yp-step-foot button+button,#yp-car-detail .yp-step-foot>button+button,#yp-car-pay .yp-step-foot>button+button,#yp-car-finance .yp-step-foot>button+button,#yp-car-bought .yp-step-foot>button+button{margin-top:12px!important}#yp-sale-detail .yp-own-actions{row-gap:12px;margin-bottom:12px}
+
+/* Pay Down Loan — Option A on the owned property card */
+#yp-sale-detail .yp-paydown{margin:8px 0 12px;text-align:left}
+#yp-sale-detail .yp-paydown>h2{margin:0 0 6px;font:600 20px/1.2 Inter,system-ui,sans-serif;color:#0b2545;letter-spacing:-.25px}
+#yp-sale-detail .yp-paydown p.yp-pay-hint{margin:0 0 12px;font:500 13.5px/1.4 Inter,system-ui,sans-serif;color:#b8410a;text-align:left}
+#yp-sale-detail .yp-pay-segs{display:grid;grid-template-columns:1fr 1.15fr .9fr;gap:4px;background:#eef1f6;border-radius:14px;padding:4px;margin:0 0 14px}
+#yp-sale-detail .yp-pay-seg{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;text-align:center;min-height:40px;padding:4px 6px;border:0;border-radius:11px;background:transparent;font:500 12.5px/1.15 Inter,system-ui,sans-serif;color:#14213d;cursor:pointer}
+#yp-sale-detail .yp-pay-seg.on{background:#fff;color:#0b2545;font-weight:600;box-shadow:0 1px 4px rgba(11,37,69,.12)}
+#yp-sale-detail .yp-pay-field{margin:0 0 10px}
+#yp-sale-detail .yp-pay-field label{display:block;font:600 17px/1.2 Inter,system-ui,sans-serif;color:#0b2545;letter-spacing:-.15px;margin:0 0 7px 2px}
+#yp-sale-detail .yp-pay-money{display:flex;align-items:center;background:#f4f7fb;border:1.5px solid #dfe5ef;border-radius:14px;min-height:50px;padding:0 14px}
+#yp-sale-detail .yp-pay-cur{color:#5a6780;font:500 16px Inter,system-ui,sans-serif;margin-right:4px}
+#yp-sale-detail .yp-pay-money input{flex:1;min-width:0;border:0;background:transparent;font:400 16px Inter,system-ui,sans-serif;color:#14213d;font-variant-numeric:tabular-nums;padding:0;outline:none}
+#yp-sale-detail .yp-paydown p.yp-pay-cash{margin:6px 2px 12px;font:400 13.5px/1.35 Inter,system-ui,sans-serif;color:#5a6780;text-align:left}
+#yp-sale-detail .yp-pay-cash strong{font-weight:600;color:#0b2545}
+#yp-sale-detail .yp-pay-result{background:#eef3fb;border:1px solid #d4e0f2;border-radius:14px;padding:10px 12px;margin:0 0 12px}
+#yp-sale-detail .yp-pay-result-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0}
+#yp-sale-detail .yp-pay-result-row + .yp-pay-result-row{border-top:1px solid #dce5f2}
+#yp-sale-detail .yp-pay-result-row span{font:400 16px/1.3 Inter,system-ui,sans-serif;color:#14213d}
+#yp-sale-detail .yp-pay-result-row b{font:600 16px/1.3 Inter,system-ui,sans-serif;color:#0b2545;font-variant-numeric:tabular-nums;text-align:right;letter-spacing:-.15px;white-space:nowrap}
+#yp-sale-detail .yp-pay-payout{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 8px;padding:4px 0}
+#yp-sale-detail .yp-pay-payout span{font:400 16px Inter,system-ui,sans-serif;color:#14213d}
+#yp-sale-detail .yp-pay-payout b{font:600 20px Inter,system-ui,sans-serif;color:#0b2545;font-variant-numeric:tabular-nums;letter-spacing:-.25px}
+#yp-sale-detail .yp-pay-btn{appearance:none;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border:0;border-radius:999px;background:#b8410a;color:#fff;font:650 16px Inter,system-ui,sans-serif;cursor:pointer;box-shadow:0 8px 18px rgba(184,65,10,.28);font-family:inherit}
+#yp-sale-detail .yp-pay-btn:disabled{background:#c5ccd8;color:#fff;box-shadow:none;cursor:default}
 </style>
 </head><body>
 <div id="map"></div><div id="osmattr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
@@ -1655,7 +1682,7 @@ html.yp-dialog-open,html.yp-dialog-open body{overflow:hidden!important;overscrol
 <div id="drawer"><div class="scrim" onclick="UI.menu(false)"></div><div class="pane"></div></div>
 <div class="sheet" id="sheet"><div id="sheetBody"></div></div>
 <div id="spot"></div><div id="coach" role="dialog" aria-live="polite"><button id="coachx" type="button" aria-label="Hide this tip" title="Hide tip (Reno button brings it back)" onclick="tipHide()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button><div id="reno"></div><div class="cb"><b>Reno</b><div id="coachtxt"></div><div id="coachbtns"></div><div id="coachnote" style="font-size:12px;color:#4d6890;margin-top:4px;display:none">Game paused while you learn</div></div></div><button id="renotip" type="button" aria-label="Show tip" title="Show Reno's tip" onclick="tipShow()"></button><div id="picker"></div>
-<script src="yp-budget.js?v=dates151"></script>
+<script src="yp-budget.js?v=dates154"></script>
 <script>/* Integrated preview keeps fe.* across reloads. A different build id is left for migrateG; it is not deleted. */
 const TEST_BUILD_ID='3d-20261103-081221';
 const TEST_ALWAYS_FRESH=false;let TEST_SID='';
@@ -4201,12 +4228,12 @@ W3D.thumb = (i, w) => { w = thumbTier(w || 320); const key = i + '@' + w; return
 W3D.ready = true; if (window.W3D_BOOT) window.W3D_BOOT();
 
 </script>
-<script src="yp-paycalc.js?v=dates151"></script>
-<script src="yp-income-form.js?v=dates151"></script>
-<script src="map-preview.js?v=dates151"></script>
-<script src="player-market.js?v=dates151"></script>
-<script src="car-yard.js?v=dates151"></script>
-<script src="overture-layer.js?v=dates151"></script>
-<script src="yp-notify.js?v=dates151"></script>
+<script src="yp-paycalc.js?v=dates154"></script>
+<script src="yp-income-form.js?v=dates154"></script>
+<script src="map-preview.js?v=dates154"></script>
+<script src="player-market.js?v=dates154"></script>
+<script src="car-yard.js?v=dates154"></script>
+<script src="overture-layer.js?v=dates154"></script>
+<script src="yp-notify.js?v=dates154"></script>
 <script>if(typeof ypRunCatchUpAway==="function")ypRunCatchUpAway();</script>
 </body></html>
