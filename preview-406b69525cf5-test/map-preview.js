@@ -498,10 +498,78 @@ function ypRaiseNameLabels(map){
  map=map||(typeof ypMap!=='undefined'?ypMap:null);
  if(!map||typeof map.moveLayer!=='function'||!map.getStyle||!map.getStyle())return;
  try{if(map.getLayer('yp-council-label'))map.moveLayer('yp-council-label');}catch(e){}
+ try{if(map.getLayer('yp-island-label'))map.moveLayer('yp-island-label');}catch(e){}
  try{if(map.getLayer('yp-suburb-label'))map.moveLayer('yp-suburb-label');}catch(e){}
+}
+
+function ypOpenIslandSoon(name){
+ if(name&&typeof name==='object')name=(name.name||(name.properties&&name.properties.name)||'');
+ const title=String(name||'Island');
+ ypExclusive('yp-soon');
+ const old=document.getElementById('yp-soon');if(old)old.remove();
+ const panel=document.createElement('div');panel.id='yp-soon';panel.setAttribute('role','dialog');panel.setAttribute('aria-label',title);
+ const card=document.createElement('div');card.className='card';
+ const head=document.createElement('div');head.className='hwh';
+ const h=document.createElement('h2');h.textContent=title;head.appendChild(h);
+ const shut=()=>{panel.remove();};
+ ypHeaderDismiss(head,shut);
+ const note=document.createElement('p');note.textContent='Coming Soon. Nothing here is for sale yet.';
+ const back=document.createElement('button');back.type='button';back.className='hwx';back.textContent='Back';back.addEventListener('click',shut);
+ card.append(head,note,back);panel.appendChild(card);document.body.appendChild(panel);
+}
+function ypPlayBeforeId(map){
+ const ids=['yp-island-fill','yp-council-label','ypb-fill','ypb-quarantine-fill'];
+ for(const id of ids){if(map.getLayer(id))return id;}
+ const first=((map.getStyle()||{}).layers||[]).find(l=>l.type==='symbol');
+ return first?first.id:undefined;
+}
+function ypEnsurePlayArea(map){
+ if(!map||typeof map.getSource!=='function'||!map.getStyle||!map.getStyle())return;
+ try{
+  if(!map.getSource('yp-play-mask'))map.addSource('yp-play-mask',{type:'geojson',data:'data/codes/play-mask.geojson'});
+  if(!map.getSource('yp-islands'))map.addSource('yp-islands',{type:'geojson',data:'data/codes/islands.geojson'});
+  if(!map.getSource('yp-island-roads'))map.addSource('yp-island-roads',{type:'geojson',data:'data/codes/island-roads.geojson'});
+  if(!map.getSource('yp-island-labels'))map.addSource('yp-island-labels',{type:'geojson',data:'data/codes/island-labels.geojson'});
+  const before=ypPlayBeforeId(map);
+  const add=(spec)=>{
+   if(map.getLayer(spec.id))return;
+   try{map.addLayer(spec, before);}catch(e){try{map.addLayer(spec);}catch(err){}}
+  };
+  add({id:'yp-mask-ocean',type:'fill',source:'yp-play-mask',filter:['==',['get','kind'],'ocean'],paint:{'fill-color':'#c9dcea','fill-opacity':1}});
+  add({id:'yp-mask-land',type:'fill',source:'yp-play-mask',filter:['==',['get','kind'],'land'],paint:{'fill-color':'#f2f5f9','fill-opacity':1}});
+  add({id:'yp-island-fill',type:'fill',source:'yp-islands',paint:{'fill-color':'#e6edda','fill-opacity':1}});
+  add({id:'yp-island-outline',type:'line',source:'yp-islands',paint:{'line-color':'#8e977c','line-width':1.2}});
+  add({id:'yp-island-roads',type:'line',source:'yp-island-roads',minzoom:8,paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],8,0.6,11,1.1,14,1.6],'line-opacity':0.95}});
+  const regular=ypMapLabelFont(map,false);
+  const bold=ypMapLabelFont(map,true);
+  const fallbacks=[bold,regular,['Noto Sans Regular'],['Open Sans Regular']];
+  ypAddSymbolLayer(map,{id:'yp-island-label',type:'symbol',source:'yp-island-labels',minzoom:6,layout:{'text-field':['concat',['get','name'],'\nComing Soon'],'text-size':['interpolate',['linear'],['zoom'],6,12,8,15,11,17],'text-optional':false,'text-allow-overlap':true,'text-ignore-placement':true,'text-padding':2,'text-anchor':'center','text-line-height':1.15,'text-max-width':10,'text-font':bold},paint:{'text-color':'#0b2545','text-halo-color':'#ffffff','text-halo-width':2.8}},fallbacks);
+  if(!map.__ypIslandClick){
+   map.__ypIslandClick=1;
+   const hit=e=>{
+    const f=e.features&&e.features[0];
+    if(!f)return;
+    const name=(f.properties&&f.properties.name)||'Island';
+    e.originalEvent&&e.originalEvent.preventDefault&&e.originalEvent.preventDefault();
+    ypOpenIslandSoon(name);
+   };
+   map.on('click','yp-island-fill',hit);
+   map.on('click','yp-island-outline',hit);
+   map.on('mouseenter','yp-island-fill',()=>{try{map.getCanvas().style.cursor='pointer';}catch(e){}});
+   map.on('mouseleave','yp-island-fill',()=>{try{map.getCanvas().style.cursor='';}catch(e){}});
+  }
+  if(!map.__ypMaxBounds){
+   map.__ypMaxBounds=1;
+   fetch('data/codes/play-area.json').then(r=>r.ok?r.json():null).then(meta=>{
+    if(!meta||!meta.maxBounds||!map.setMaxBounds)return;
+    try{map.setMaxBounds(meta.maxBounds);}catch(e){}
+   }).catch(()=>{});
+  }
+ }catch(e){}
 }
 function ypEnsureSuburbLabels(map){
  if(!map||typeof map.getSource!=='function'||!map.getStyle||!map.getStyle())return;
+ ypEnsurePlayArea(map);
  try{
   if(!map.getSource('yp-council-labels'))map.addSource('yp-council-labels',{type:'geojson',data:'data/codes/councils.geojson'});
   if(!map.getSource('yp-suburb-labels'))map.addSource('yp-suburb-labels',{type:'geojson',data:'data/codes/labels.geojson'});

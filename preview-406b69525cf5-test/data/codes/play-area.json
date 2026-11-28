@@ -1,0 +1,44 @@
+{
+  "bandKm": 20,
+  "maxBounds": [
+    [
+      149.8,
+      -27.1
+    ],
+    [
+      154.2,
+      -22.8
+    ]
+  ],
+  "islands": [
+    {
+      "id": "stkitts",
+      "name": "Hudson Island",
+      "lon": 152.35472,
+      "lat": -24.58,
+      "wkm": 27.0,
+      "hkm": 22.7
+    },
+    {
+      "id": "nevis",
+      "name": "Bre Island",
+      "lon": 152.61857,
+      "lat": -24.86,
+      "wkm": 10.0,
+      "hkm": 12.6
+    },
+    {
+      "id": "stlucia",
+      "name": "Gracehaven Island",
+      "lon": 153.0981,
+      "lat": -25.22,
+      "wkm": 22.4,
+      "hkm": 44.5
+    }
+  ],
+  "colors": {
+    "land": "#f2f5f9",
+    "ocean": "#c9dcea"
+  },
+  "maxBoundsPadDeg": 0.55
+}
