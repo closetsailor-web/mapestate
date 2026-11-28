@@ -466,21 +466,58 @@ function ypMigrateWithdrawnRental(rental){if(!rental||rental.status!=='withdrawn
 function ypReadStock(){try{const o=JSON.parse(localStorage.getItem(YP_STOCK_KEY)||'null');if(!o||o.version!==1||!Array.isArray(o.rentals))return ypFreshStock();let changed=false;o.rentals.forEach(r=>{if(ypMigrateWithdrawnRental(r))changed=true;});if(changed)ypWriteStock(o);return o;}catch(e){return ypFreshStock();}}
 function ypWriteStock(store){try{localStorage.setItem(YP_STOCK_KEY,JSON.stringify(store));}catch(e){}}
 function ypApplyLabelPolicy(map){const layers=map&&map.getStyle&&map.getStyle()&&map.getStyle().layers||[];for(const layer of layers){if(ypShouldHideLabel(layer)){try{map.setLayoutProperty(layer.id,'visibility','none');}catch(e){}}}}
+function ypLiteralFont(value){return Array.isArray(value)&&value.length&&value.every(x=>typeof x==='string'&&x)?value.slice():null;}
+function ypMapLabelFont(map,wantBold){
+ const layers=((map&&map.getStyle&&map.getStyle())||{}).layers||[];
+ const found=[];
+ for(const layer of layers){
+  const font=ypLiteralFont(layer&&layer.layout&&layer.layout['text-font']);
+  if(font)found.push(font);
+ }
+ const pick=wantBold
+  ?(found.find(f=>/bold/i.test(f[0]||'')&&!/italic/i.test(f[0]||''))||found.find(f=>/semibold|medium|demi/i.test(f[0]||'')))
+  :(found.find(f=>/regular/i.test(f[0]||'')&&!/italic|bold/i.test(f[0]||''))||found[0]);
+ if(pick)return pick;
+ return wantBold?['Noto Sans Bold','Open Sans Bold']:['Noto Sans Regular','Open Sans Regular'];
+}
+function ypAddSymbolLayer(map,spec,fonts){
+ if(map.getLayer(spec.id))try{map.removeLayer(spec.id);}catch(e){}
+ const tried=[];
+ for(const font of fonts){
+  if(!font||tried.some(t=>t.join('\0')===font.join('\0')))continue;
+  tried.push(font);
+  try{
+   const layout=Object.assign({},spec.layout,{'text-font':font});
+   map.addLayer(Object.assign({},spec,{layout}));
+   return font;
+  }catch(e){if(map.getLayer(spec.id))try{map.removeLayer(spec.id);}catch(err){}}
+ }
+ return null;
+}
+function ypRaiseNameLabels(map){
+ map=map||(typeof ypMap!=='undefined'?ypMap:null);
+ if(!map||typeof map.moveLayer!=='function'||!map.getStyle||!map.getStyle())return;
+ try{if(map.getLayer('yp-council-label'))map.moveLayer('yp-council-label');}catch(e){}
+ try{if(map.getLayer('yp-suburb-label'))map.moveLayer('yp-suburb-label');}catch(e){}
+}
 function ypEnsureSuburbLabels(map){
  if(!map||typeof map.getSource!=='function'||!map.getStyle||!map.getStyle())return;
  try{
+  if(!map.getSource('yp-council-labels'))map.addSource('yp-council-labels',{type:'geojson',data:'data/codes/councils.geojson'});
   if(!map.getSource('yp-suburb-labels'))map.addSource('yp-suburb-labels',{type:'geojson',data:'data/codes/labels.geojson'});
-  if(!map.getLayer('yp-suburb-label')){
-   const sample=((map.getStyle()||{}).layers||[]).find(l=>l.layout&&l.layout['text-font']);
-   const textFont=sample?sample.layout['text-font']:['Open Sans Regular'];
-   map.addLayer({id:'yp-suburb-label',type:'symbol',source:'yp-suburb-labels',minzoom:8,layout:{'text-field':['get','name'],'text-size':['interpolate',['linear'],['zoom'],8,10,11,11,14,13],'text-font':textFont,'text-optional':true,'text-allow-overlap':false,'text-padding':2,'text-variable-anchor':['center','top','bottom','left','right']},paint:{'text-color':'#14213d','text-halo-color':'#ffffff','text-halo-width':1.2}});
-  }
+  const regular=ypMapLabelFont(map,false);
+  const bold=ypMapLabelFont(map,true);
+  const fallbacks=[regular,bold,['Noto Sans Regular'],['Open Sans Regular'],['Noto Sans Bold'],['Open Sans Bold']];
+  ypAddSymbolLayer(map,{id:'yp-council-label',type:'symbol',source:'yp-council-labels',minzoom:5,maxzoom:9,layout:{'text-field':['get','name'],'text-size':['interpolate',['linear'],['zoom'],6,15,8,18,8.8,19],'text-optional':false,'text-allow-overlap':true,'text-ignore-placement':true,'text-padding':2,'text-anchor':'center','text-max-width':8},paint:{'text-color':'#0b2545','text-halo-color':'#ffffff','text-halo-width':2.6}},[bold].concat(fallbacks));
+  ypAddSymbolLayer(map,{id:'yp-suburb-label',type:'symbol',source:'yp-suburb-labels',minzoom:9,layout:{'text-field':['get','name'],'text-size':['interpolate',['linear'],['zoom'],9,15,11,18,13,21,15,23],'text-optional':false,'text-allow-overlap':true,'text-ignore-placement':true,'text-padding':1,'text-variable-anchor':['center','top','bottom','left','right'],'text-max-width':8,'symbol-sort-key':['-',['coalesce',['get','n'],0]]},paint:{'text-color':'#0b2545','text-halo-color':'#ffffff','text-halo-width':3.5}},[regular].concat(fallbacks));
+  ypRaiseNameLabels(map);
  }catch(e){}
  ypApplyLabelPolicy(map);
+ ypRaiseNameLabels(map);
 }
 function ypRentMode(){return !window.__ypListKind||window.__ypListKind==='rent';}
 function ypListedRentals(place){return place&&ypRentMode()?ypRadiusList(ypReadStock(),place).items:[];}
-function ypSyncListingHomes(items){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-listing-homes'))return;const features=[];for(const rental of items||[]){if(!rental.footprintId||!rental.geometry)continue;features.push({type:'Feature',properties:{id:rental.id,footprintId:rental.footprintId},geometry:rental.geometry});}ypMap.getSource('yp-listing-homes').setData({type:'FeatureCollection',features});const anchor=ypMap.getLayer('ypb-selected-fill')?'ypb-selected-fill':null;const stack=['yp-listing-fill','yp-listing-line','yp-rental-shadow','yp-rental-point'];try{stack.forEach(id=>{if(!ypMap.getLayer(id))return;if(anchor)ypMap.moveLayer(id,anchor);else ypMap.moveLayer(id);});}catch(e){}}
+function ypSyncListingHomes(items){if(!ypMap||!ypMap.getSource||!ypMap.getSource('yp-listing-homes'))return;const features=[];for(const rental of items||[]){if(!rental.footprintId||!rental.geometry)continue;features.push({type:'Feature',properties:{id:rental.id,footprintId:rental.footprintId},geometry:rental.geometry});}ypMap.getSource('yp-listing-homes').setData({type:'FeatureCollection',features});const anchor=ypMap.getLayer('ypb-selected-fill')?'ypb-selected-fill':null;const stack=['yp-listing-fill','yp-listing-line','yp-rental-shadow','yp-rental-point'];try{stack.forEach(id=>{if(!ypMap.getLayer(id))return;if(anchor)ypMap.moveLayer(id,anchor);else ypMap.moveLayer(id);});}catch(e){}if(typeof ypRaiseNameLabels==='function')ypRaiseNameLabels(ypMap);}
 let ypListingTapAt=0;
 function ypListingHit(event){const m=typeof ypMap!=='undefined'?ypMap:null;if(!m||!event)return '';const layers=['yp-listing-fill','yp-listing-line','yp-rental-point','yp-rental-shadow'].filter(id=>m.getLayer(id));if(event.point&&layers.length){try{const hits=m.queryRenderedFeatures(event.point,{layers})||[];const hit=hits.find(f=>f.properties&&f.properties.id);if(hit)return String(hit.properties.id);}catch(e){}}const lng=event.lngLat&&+event.lngLat.lng,lat=event.lngLat&&+event.lngLat.lat;if(!Number.isFinite(lng)||!Number.isFinite(lat))return '';const zoom=typeof m.getZoom==='function'?m.getZoom():0;if(zoom<14)return '';for(const rental of ypListedRentals(window.__ypListCentre)){if(ypOuterRings(rental.geometry).some(ring=>ypPointInRing(lng,lat,ring)))return rental.id;}return '';}
 function ypOpenListingTap(event){const id=ypListingHit(event);if(!id)return false;const now=performance.now();if(now-ypListingTapAt>450){ypListingTapAt=now;const mine=typeof ypActiveTenancy==='function'?ypActiveTenancy():null;if(mine&&mine.id===id&&(mine.moveStep==='report'||mine.moveStep==='keys'))ypResumeRent(id);else if(mine&&(mine.id===id||mine.footprintId===id)&&typeof ypOpenProperty==='function')ypOpenProperty(mine.footprintId||id);else ypOpenRentalDetail(id);}return true;}

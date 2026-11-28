@@ -64,13 +64,16 @@
     ];
     if (m.getSource('ypb-boundary')) layers.push({id: 'ypb-boundary', type: 'line', source: 'ypb-boundary', paint: {'line-color': '#0b2545', 'line-width': 1.5}});
     for (const layer of layers) {
-      if (!m.getLayer(layer.id)) m.addLayer(layer);
-      else if (layer.paint) {
+      if (!m.getLayer(layer.id)) {
+        const before = m.getLayer('yp-council-label') ? 'yp-council-label' : (m.getLayer('yp-suburb-label') ? 'yp-suburb-label' : undefined);
+        m.addLayer(layer, before);
+      } else if (layer.paint) {
         for (const key of Object.keys(layer.paint)) {
           try { m.setPaintProperty(layer.id, key, layer.paint[key]); } catch (e) {}
         }
       }
     }
+    if (typeof ypRaiseNameLabels === 'function') ypRaiseNameLabels(m);
     syncSelMarker();
     return !!m.getLayer('ypb-fill');
   }
