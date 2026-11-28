@@ -535,8 +535,10 @@ function ypEnsurePlayArea(map){
    if(map.getLayer(spec.id))return;
    try{map.addLayer(spec, before);}catch(e){try{map.addLayer(spec);}catch(err){}}
   };
+  // One world rectangle with a single hole (the four-council outer boundary), filled as ocean.
+  // A holed inverted polygon with dozens of rings was mis-triangulated and painted inside the game.
+  ['yp-mask-land','yp-mask-water','yp-mask-waterway'].forEach(id=>{if(map.getLayer(id))try{map.removeLayer(id);}catch(e){}});
   add({id:'yp-mask-ocean',type:'fill',source:'yp-play-mask',filter:['==',['get','kind'],'ocean'],paint:{'fill-color':'#c9dcea','fill-opacity':1}});
-  add({id:'yp-mask-land',type:'fill',source:'yp-play-mask',filter:['==',['get','kind'],'land'],paint:{'fill-color':'#f2f5f9','fill-opacity':1}});
   add({id:'yp-island-fill',type:'fill',source:'yp-islands',paint:{'fill-color':'#e6edda','fill-opacity':1}});
   add({id:'yp-island-outline',type:'line',source:'yp-islands',paint:{'line-color':'#8e977c','line-width':1.2}});
   add({id:'yp-island-roads',type:'line',source:'yp-island-roads',minzoom:8,paint:{'line-color':'#ffffff','line-width':['interpolate',['linear'],['zoom'],8,0.6,11,1.1,14,1.6],'line-opacity':0.95}});
